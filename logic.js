@@ -135,7 +135,36 @@ function AndGate()
 AndGate.prototype = new DragableThing();
 
 AndGate.prototype.draw = function(ctx, selected) {
-
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Inputs
+	ctx.beginPath();
+	ctx.moveTo(0.3, 0.95);
+	ctx.lineTo(0.3, 0.8);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, 0.95);
+	ctx.lineTo(0.7, 0.8);
+	ctx.stroke();
+	
+	// Body
+	ctx.beginPath();
+	ctx.moveTo(0.85, 0.8);
+	ctx.lineTo(0.15, 0.8);
+	ctx.lineTo(0.15, 0.5);
+	ctx.arc(0.5, 0.5, 0.35, Math.PI, 0);
+	ctx.lineTo(0.85, 0.8);
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
 };
 
 /********************************************************************************************/
@@ -148,7 +177,37 @@ function OrGate()
 OrGate.prototype = new DragableThing();
 
 OrGate.prototype.draw = function(ctx, selected) {
-
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Inputs
+	ctx.beginPath();
+	ctx.moveTo(0.3, 0.95);
+	ctx.lineTo(0.3, 0.75);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, 0.95);
+	ctx.lineTo(0.7, 0.75);
+	ctx.stroke();
+	
+	// Body
+	ctx.beginPath();
+	ctx.moveTo(0.15, 0.8);
+	ctx.bezierCurveTo(0.3, 0.7, 0.7, 0.7, 0.85, 0.8);
+	ctx.lineTo(0.87, 0.5);
+	ctx.bezierCurveTo(0.87, 0.2, 0.6, 0.2,		0.5, 0.1);
+	ctx.bezierCurveTo(0.4, 0.2, 0.13, 0.2, 			0.15, 0.5);
+	ctx.lineTo(0.15, 0.8);
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
 };
 
 
@@ -403,12 +462,18 @@ var canvas = document.getElementById("logic_canvas");
 
 var dragable_thing = new DragableThing();
 var not_gate = new NotGate();
+var and_gate = new AndGate();
+var or_gate = new OrGate();
 
 var container = new Container();
 container.add(dragable_thing);
 container.add(not_gate);
+container.add(and_gate);
+container.add(or_gate);
 dragable_thing.setPosition(new Point(5, 5));
 not_gate.setPosition(new Point(5, 4));
+and_gate.setPosition(new Point(5, 3));
+or_gate.setPosition(new Point(5, 2));
 var view = new View(container);
 
 var widget = new LogicWidget(canvas);
