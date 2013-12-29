@@ -6,8 +6,20 @@ function Point(x, y)
 	this.y = y;
 }
 
+Point.prototype.copy = function() {
+    return new Point(this.x, this.y);
+};
+
+Point.prototype.minus = function(other) {
+	return new Point(this.x - other.x, this.y - other.y);
+};
+
+Point.prototype.plus = function(other) {
+	return new Point(this.x + other.x, this.y + other.y);
+};
+
 /********************************************************************************************/
-functon Box(left, top, right, bottom)
+function Box(left, top, right, bottom)
 /********************************************************************************************/
 {
 	this.left = left;
@@ -17,64 +29,131 @@ functon Box(left, top, right, bottom)
 }
 
 function BoxFromPointAndSize(point, size) {
-	return Box(point.x, point.y, point.x + size.width, point.y + size.height);
-}
+	return new Box(point.x, point.y, point.x + size.width, point.y + size.height);
+};
 
-Box.prototype.topLeft() {
+Box.prototype.topLeft = function() {
 	return new Point(this.left, this.top);
-}
+};
 
-Box.prototype.bottomRight() {
+Box.prototype.bottomRight = function() {
 	return new Point(this.right, this.bottom);
-}
+};
 
-Box.prototype.pointIn(point) {
-	return point.x >= left && point.x <= right && point.y >= top && point.y <= bottom;
-}
+Box.prototype.pointIn = function(point) {
+	return point.x >= this.left && point.x <= this.right && point.y >= this.top && point.y <= this.bottom;
+};
 
 Box.prototype.intersects = function(other) {
 	return this.pointIn(this.topLeft()) || this.pointIn(this.bottomRight());
-}
+};
 
 /********************************************************************************************/
 function DragableThing()
 /********************************************************************************************/
 {
-	this.top_left = Point(0, 0);
+	this.top_left = new Point(0, 0);
 	this.container = null;
 }
 
 DragableThing.prototype.setContainer = function(container) {
 	this.container = container;
-}
+};
 
-DragableThing.prototype.positon = function() {
+DragableThing.prototype.position = function() {
 	return this.top_left;
-}
+};
 
 DragableThing.prototype.setPosition = function(new_position) {
 	this.top_left.x = new_position.x;
-	this.top_right.y = new_position.y;
-}
+	this.top_left.y = new_position.y;
+	this.container.objectMoved(this);
+};
 
 DragableThing.prototype.size = function() {
 	return {
 		width: 1,
 		height: 1
 	};
-}
+};
 
-DragableThing.prototype.Draw = function(ctx, selected) {
-	ctx.fillRect(bla bla bla);
+DragableThing.prototype.draw = function(ctx, selected) {
+	ctx.fillRect(0, 0, 1, 1);
 };
 
 DragableThing.prototype.hitTest = function(x, y) {
 	
 };
 
+/********************************************************************************************/
+function NotGate()
+/********************************************************************************************/
+{	
+}
+
+NotGate.prototype = new DragableThing();
+
+NotGate.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	ctx.beginPath();
+	
+	//	Input
+	ctx.moveTo(0.5, 0.95);
+	ctx.lineTo(0.5, 0.8);
+	
+	// Triangle
+	ctx.lineTo(0.1, 0.8);
+	ctx.lineTo(0.5, 0.4);
+	ctx.lineTo(0.9, 0.8);
+	ctx.lineTo(0.5, 0.8);
+	
+	ctx.stroke();
+	
+	// the circle
+	ctx.beginPath();
+	moveTo(0.5, 0.4);
+	ctx.arc(0.5, 0.3, 0.1, - Math.PI ,  Math.PI );
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.2);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
+};
 
 /********************************************************************************************/
-function Conatiner()
+function AndGate()
+/********************************************************************************************/
+{
+	
+}
+
+AndGate.prototype = new DragableThing();
+
+AndGate.prototype.draw = function(ctx, selected) {
+
+};
+
+/********************************************************************************************/
+function OrGate()
+/********************************************************************************************/
+{
+	
+}
+
+OrGate.prototype = new DragableThing();
+
+OrGate.prototype.draw = function(ctx, selected) {
+
+};
+
+
+/********************************************************************************************/
+function Container()
 /********************************************************************************************/
 {
 	this.objects = [];
@@ -85,16 +164,17 @@ Container.prototype.add = function(object) {
 		bounding_box: 	BoxFromPointAndSize(object.position(), object.size()),
 		object: object
 	});
+	object.setContainer(this);
 };
 
-Container.prototype.remove - function(object) {
-	for (var i = 0; i < this.objects.length i++) {
+Container.prototype.remove = function(object) {
+	for (var i = 0; i < this.objects.length; i++) {
 		if (this.objects[i].object === object) {
 			this.objects.splice(i, 1);
 			break;
 		}
 	}
-}
+};
 
 Container.prototype.allObjectsTouchingBox = function(box) {
 	var results = [];
@@ -104,7 +184,7 @@ Container.prototype.allObjectsTouchingBox = function(box) {
 		}
 	}
 	return results;
-}
+};
 
 Container.prototype.hitTest = function(point) {
 	var results = [];
@@ -114,7 +194,16 @@ Container.prototype.hitTest = function(point) {
 		}
 	}
 	return results;
-}
+};
+
+Container.prototype.objectMoved = function(object) {
+	for (var i = 0; i < this.objects.length; i++) {
+		if (this.objects[i].object === object) {
+			this.objects[i].bounding_box = BoxFromPointAndSize(object.position(), object.size());
+			break;
+		}
+	}
+};
 
 /********************************************************************************************/
 function View(container)
@@ -122,51 +211,86 @@ function View(container)
 {
 	this.container = container;
 	this.dragged_object = null;
-	this.origin = Point(0,0);
-	this.scale = 20;
+	this.origin = new Point(0,0);
+	this.scale = 30;
 }
 
 View.prototype.setWindow = function(ctx, box) {
 	this.ctx = ctx;
 	this.drawing_area = box;
-}
+};
 
-View.prototype.toModelCoordinates(point) {
-	return Point( (point.x / scale) + origin.x, (point.y / scale) + origin.y);
-}
+View.prototype.toModelCoordinates = function(point) {
+	return new Point( (point.x / this.scale) + this.origin.x, (point.y / this.scale) + this.origin.y);
+};
 
 View.prototype.beginDrag = function(point) {
 	//Locate the thing being draged
-	this.start_position = self.toModelCoordinates(point)
+	this.start_position = this.toModelCoordinates(point);
 	var objects = container.hitTest(this.start_position);
 	if (objects.length > 0) {
 		this.dragged_object = objects[0];
+		this.original_position = this.dragged_object.position().copy();
+		console.log(this.original_position);
 	}
-}
+};
 
-View.prototype.continueDrag = function(x, y) {
+View.prototype.continueDrag = function(point) {
 	//Move the thing
 	if (this.dragged_object) {
-		this.dragged_object.setPosition(self.toModelCoordinates(point));
+		var p = this.toModelCoordinates(point);
+		var d = p.minus(this.start_position);
+		this.deleteItem(this.dragged_object);
+		this.dragged_object.setPosition(this.original_position.plus(d));
+		this.drawItem(this.dragged_object);
 	}
-}
+};
 
-View.prototype.endDrag = function(x, y) {
+View.prototype.endDrag = function(point) {
 	//Leave the thing in its new position
 	this.dragged_object = null;
-}
+};
 
 View.prototype.cancelDrag = function() {
 	//Dump the thing back in its original position
 	if (this.dragged_object) {
-		this.dragged_object.setPosition(this.start_position);
+		this.deleteItem(this.dragged_object);
+		this.dragged_object.setPosition(this.original_position);
+		this.drawItem(this.dragged_object);
 		this.dragged_object = null;
 	}
-}
+};
 
-View.prototype.beginDragWithNewObject = function(x, y, object) {
+View.prototype.beginDragWithNewObject = function(point, object) {
 	//Add a new object at position (x,y), it is being dragged
-}
+};
+
+View.prototype.draw = function() {
+	var all_in_view = this.container.allObjectsTouchingBox(this.drawing_area);
+	for (var i = 0; i < all_in_view.length; i++) {
+		this.drawItem(all_in_view[i]);
+	}
+};
+
+View.prototype.drawItem = function(item) {
+	var position = item.position();
+	this.ctx.save();
+	this.ctx.scale(this.scale, this.scale);
+	this.ctx.translate(this.origin.x + position.x, this.origin.y + position.y);
+	item.draw(this.ctx);
+	this.ctx.restore();
+};
+
+View.prototype.deleteItem = function(item) {
+	var position = item.position();
+	var size = item.size();
+	this.ctx.save();
+	this.ctx.scale(this.scale, this.scale);
+	this.ctx.translate(this.origin.x + position.x, this.origin.y + position.y);
+	//item.draw(this.ctx);
+	this.ctx.clearRect(0, 0, size.width, size.height);
+	this.ctx.restore();
+};
 
 /********************************************************************************************/
 function LogicWidget(canvas)
@@ -189,37 +313,37 @@ function LogicWidget(canvas)
 		function(event) {
 			// not even sure if I want this either
 			event.preventDefault();
-			that.click(event.x - canvas.offsetLeft, event.y - canvas.offsetTop, event);
+			//that.click(event.x - canvas.offsetLeft, event.y - canvas.offsetTop, event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mouseover',
 		function(event) {
-			that.mouseover(event.x - canvas.offsetLeft, event.y - canvas.offsetTop, event);
+			that.mouseover(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mouseout',
 		function(event) {
-			that.mouseout(event.x - canvas.offsetLeft, event.y - canvas.offsetTop, event);
+			that.mouseout(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mousedown',
 		function(event) {
-			that.mousedown(event.x - canvas.offsetLeft, event.y - canvas.offsetTop, event);
+			that.mousedown(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mouseup',
 		function(event) {
-			that.mouseup(event.x - canvas.offsetLeft, event.y - canvas.offsetTop, event);
+			that.mouseup(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mousemove',
 		function(event) {
-			that.mousemove(event.x - canvas.offsetLeft, event.y - canvas.offsetTop, event);
+			that.mousemove(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
 			return false;
 		}, false);
 	
@@ -229,45 +353,65 @@ function LogicWidget(canvas)
 	this.current_drag_target = null;
 }
 
-LogicWidget.prototype.mouseover = function(x, y, event) {
-	this.mouse_over = true;
-}
+LogicWidget.prototype.setView = function(view) {
+	this.current_drag_target = view;
+	view.setWindow(this.ctx, new Box(0, 0, 800, 600));
+};
 
-LogicWidget.prototype.mouseout = function(x, y, event) {
+LogicWidget.prototype.mouseover = function(point, event) {
+	this.mouse_over = true;
+};
+
+LogicWidget.prototype.mouseout = function(point, event) {
 	this.mouse_over = false;
 	if (this.current_drag_target) {
 		this.current_drag_target.cancelDrag();
-		this.current_drag_target= null;
+		// this.current_drag_target= null; again I don't think this is what I meant
 	}
 	this.in_drag = false;
 	this.mouse_down = false;
-}
+};
 
-LogicWidget.prototype.mousedown = function(x, y, event) {
+LogicWidget.prototype.mousedown = function(point, event) {
 	this.mouse_down = true;
-}
+	this.mouse_down_point = point;
+};
 
-LogicWidget.prototype.mouseup = function(x, y, event) {
+LogicWidget.prototype.mouseup = function(point, event) {
 	this.mouse_down = false;
 	if (this.in_drag && this.current_drag_target) {
-		this.current_drag_target.endDrag(x, y);
+		this.current_drag_target.endDrag(point);
 	}
 	this.in_drag = false;
-	this.current_drag_target = null;
+	// this.current_drag_target = null; I don't think this is what i meant
 	
-}
+};
 
-LogicWidget.prototype.mousemove = function(x, y, event) {
+LogicWidget.prototype.mousemove = function(point, event) {
 	if (this.in_drag && this.current_drag_target) {
-		this.current_drag_target.continueDrag(x,y);
+		this.current_drag_target.continueDrag(point);
 	}
-	if (!this.in_drag && mouse_down && this.current_drag_target) {
-		this.current_drag_target.startDrag(this.mouse_down_x, this.mouse_down_y);
-		this.current_drag_target.continueDrag(x, y);
+	if (!this.in_drag && this.mouse_down && this.current_drag_target) {
+		this.current_drag_target.beginDrag(this.mouse_down_point);
+		this.current_drag_target.continueDrag(point);
 		this.in_drag = true;
 	}
-}
+};
 
 
 var canvas = document.getElementById("logic_canvas");
+
+var dragable_thing = new DragableThing();
+var not_gate = new NotGate();
+
+var container = new Container();
+container.add(dragable_thing);
+container.add(not_gate);
+dragable_thing.setPosition(new Point(5, 5));
+not_gate.setPosition(new Point(5, 4));
+var view = new View(container);
+
 var widget = new LogicWidget(canvas);
+widget.setView(view);
+
+view.draw();
