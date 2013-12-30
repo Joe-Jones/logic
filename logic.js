@@ -211,6 +211,17 @@ OrGate.prototype.draw = function(ctx, selected) {
 };
 
 
+function makeGate(type) {
+	switch(type) {
+		case "AND":
+			return new AndGate();
+		case "OR":
+			return new OrGate();
+		case "NOT":
+			return new NotGate();
+	}
+}
+
 /********************************************************************************************/
 function Container()
 /********************************************************************************************/
@@ -378,38 +389,48 @@ function LogicWidget(canvas)
 	
 	canvas.addEventListener('mouseover',
 		function(event) {
-			that.mouseover(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
+			that.mouseover(that.pointFromEvent(event), event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mouseout',
 		function(event) {
-			that.mouseout(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
+			that.mouseout(that.pointFromEvent(event), event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mousedown',
 		function(event) {
-			that.mousedown(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
+			that.mousedown(that.pointFromEvent(event), event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mouseup',
 		function(event) {
-			that.mouseup(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
+			that.mouseup(that.pointFromEvent(event), event);
 			return false;
 		}, false);
 	
 	canvas.addEventListener('mousemove',
 		function(event) {
-			that.mousemove(new Point(event.x - canvas.offsetLeft, event.y - canvas.offsetTop), event);
+			that.mousemove(that.pointFromEvent(event), event);
 			return false;
 		}, false);
+	
+	canvas.addEventListener('ondrop',
+		function(event) {
+			that.ondrop(that.pointFromEvent(event), event);
+			return false;
+		}, true);
 	
 	this.mouse_over = false;
 	this.mouse_down = false;
 	this.in_drag = false;
 	this.current_drag_target = null;
+}
+
+LogicWidget.prototype.pointFromEvent = function(event) {
+	return new Point(event.offsetX, event.offsetY);
 }
 
 LogicWidget.prototype.setView = function(view) {
@@ -457,6 +478,52 @@ LogicWidget.prototype.mousemove = function(point, event) {
 	}
 };
 
+LogicWidget.prototype.ondrop = function(point, event) {
+	
+	
+};
+
+
+/********************************************************************************************/
+function Pallet()
+/********************************************************************************************/
+{
+	
+}
+
+function drawGate(canvas, type) {
+	var ctx = canvas.getContext("2d");
+	ctx.scale(canvas.width, canvas.height);
+	var gate = makeGate(type)
+	gate.draw(ctx);
+}
+
+function createPallet() {
+	var gate_list = ["AND", "OR", "NOT"];
+	
+	// Create the elements
+	var html = '<table>';
+	for (var i = 0; i < gate_list.length; i++) {
+		html += '<tr><td><canvas width="30" height="30" draggable="true" id="pallet-item-' + String(i) + '"></canvas></td></tr>'
+	}
+	html += "</table>";
+	document.getElementById("pallet").innerHTML = html;
+
+	//
+	for (var i = 0; i < gate_list.length; i++) {
+		var canvas = document.getElementById("pallet-item-" + String(i));
+		var type = gate_list[i];
+		drawGate(canvas, type);
+		canvas.addEventListener("dragstart",
+			function (event) {
+				event.dataTransfer.setData("text/gate-type", type);
+				event.dataTransfer.effectAllowed = 'move'; // only allow moves
+			}, true);
+	}
+	
+}
+
+
 
 var canvas = document.getElementById("logic_canvas");
 
@@ -480,3 +547,4 @@ var widget = new LogicWidget(canvas);
 widget.setView(view);
 
 view.draw();
+createPallet()
