@@ -2,6 +2,10 @@
 function Point(x, y)
 /********************************************************************************************/
 {
+	if (typeof y == 'undefined') { // Copy Constructor
+		this.x = x.x;
+		this.y = x.y;
+	}
 	this.x = x;
 	this.y = y;
 }
@@ -65,8 +69,7 @@ DragableThing.prototype.position = function() {
 };
 
 DragableThing.prototype.setPosition = function(new_position) {
-	this.top_left.x = new_position.x;
-	this.top_left.y = new_position.y;
+	this.top_left = new_position;
 	this.container.objectMoved(this);
 };
 
@@ -335,6 +338,14 @@ View.prototype.beginDragWithNewObject = function(point, object) {
 	//Add a new object at position (x,y), it is being dragged
 };
 
+View.prototype.addObject = function(type, at) {
+	var object = makeGate(type);
+	var p = this.toModelCoordinates(at);
+	this.container.add(object);
+	object.setPosition(p);
+	this.drawItem(object)
+};
+
 View.prototype.draw = function() {
 	var all_in_view = this.container.allObjectsTouchingBox(this.drawing_area);
 	for (var i = 0; i < all_in_view.length; i++) {
@@ -417,11 +428,17 @@ function LogicWidget(canvas)
 			return false;
 		}, false);
 	
-	canvas.addEventListener('ondrop',
+	canvas.addEventListener('drop',
 		function(event) {
-			that.ondrop(that.pointFromEvent(event), event);
+			that.drop(that.pointFromEvent(event), event);
 			return false;
-		}, true);
+		}, false);
+	
+	canvas.addEventListener('dragover',
+		function(event) {
+			event.preventDefault();
+			return false;
+		}, false);
 	
 	this.mouse_over = false;
 	this.mouse_down = false;
@@ -478,9 +495,9 @@ LogicWidget.prototype.mousemove = function(point, event) {
 	}
 };
 
-LogicWidget.prototype.ondrop = function(point, event) {
-	
-	
+LogicWidget.prototype.drop = function(point, event) {
+	var type = event.dataTransfer.getData("gateType");
+	this.current_drag_target.addObject(type, point); //do I need to check current_drag_target, is it a load of shit.
 };
 
 
@@ -510,41 +527,25 @@ function createPallet() {
 	document.getElementById("pallet").innerHTML = html;
 
 	//
+	function makeEventListener(type) {
+		return function (event) {
+			event.dataTransfer.setData("gateType", type);
+			event.dataTransfer.effectAllowed = 'move'; // only allow moves, what the fuck does that even mean?
+		}
+	}
 	for (var i = 0; i < gate_list.length; i++) {
 		var canvas = document.getElementById("pallet-item-" + String(i));
 		var type = gate_list[i];
 		drawGate(canvas, type);
-		canvas.addEventListener("dragstart",
-			function (event) {
-				event.dataTransfer.setData("text/gate-type", type);
-				event.dataTransfer.effectAllowed = 'move'; // only allow moves
-			}, true);
+		canvas.addEventListener("dragstart", makeEventListener(type), true);
 	}
 	
 }
 
-
-
 var canvas = document.getElementById("logic_canvas");
-
-var dragable_thing = new DragableThing();
-var not_gate = new NotGate();
-var and_gate = new AndGate();
-var or_gate = new OrGate();
-
 var container = new Container();
-container.add(dragable_thing);
-container.add(not_gate);
-container.add(and_gate);
-container.add(or_gate);
-dragable_thing.setPosition(new Point(5, 5));
-not_gate.setPosition(new Point(5, 4));
-and_gate.setPosition(new Point(5, 3));
-or_gate.setPosition(new Point(5, 2));
 var view = new View(container);
-
 var widget = new LogicWidget(canvas);
 widget.setView(view);
-
 view.draw();
-createPallet()
+createPallet();
