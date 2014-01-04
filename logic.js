@@ -44,12 +44,28 @@ Box.prototype.bottomRight = function() {
 	return new Point(this.right, this.bottom);
 };
 
+Box.prototype.topRight = function() {
+	return new Point(this.right, this.top);
+};
+
+Box.prototype.bottomLeft = function() {
+	return new Point(this.left, this.bottom);
+};
+
 Box.prototype.pointIn = function(point) {
 	return point.x >= this.left && point.x <= this.right && point.y >= this.top && point.y <= this.bottom;
 };
 
 Box.prototype.intersects = function(other) {
-	return this.pointIn(this.topLeft()) || this.pointIn(this.bottomRight());
+	return this.pointIn(other.topLeft()) || this.pointIn(other.bottomRight()) || this.pointIn(other.topRight()) || this.pointIn(other.bottomLeft());
+};
+
+Box.prototype.width = function() {
+	return Math.abs(this.left - this.right);
+};
+
+Box.prototype.height = function() {
+	return Math.abs(this.bottom - this.top);
 };
 
 /********************************************************************************************/
@@ -78,6 +94,10 @@ DragableThing.prototype.size = function() {
 		width: 1,
 		height: 1
 	};
+};
+
+DragableThing.prototype.boundingBox = function() {
+	return BoxFromPointAndSize(this.top_left, this.size());
 };
 
 DragableThing.prototype.draw = function(ctx, selected) {
@@ -339,7 +359,6 @@ SchemaDrawer.prototype.draw = function() {
 SchemaDrawer.prototype.drawItem = function(item) {
 	var position = item.position();
 	this.ctx.save();
-	this.ctx.scale(this.scale, this.scale);
 	this.ctx.translate(this.drawing_area.left + position.x, this.drawing_area.top + position.y);
 	item.draw(this.ctx);
 	this.ctx.restore();
@@ -351,8 +370,41 @@ SchemaDrawer.prototype.deleteItem = function(item) {
 	this.ctx.save();
 	this.ctx.scale(this.scale, this.scale);
 	this.ctx.translate(this.drawing_area.left + position.x, this.drawing_area.top + position.y);
-	//item.draw(this.ctx);
 	this.ctx.clearRect(0, 0, size.width, size.height);
+	this.ctx.restore();
+};
+
+SchemaDrawer.prototype.moveItem = function(item, old_bounding_box) {
+	// Delete the old rectangle.
+	this.ctx.save();
+	this.ctx.scale(this.scale, this.scale);
+	this.ctx.clearRect(old_bounding_box.left, old_bounding_box.top, old_bounding_box.width(), old_bounding_box.height());
+	
+	// Set up the clip path.
+	this.ctx.save();
+	this.ctx.beginPath();
+	this.ctx.moveTo(old_bounding_box.left, old_bounding_box.top);
+	this.ctx.lineTo(old_bounding_box.right, old_bounding_box.top);
+	this.ctx.lineTo(old_bounding_box.right, old_bounding_box.bottom);
+	this.ctx.lineTo(old_bounding_box.left, old_bounding_box.bottom);
+	this.ctx.closePath();
+	this.ctx.clip();
+	
+	
+	// Draw everything that might have been deleted or damaged by the clearRect.
+	var all_needing_redrawn = this.model.allObjectsTouchingBox(old_bounding_box);
+	for (var i = 0; i < all_needing_redrawn.length; i++) {
+		var list_item = all_needing_redrawn[i];
+		if (item !== list_item) {
+			this.drawItem(list_item);
+		}
+	}
+	
+	// Drop the clip path and draw item in new position.
+	this.ctx.restore();
+	this.drawItem(item);
+	
+	// Drop the scale.
 	this.ctx.restore();
 };
 
@@ -383,7 +435,6 @@ View.prototype.beginDrag = function(point) {
 	if (objects.length > 0) {
 		this.dragged_object = objects[0];
 		this.original_position = this.dragged_object.position().copy();
-		console.log(this.original_position);
 	}
 };
 
@@ -392,9 +443,9 @@ View.prototype.continueDrag = function(point) {
 	if (this.dragged_object) {
 		var p = this.toModelCoordinates(point);
 		var d = p.minus(this.start_position);
-		this.drawer.deleteItem(this.dragged_object);
+		var old_bounding_box = this.dragged_object.boundingBox();
 		this.dragged_object.setPosition(this.original_position.plus(d));
-		this.drawer.drawItem(this.dragged_object);
+		this.drawer.moveItem(this.dragged_object, old_bounding_box);
 	}
 };
 
@@ -406,9 +457,9 @@ View.prototype.endDrag = function(point) {
 View.prototype.cancelDrag = function() {
 	//Dump the thing back in its original position
 	if (this.dragged_object) {
-		this.deleteItem(this.dragged_object);
+		var old_bounding_box = this.dragged_object.boundingBox();
 		this.dragged_object.setPosition(this.original_position);
-		this.drawer.drawItem(this.dragged_object);
+		this.drawer.moveItem(this.dragged_object, old_bounding_box);
 		this.dragged_object = null;
 	}
 };
@@ -422,7 +473,10 @@ View.prototype.addObject = function(type, at) {
 	var p = this.toModelCoordinates(at);
 	this.model.add(object);
 	object.setPosition(p);
+	this.ctx.save();
+	this.ctx.scale(this.scale, this.scale); // Shouldn't be doing the scale here
 	this.drawer.drawItem(object)
+	this.ctx.restore();
 };
 
 /********************************************************************************************/
