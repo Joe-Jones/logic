@@ -335,14 +335,25 @@ function SchemaDrawer(model, canvas_context, scale, drawing_area)
 	this.ctx = canvas_context;
 	this.scale = scale;
 	this.drawing_area = drawing_area;
+	this.ctx.save()
+	this.setTransform();
 }
 
 SchemaDrawer.prototype.setScale = function(scale) {
 	this.scale = scale;
+	this.setTransform();
 };
 
 SchemaDrawer.prototype.setDrawingArea = function(drawing_area) {
 	this.drawing_area = drawing_area;
+	this.setTransform();
+};
+
+SchemaDrawer.prototype.setTransform = function() {
+	this.ctx.restore();
+	this.ctx.save();
+	this.ctx.scale(this.scale, this.scale);
+	this.ctx.transform(this.drawing_area.left, this.drawing_area.top);
 };
 
 /********
@@ -359,7 +370,7 @@ SchemaDrawer.prototype.draw = function() {
 SchemaDrawer.prototype.drawItem = function(item) {
 	var position = item.position();
 	this.ctx.save();
-	this.ctx.translate(this.drawing_area.left + position.x, this.drawing_area.top + position.y);
+	this.ctx.translate(position.x, position.y);
 	item.draw(this.ctx);
 	this.ctx.restore();
 };
@@ -376,8 +387,6 @@ SchemaDrawer.prototype.deleteItem = function(item) {
 
 SchemaDrawer.prototype.moveItem = function(item, old_bounding_box) {
 	// Delete the old rectangle.
-	this.ctx.save();
-	this.ctx.scale(this.scale, this.scale);
 	this.ctx.clearRect(old_bounding_box.left, old_bounding_box.top, old_bounding_box.width(), old_bounding_box.height());
 	
 	// Set up the clip path.
@@ -403,9 +412,6 @@ SchemaDrawer.prototype.moveItem = function(item, old_bounding_box) {
 	// Drop the clip path and draw item in new position.
 	this.ctx.restore();
 	this.drawItem(item);
-	
-	// Drop the scale.
-	this.ctx.restore();
 };
 
 /********************************************************************************************/
@@ -473,10 +479,7 @@ View.prototype.addObject = function(type, at) {
 	var p = this.toModelCoordinates(at);
 	this.model.add(object);
 	object.setPosition(p);
-	this.ctx.save();
-	this.ctx.scale(this.scale, this.scale); // Shouldn't be doing the scale here
 	this.drawer.drawItem(object)
-	this.ctx.restore();
 };
 
 /********************************************************************************************/
