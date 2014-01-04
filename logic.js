@@ -447,7 +447,17 @@ function LogicWidget(canvas)
 }
 
 LogicWidget.prototype.pointFromEvent = function(event) {
-	return new Point(event.offsetX, event.offsetY);
+	// This code is bases on the snipit found in https://bugzilla.mozilla.org/show_bug.cgi?id=122665#c3
+	// There is some more background in https://bugzilla.mozilla.org/show_bug.cgi?id=69787
+	var element = event.target;
+	var offset_x = 0;
+	var offset_y = 0;
+	while (element.offsetParent) {
+		offset_x += element.offsetLeft;
+		offset_y += element.offsetTop;
+		element = element.offsetParent;
+	}
+	return new Point(event.pageX - offset_x, event.pageY - offset_y);
 }
 
 LogicWidget.prototype.setView = function(view) {
