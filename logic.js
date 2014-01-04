@@ -57,11 +57,11 @@ function DragableThing()
 /********************************************************************************************/
 {
 	this.top_left = new Point(0, 0);
-	this.container = null;
+	this.model = null;
 }
 
-DragableThing.prototype.setContainer = function(container) {
-	this.container = container;
+DragableThing.prototype.setModel = function(model) {
+	this.model = model;
 };
 
 DragableThing.prototype.position = function() {
@@ -70,7 +70,7 @@ DragableThing.prototype.position = function() {
 
 DragableThing.prototype.setPosition = function(new_position) {
 	this.top_left = new_position;
-	this.container.objectMoved(this);
+	this.model.objectMoved(this);
 };
 
 DragableThing.prototype.size = function() {
@@ -255,21 +255,21 @@ function makeGate(type) {
 }
 
 /********************************************************************************************/
-function Container()
+function SchemaModel()
 /********************************************************************************************/
 {
 	this.objects = [];
 }
 
-Container.prototype.add = function(object) {
+SchemaModel.prototype.add = function(object) {
 	this.objects.push({
 		bounding_box: 	BoxFromPointAndSize(object.position(), object.size()),
 		object: object
 	});
-	object.setContainer(this);
+	object.setModel(this);
 };
 
-Container.prototype.remove = function(object) {
+SchemaModel.prototype.remove = function(object) {
 	for (var i = 0; i < this.objects.length; i++) {
 		if (this.objects[i].object === object) {
 			this.objects.splice(i, 1);
@@ -278,7 +278,7 @@ Container.prototype.remove = function(object) {
 	}
 };
 
-Container.prototype.allObjectsTouchingBox = function(box) {
+SchemaModel.prototype.allObjectsTouchingBox = function(box) {
 	var results = [];
 	for (var i = 0; i < this.objects.length; i++) {
 		if (this.objects[i].bounding_box.intersects(box)) {
@@ -288,7 +288,7 @@ Container.prototype.allObjectsTouchingBox = function(box) {
 	return results;
 };
 
-Container.prototype.hitTest = function(point) {
+SchemaModel.prototype.hitTest = function(point) {
 	var results = [];
 	for (var i = 0; i < this.objects.length; i++) {
 		if (this.objects[i].bounding_box.pointIn(point)) {
@@ -298,7 +298,7 @@ Container.prototype.hitTest = function(point) {
 	return results;
 };
 
-Container.prototype.objectMoved = function(object) {
+SchemaModel.prototype.objectMoved = function(object) {
 	for (var i = 0; i < this.objects.length; i++) {
 		if (this.objects[i].object === object) {
 			this.objects[i].bounding_box = BoxFromPointAndSize(object.position(), object.size());
@@ -308,10 +308,59 @@ Container.prototype.objectMoved = function(object) {
 };
 
 /********************************************************************************************/
-function View(container)
+function SchemaDrawer(model, canvas_context, scale, drawing_area)
 /********************************************************************************************/
 {
-	this.container = container;
+	this.model = model;
+	this.ctx = canvas_context;
+	this.scale = scale;
+	this.drawing_area = drawing_area;
+}
+
+SchemaDrawer.prototype.setScale = function(scale) {
+	this.scale = scale;
+};
+
+SchemaDrawer.prototype.setDrawingArea = function(drawing_area) {
+	this.drawing_area = drawing_area;
+};
+
+/********
+** method draw()
+** Draw everything in the view, used when the view if first created, or if the view is moved or if the scale is changed
+*******/
+SchemaDrawer.prototype.draw = function() {
+	var all_in_view = this.model.allObjectsTouchingBox(this.drawing_area);
+	for (var i = 0; i < all_in_view.length; i++) {
+		this.drawItem(all_in_view[i]);
+	}
+};
+
+SchemaDrawer.prototype.drawItem = function(item) {
+	var position = item.position();
+	this.ctx.save();
+	this.ctx.scale(this.scale, this.scale);
+	this.ctx.translate(this.drawing_area.left + position.x, this.drawing_area.top + position.y);
+	item.draw(this.ctx);
+	this.ctx.restore();
+};
+
+SchemaDrawer.prototype.deleteItem = function(item) {
+	var position = item.position();
+	var size = item.size();
+	this.ctx.save();
+	this.ctx.scale(this.scale, this.scale);
+	this.ctx.translate(this.drawing_area.left + position.x, this.drawing_area.top + position.y);
+	//item.draw(this.ctx);
+	this.ctx.clearRect(0, 0, size.width, size.height);
+	this.ctx.restore();
+};
+
+/********************************************************************************************/
+function View(model)
+/********************************************************************************************/
+{
+	this.model = model;
 	this.dragged_object = null;
 	this.origin = new Point(0,0);
 	this.scale = 30;
@@ -320,6 +369,7 @@ function View(container)
 View.prototype.setWindow = function(ctx, box) {
 	this.ctx = ctx;
 	this.drawing_area = box;
+	this.drawer = new SchemaDrawer(this.model, this.ctx, this.scale, this.drawing_area);
 };
 
 View.prototype.toModelCoordinates = function(point) {
@@ -329,7 +379,7 @@ View.prototype.toModelCoordinates = function(point) {
 View.prototype.beginDrag = function(point) {
 	//Locate the thing being draged
 	this.start_position = this.toModelCoordinates(point);
-	var objects = container.hitTest(this.start_position);
+	var objects = model.hitTest(this.start_position);
 	if (objects.length > 0) {
 		this.dragged_object = objects[0];
 		this.original_position = this.dragged_object.position().copy();
@@ -342,9 +392,9 @@ View.prototype.continueDrag = function(point) {
 	if (this.dragged_object) {
 		var p = this.toModelCoordinates(point);
 		var d = p.minus(this.start_position);
-		this.deleteItem(this.dragged_object);
+		this.drawer.deleteItem(this.dragged_object);
 		this.dragged_object.setPosition(this.original_position.plus(d));
-		this.drawItem(this.dragged_object);
+		this.drawer.drawItem(this.dragged_object);
 	}
 };
 
@@ -358,7 +408,7 @@ View.prototype.cancelDrag = function() {
 	if (this.dragged_object) {
 		this.deleteItem(this.dragged_object);
 		this.dragged_object.setPosition(this.original_position);
-		this.drawItem(this.dragged_object);
+		this.drawer.drawItem(this.dragged_object);
 		this.dragged_object = null;
 	}
 };
@@ -370,36 +420,9 @@ View.prototype.beginDragWithNewObject = function(point, object) {
 View.prototype.addObject = function(type, at) {
 	var object = makeGate(type);
 	var p = this.toModelCoordinates(at);
-	this.container.add(object);
+	this.model.add(object);
 	object.setPosition(p);
-	this.drawItem(object)
-};
-
-View.prototype.draw = function() {
-	var all_in_view = this.container.allObjectsTouchingBox(this.drawing_area);
-	for (var i = 0; i < all_in_view.length; i++) {
-		this.drawItem(all_in_view[i]);
-	}
-};
-
-View.prototype.drawItem = function(item) {
-	var position = item.position();
-	this.ctx.save();
-	this.ctx.scale(this.scale, this.scale);
-	this.ctx.translate(this.origin.x + position.x, this.origin.y + position.y);
-	item.draw(this.ctx);
-	this.ctx.restore();
-};
-
-View.prototype.deleteItem = function(item) {
-	var position = item.position();
-	var size = item.size();
-	this.ctx.save();
-	this.ctx.scale(this.scale, this.scale);
-	this.ctx.translate(this.origin.x + position.x, this.origin.y + position.y);
-	//item.draw(this.ctx);
-	this.ctx.clearRect(0, 0, size.width, size.height);
-	this.ctx.restore();
+	this.drawer.drawItem(object)
 };
 
 /********************************************************************************************/
@@ -582,9 +605,8 @@ function createPallet() {
 }
 
 var canvas = document.getElementById("logic_canvas");
-var container = new Container();
-var view = new View(container);
+var model = new SchemaModel();
+var view = new View(model);
 var widget = new LogicWidget(canvas);
 widget.setView(view);
-view.draw();
 createPallet();
