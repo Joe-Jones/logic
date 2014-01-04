@@ -88,6 +88,26 @@ DragableThing.prototype.hitTest = function(x, y) {
 	
 };
 
+DragableThing.prototype.inputs = function() {
+	return [];
+}
+
+DragableThing.prototype.outputs = function() {
+	return [];
+}
+
+DragableThing.prototype.LogicGateSingleOutput = function() {
+	return [new Point(0.5, 0.05)];
+};
+
+DragableThing.prototype.LogicGateSingleInput = function() {
+	return [new Point(0.5, 0.95)]
+};
+
+DragableThing.prototype.LogicGateDoubleInput = function() {
+	return [new Point(0.3, 0.95), new Point(0.7, 0.95)];
+};
+
 /********************************************************************************************/
 function NotGate()
 /********************************************************************************************/
@@ -127,6 +147,9 @@ NotGate.prototype.draw = function(ctx, selected) {
 	
 	ctx.restore();
 };
+
+NotGate.prototype.input = DragableThing.prototype.LogicGateSingleInput;
+NotGate.prototype.output = DragableThing.prototype.LogicGateSingleOutput;
 
 /********************************************************************************************/
 function AndGate()
@@ -170,6 +193,9 @@ AndGate.prototype.draw = function(ctx, selected) {
 	ctx.restore();
 };
 
+AndGate.prototype.input = DragableThing.prototype.LogicGateSingleOutput;
+AndGate.prototype.output = DragableThing.prototype.LogicGateDoubleInput;
+
 /********************************************************************************************/
 function OrGate()
 /********************************************************************************************/
@@ -212,6 +238,9 @@ OrGate.prototype.draw = function(ctx, selected) {
 	
 	ctx.restore();
 };
+
+OrGate.prototype.input = DragableThing.prototype.LogicGateSingleOutput;
+OrGate.prototype.output = DragableThing.prototype.LogicGateDoubleInput;
 
 
 function makeGate(type) {
