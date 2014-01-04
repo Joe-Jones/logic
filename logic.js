@@ -86,7 +86,6 @@ DragableThing.prototype.position = function() {
 
 DragableThing.prototype.setPosition = function(new_position) {
 	this.top_left = new_position;
-	this.model.objectMoved(this);
 };
 
 DragableThing.prototype.size = function() {
@@ -282,16 +281,13 @@ function SchemaModel()
 }
 
 SchemaModel.prototype.add = function(object) {
-	this.objects.push({
-		bounding_box: 	BoxFromPointAndSize(object.position(), object.size()),
-		object: object
-	});
+	this.objects.push(object);
 	object.setModel(this);
 };
 
 SchemaModel.prototype.remove = function(object) {
 	for (var i = 0; i < this.objects.length; i++) {
-		if (this.objects[i].object === object) {
+		if (this.objects[i] === object) {
 			this.objects.splice(i, 1);
 			break;
 		}
@@ -301,8 +297,8 @@ SchemaModel.prototype.remove = function(object) {
 SchemaModel.prototype.allObjectsTouchingBox = function(box) {
 	var results = [];
 	for (var i = 0; i < this.objects.length; i++) {
-		if (this.objects[i].bounding_box.intersects(box)) {
-			results.push(this.objects[i].object);
+		if (this.objects[i].boundingBox().intersects(box)) {
+			results.push(this.objects[i]);
 		}
 	}
 	return results;
@@ -311,20 +307,11 @@ SchemaModel.prototype.allObjectsTouchingBox = function(box) {
 SchemaModel.prototype.hitTest = function(point) {
 	var results = [];
 	for (var i = 0; i < this.objects.length; i++) {
-		if (this.objects[i].bounding_box.pointIn(point)) {
-			results.push(this.objects[i].object);
+		if (this.objects[i].boundingBox().pointIn(point)) {
+			results.push(this.objects[i]);
 		}
 	}
 	return results;
-};
-
-SchemaModel.prototype.objectMoved = function(object) {
-	for (var i = 0; i < this.objects.length; i++) {
-		if (this.objects[i].object === object) {
-			this.objects[i].bounding_box = BoxFromPointAndSize(object.position(), object.size());
-			break;
-		}
-	}
 };
 
 /********************************************************************************************/
