@@ -22,6 +22,10 @@ Point.prototype.plus = function(other) {
 	return new Point(this.x + other.x, this.y + other.y);
 };
 
+Point.prototype.distance = function(other) {
+	return Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
+}
+
 /********************************************************************************************/
 function Box(left, top, right, bottom)
 /********************************************************************************************/
@@ -34,7 +38,25 @@ function Box(left, top, right, bottom)
 
 function BoxFromPointAndSize(point, size) {
 	return new Box(point.x, point.y, point.x + size.width, point.y + size.height);
-};
+}
+
+function smallest(a, b) {
+	if (a < b) {
+		return a;
+	}
+	return b;
+}
+
+function biggest(a, b) {
+	if (a > b) {
+		return a;
+	}
+	return b;
+}
+
+function BoxFromTwoPoints(point1, point2)  {
+	return new Box(smallest(point1.x, point2.x), smallest(point1.y, point2.y), biggest(point1.x, point2.x), biggest(point1.y, point2.y));
+}
 
 Box.prototype.topLeft = function() {
 	return new Point(this.left, this.top);
@@ -116,15 +138,15 @@ DragableThing.prototype.outputs = function() {
 }
 
 DragableThing.prototype.LogicGateSingleOutput = function() {
-	return [new Point(0.5, 0.05)];
+	return [this.top_left.plus(new Point(0.5, 0.05))];
 };
 
 DragableThing.prototype.LogicGateSingleInput = function() {
-	return [new Point(0.5, 0.95)]
+	return [this.top_left.plus(new Point(0.5, 0.95))]
 };
 
 DragableThing.prototype.LogicGateDoubleInput = function() {
-	return [new Point(0.3, 0.95), new Point(0.7, 0.95)];
+	return [this.top_left.plus(new Point(0.3, 0.95)), this.top_left.plus(new Point(0.7, 0.95))];
 };
 
 /********************************************************************************************/
@@ -274,6 +296,20 @@ function makeGate(type) {
 }
 
 /********************************************************************************************/
+function Connection(input_item, input_num, output_item, output_num)
+/********************************************************************************************/
+{
+	this.input_item = input_item;
+	this.input_num = input_num;
+	this.output_item = output_item;
+	this.output_num = output_num;
+}
+
+Connection.prototype.boundingBox = function() {
+	return BoxFromTwoPoints(this.input_item.inputs()[this.input_num], this.output_items.outputs()[this.output_num]);
+}
+
+/********************************************************************************************/
 function SchemaModel()
 /********************************************************************************************/
 {
@@ -314,6 +350,27 @@ SchemaModel.prototype.hitTest = function(point) {
 	return results;
 };
 
+SchemaModel.prototype.hotPoint = function(point) {
+	var items = this.hitTest(point);
+	for (var i = 0; i < items.length; i++) {
+		var item = items[i];
+		var inputs = item.inputs();
+		for (var j = 0; j < inputs.length; j++) {
+			var input = inputs[j];
+			if (point.distance(input) < 0.05) {
+				return { item: item, type: 'INPUT', number: j, position: input };
+			}
+		}
+		var outputs = item.outputs();
+		for (var j = 0; j < outputs.length; j++) {
+			var output = outputs[j];
+			if (point.distance(output) < 0.05) {
+				return { item: item, type: 'OUTPUT', number: j, position: output };
+			}
+		}
+	}
+}
+
 /********************************************************************************************/
 function SchemaDrawer(model, canvas_context, scale, drawing_area)
 /********************************************************************************************/
@@ -340,7 +397,7 @@ SchemaDrawer.prototype.setTransform = function() {
 	this.ctx.restore();
 	this.ctx.save();
 	this.ctx.scale(this.scale, this.scale);
-	this.ctx.transform(this.drawing_area.left, this.drawing_area.top);
+	this.ctx.translate(this.drawing_area.left, this.drawing_area.top);
 };
 
 /********
@@ -372,33 +429,48 @@ SchemaDrawer.prototype.deleteItem = function(item) {
 	this.ctx.restore();
 };
 
-SchemaDrawer.prototype.moveItem = function(item, old_bounding_box) {
+SchemaDrawer.prototype.redrawRectangle = function(rectangle, exclude_item) {
 	// Delete the old rectangle.
-	this.ctx.clearRect(old_bounding_box.left, old_bounding_box.top, old_bounding_box.width(), old_bounding_box.height());
+	this.ctx.clearRect(rectangle.left, rectangle.top, rectangle.width(), rectangle.height());
 	
 	// Set up the clip path.
 	this.ctx.save();
 	this.ctx.beginPath();
-	this.ctx.moveTo(old_bounding_box.left, old_bounding_box.top);
-	this.ctx.lineTo(old_bounding_box.right, old_bounding_box.top);
-	this.ctx.lineTo(old_bounding_box.right, old_bounding_box.bottom);
-	this.ctx.lineTo(old_bounding_box.left, old_bounding_box.bottom);
+	this.ctx.moveTo(rectangle.left, rectangle.top);
+	this.ctx.lineTo(rectangle.right, rectangle.top);
+	this.ctx.lineTo(rectangle.right, rectangle.bottom);
+	this.ctx.lineTo(rectangle.left, rectangle.bottom);
 	this.ctx.closePath();
 	this.ctx.clip();
 	
-	
 	// Draw everything that might have been deleted or damaged by the clearRect.
-	var all_needing_redrawn = this.model.allObjectsTouchingBox(old_bounding_box);
+	var all_needing_redrawn = this.model.allObjectsTouchingBox(rectangle);
 	for (var i = 0; i < all_needing_redrawn.length; i++) {
 		var list_item = all_needing_redrawn[i];
-		if (item !== list_item) {
+		if (list_item !== exclude_item) {
 			this.drawItem(list_item);
 		}
 	}
 	
 	// Drop the clip path and draw item in new position.
 	this.ctx.restore();
+};
+
+SchemaDrawer.prototype.moveItem = function(item, old_bounding_box) {
+	this.redrawRectangle(old_bounding_box, item);
 	this.drawItem(item);
+};
+
+SchemaDrawer.prototype.drawHighlight = function(point) {
+	this.ctx.save();
+	this.ctx.globalAlpha = 0.5;
+	ctx.strokeStyle = "red";
+	this.ctx.arc(point.x, point.y, 0.05, 0, 2 * Math.PI);
+	this.ctx.restore();
+};
+
+SchemaDrawer.prototype.removeHighlight = function(point) {
+	this.redrawRectangle(BoxFromPointAndSize(point.minus(new Point(0.1, 0.1)), {x: 0.2, y: 0.2}));
 };
 
 /********************************************************************************************/
