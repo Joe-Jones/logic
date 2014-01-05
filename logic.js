@@ -561,10 +561,10 @@ function LogicWidget(canvas)
 	this.canvas = canvas;
 	this.ctx = canvas.getContext("2d");
 	var model = new SchemaModel();
-	this.current_drag_target = new View(model, this.ctx);
+	this.view = new View(model, this.ctx);
 	this.origin = new Point(0, 0);
 	this.scale = 30;
-	this.current_drag_target.setScale(this.scale);
+	this.view.setScale(this.scale);
 	this.canvasResized();
 	
 	canvas.addEventListener('contextmenu',
@@ -650,7 +650,7 @@ LogicWidget.prototype.pointFromEvent = function(event) {
 };
 
 LogicWidget.prototype.canvasResized = function() {
-	this.current_drag_target.setDrawingArea(BoxFromPointAndSize(this.origin, { width: this.ctx.canvas.width * this.scale, height: this.ctx.canvas.height * this.scale }));
+	this.view.setDrawingArea(BoxFromPointAndSize(this.origin, { width: this.ctx.canvas.width * this.scale, height: this.ctx.canvas.height * this.scale }));
 };
 
 LogicWidget.prototype.mouseover = function(point, event) {
@@ -659,10 +659,7 @@ LogicWidget.prototype.mouseover = function(point, event) {
 
 LogicWidget.prototype.mouseout = function(point, event) {
 	this.mouse_over = false;
-	if (this.current_drag_target) {
-		this.current_drag_target.cancelDrag();
-		// this.current_drag_target= null; again I don't think this is what I meant
-	}
+	this.view.cancelDrag();
 	this.in_drag = false;
 	this.mouse_down = false;
 };
@@ -674,28 +671,26 @@ LogicWidget.prototype.mousedown = function(point, event) {
 
 LogicWidget.prototype.mouseup = function(point, event) {
 	this.mouse_down = false;
-	if (this.in_drag && this.current_drag_target) {
-		this.current_drag_target.endDrag(point);
+	if (this.in_drag) {
+		this.view.endDrag(point);
 	}
 	this.in_drag = false;
-	// this.current_drag_target = null; I don't think this is what i meant
-	
 };
 
 LogicWidget.prototype.mousemove = function(point, event) {
-	if (this.in_drag && this.current_drag_target) {
-		this.current_drag_target.continueDrag(point);
+	if (this.in_drag) {
+		this.view.continueDrag(point);
 	}
-	if (!this.in_drag && this.mouse_down && this.current_drag_target) {
-		this.current_drag_target.beginDrag(this.mouse_down_point);
-		this.current_drag_target.continueDrag(point);
+	if (!this.in_drag && this.mouse_down) {
+		this.view.beginDrag(this.mouse_down_point);
+		this.view.continueDrag(point);
 		this.in_drag = true;
 	}
 };
 
 LogicWidget.prototype.drop = function(point, event) {
 	var type = event.dataTransfer.getData("gateType");
-	this.current_drag_target.addObject(type, point); //do I need to check current_drag_target, is it a load of shit.
+	this.view.addObject(type, point);
 };
 
 
