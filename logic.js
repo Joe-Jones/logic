@@ -400,6 +400,14 @@ SchemaDrawer.prototype.setTransform = function() {
 	this.ctx.translate(this.drawing_area.left, this.drawing_area.top);
 };
 
+SchemaDrawer.prototype.clear = function() {
+	// Based on code on this page http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+	this.ctx.save();
+	this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+	this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+	this.ctx.restore();
+}
+
 /********
 ** method draw()
 ** Draw everything in the view, used when the view if first created, or if the view is moved or if the scale is changed
@@ -474,29 +482,35 @@ SchemaDrawer.prototype.removeHighlight = function(point) {
 };
 
 /********************************************************************************************/
-function View(model)
+function View(model, canvas_context)
 /********************************************************************************************/
 {
 	this.model = model;
 	this.dragged_object = null;
-	this.origin = new Point(0,0);
+	this.drawing_area = BoxFromPointAndSize(new Point(0, 0), {width: 30, height: 30 }); 
 	this.scale = 30;
+	this.ctx = canvas_context;
+	this.drawer = new SchemaDrawer(this.model, this.ctx, this.scale, this.drawing_area);
 }
 
-View.prototype.setWindow = function(ctx, box) {
-	this.ctx = ctx;
-	this.drawing_area = box;
-	this.drawer = new SchemaDrawer(this.model, this.ctx, this.scale, this.drawing_area);
+View.prototype.setScale = function(scale) {
+	this.scale = scale;
+	this.drawer.setScale(scale);
+	this.drawer.clear();
+	this.drawer.draw();
 };
 
-View.prototype.toModelCoordinates = function(point) {
-	return new Point( (point.x / this.scale) + this.origin.x, (point.y / this.scale) + this.origin.y);
+View.prototype.setDrawingArea = function(drawing_area) {
+	this.drawing_area = drawing_area;
+	this.drawer.setDrawingArea(drawing_area);
+	this.drawer.clear();
+	this.drawer.draw();
 };
 
 View.prototype.beginDrag = function(point) {
 	//Locate the thing being draged
-	this.start_position = this.toModelCoordinates(point);
-	var objects = model.hitTest(this.start_position);
+	this.start_position = point;
+	var objects = this.model.hitTest(this.start_position);
 	if (objects.length > 0) {
 		this.dragged_object = objects[0];
 		this.original_position = this.dragged_object.position().copy();
@@ -506,8 +520,7 @@ View.prototype.beginDrag = function(point) {
 View.prototype.continueDrag = function(point) {
 	//Move the thing
 	if (this.dragged_object) {
-		var p = this.toModelCoordinates(point);
-		var d = p.minus(this.start_position);
+		var d = point.minus(this.start_position);
 		var old_bounding_box = this.dragged_object.boundingBox();
 		this.dragged_object.setPosition(this.original_position.plus(d));
 		this.drawer.moveItem(this.dragged_object, old_bounding_box);
@@ -535,9 +548,8 @@ View.prototype.beginDragWithNewObject = function(point, object) {
 
 View.prototype.addObject = function(type, at) {
 	var object = makeGate(type);
-	var p = this.toModelCoordinates(at);
 	this.model.add(object);
-	object.setPosition(p);
+	object.setPosition(at);
 	this.drawer.drawItem(object)
 };
 
@@ -548,6 +560,12 @@ function LogicWidget(canvas)
 	var that = this;
 	this.canvas = canvas;
 	this.ctx = canvas.getContext("2d");
+	var model = new SchemaModel();
+	this.current_drag_target = new View(model, this.ctx);
+	this.origin = new Point(0, 0);
+	this.scale = 30;
+	this.current_drag_target.setScale(this.scale);
+	this.canvasResized();
 	
 	canvas.addEventListener('contextmenu',
 		function(event) {
@@ -610,8 +628,7 @@ function LogicWidget(canvas)
 	
 	this.mouse_over = false;
 	this.mouse_down = false;
-	this.in_drag = false;
-	this.current_drag_target = null;
+	this.in_drag = false
 }
 
 LogicWidget.prototype.pointFromEvent = function(event) {
@@ -625,12 +642,15 @@ LogicWidget.prototype.pointFromEvent = function(event) {
 		offset_y += element.offsetTop;
 		element = element.offsetParent;
 	}
-	return new Point(event.pageX - offset_x, event.pageY - offset_y);
-}
+	var x = event.pageX - offset_x;
+	var y = event.pageY - offset_y;
+	
+	// And now change the point into model coordinates
+	return new Point( (x / this.scale) + this.origin.x, (y / this.scale) + this.origin.y);
+};
 
-LogicWidget.prototype.setView = function(view) {
-	this.current_drag_target = view;
-	view.setWindow(this.ctx, new Box(0, 0, 800, 600));
+LogicWidget.prototype.canvasResized = function() {
+	this.current_drag_target.setDrawingArea(BoxFromPointAndSize(this.origin, { width: this.ctx.canvas.width * this.scale, height: this.ctx.canvas.height * this.scale }));
 };
 
 LogicWidget.prototype.mouseover = function(point, event) {
@@ -721,8 +741,5 @@ function createPallet() {
 }
 
 var canvas = document.getElementById("logic_canvas");
-var model = new SchemaModel();
-var view = new View(model);
 var widget = new LogicWidget(canvas);
-widget.setView(view);
 createPallet();
