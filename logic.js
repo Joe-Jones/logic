@@ -58,6 +58,10 @@ function BoxFromTwoPoints(point1, point2)  {
 	return new Box(smallest(point1.x, point2.x), smallest(point1.y, point2.y), biggest(point1.x, point2.x), biggest(point1.y, point2.y));
 }
 
+function SmallestCoveringBox(box1, box2) {
+	return new Box(smallest(box1.left, box2.left), smallest(box1.top, box2.top), biggest(box1.right, box2.right), biggest(box1.bottom, box2.bottom));
+}
+
 Box.prototype.topLeft = function() {
 	return new Point(this.left, this.top);
 };
@@ -506,6 +510,8 @@ function SchemaDrawer(model, canvas_context, scale, drawing_area)
 	this.drawing_area = drawing_area;
 	this.ctx.save()
 	this.setTransform();
+	this.highlight = null;
+	this.temp_connection = null;
 }
 
 SchemaDrawer.prototype.setScale = function(scale) {
@@ -523,9 +529,10 @@ SchemaDrawer.prototype.setTransform = function() {
 	this.ctx.save();
 	this.ctx.scale(this.scale, this.scale);
 	this.ctx.translate(this.drawing_area.left, this.drawing_area.top);
+	this.invalid_rectangle = this.drawing_area;
 };
 
-SchemaDrawer.prototype.clear = function() {
+SchemaDrawer.prototype.clear = function() { // We can probably do without this now.
 	// Based on code on this page http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
 	this.ctx.save();
 	this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -533,65 +540,59 @@ SchemaDrawer.prototype.clear = function() {
 	this.ctx.restore();
 }
 
-/********
-** method draw()
-** Draw everything in the view, used when the view if first created, or if the view is moved or if the scale is changed
-*******/
-SchemaDrawer.prototype.draw = function() {
-	var all_in_view = this.model.allObjectsTouchingBox(this.drawing_area);
-	for (var i = 0; i < all_in_view.length; i++) {
-		this.drawItem(all_in_view[i]);
+SchemaDrawer.prototype.invalidateRectangle = function(rectangle) {
+	if (!this.invalid_rectangle) {
+		this.invalid_rectangle = rectangle;
+	} else {
+		this.invalid_rectangle = SmallestCoveringBox(this.invalid_rectangle, rectangle);
 	}
 };
 
-SchemaDrawer.prototype.drawItem = function(item) {
-	item.drawWrapper(this.ctx);
-};
-
-SchemaDrawer.prototype.deleteItem = function(item) { // Todo this isn't used any more I dont think.
-	var position = item.position();
-	var size = item.size();
-	this.ctx.save();
-	this.ctx.scale(this.scale, this.scale);
-	this.ctx.translate(this.drawing_area.left + position.x, this.drawing_area.top + position.y);
-	this.ctx.clearRect(0, 0, size.width, size.height);
-	this.ctx.restore();
-};
-
-SchemaDrawer.prototype.redrawRectangle = function(rectangle, exclude_item, highlight) {
-	// Set up the clip path.
-	this.ctx.save();
-	this.ctx.beginPath();
-	this.ctx.moveTo(rectangle.left, rectangle.top);
-	this.ctx.lineTo(rectangle.right, rectangle.top);
-	this.ctx.lineTo(rectangle.right, rectangle.bottom);
-	this.ctx.lineTo(rectangle.left, rectangle.bottom);
-	this.ctx.closePath();
-	this.ctx.clip();
-	
-	// Delete the old rectangle.
-	this.ctx.clearRect(rectangle.left, rectangle.top, rectangle.width(), rectangle.height());
-	
-	// Draw everything that might have been deleted or damaged by the clearRect.
-	var all_needing_redrawn = this.model.allObjectsTouchingBox(rectangle);
-	for (var i = 0; i < all_needing_redrawn.length; i++) {
-		var list_item = all_needing_redrawn[i];
-		if (list_item !== exclude_item) {
-			this.drawItem(list_item);
+SchemaDrawer.prototype.draw = function(exclude_item) {
+	if (this.temp_connection) {
+		this.invalidateRectangle(this.temp_connection.boundingBox().expand(0.1));
+	}
+	if (this.invalid_rectangle) {
+		// Set up the clip path.
+		this.ctx.save();
+		this.ctx.beginPath();
+		this.ctx.moveTo(this.invalid_rectangle.left, this.invalid_rectangle.top);
+		this.ctx.lineTo(this.invalid_rectangle.right, this.invalid_rectangle.top);
+		this.ctx.lineTo(this.invalid_rectangle.right, this.invalid_rectangle.bottom);
+		this.ctx.lineTo(this.invalid_rectangle.left, this.invalid_rectangle.bottom);
+		this.ctx.closePath();
+		this.ctx.clip();
+		
+		// Delete the old rectangle.
+		this.ctx.clearRect(this.invalid_rectangle.left, this.invalid_rectangle.top, this.invalid_rectangle.width(), this.invalid_rectangle.height());
+		
+		// Draw everything that might have been deleted or damaged by the clearRect.
+		var all_needing_redrawn = this.model.allObjectsTouchingBox(this.invalid_rectangle);
+		for (var i = 0; i < all_needing_redrawn.length; i++) {
+			var list_item = all_needing_redrawn[i];
+			if (list_item !== exclude_item) {
+				list_item.drawWrapper(this.ctx);
+			}
 		}
+		
+		if (this.highlight) {
+			this.drawHighlight(this.highlight);
+		}
+		
+		if (this.temp_connection) {
+			this.temp_connection.drawWrapper(this.ctx);
+		}
+		
+		// Drop the clip path and draw item in new position.
+		this.ctx.restore();
+		
+		this.invalid_rectangle = null;
 	}
-	
-	if (highlight) {
-		this.drawHighlight(highlight);
-	}
-	
-	// Drop the clip path and draw item in new position.
-	this.ctx.restore();
 };
 
 SchemaDrawer.prototype.moveItem = function(item, old_bounding_box) {
-	this.redrawRectangle(old_bounding_box, item);
-	this.drawItem(item);
+	this.invalidateRectangle(old_bounding_box, item);
+	this.invalidateRectangle(item.boundingBox());
 };
 
 SchemaDrawer.prototype.drawHighlight = function(point) {
@@ -605,8 +606,24 @@ SchemaDrawer.prototype.drawHighlight = function(point) {
 	this.ctx.restore();
 };
 
+
+SchemaDrawer.prototype.addHighlight = function(point) {
+	this.highlight = point;
+	this.invalidateRectangle(BoxFromPointAndSize(point.minus(new Point(0.2, 0.2)), {width: 0.4, height: 0.4}));
+};
+
 SchemaDrawer.prototype.removeHighlight = function(point) {
-	this.redrawRectangle(BoxFromPointAndSize(point.minus(new Point(0.2, 0.2)), {width: 0.4, height: 0.4}));
+	this.highlight = null;
+	this.invalidateRectangle(BoxFromPointAndSize(point.minus(new Point(0.2, 0.2)), {width: 0.4, height: 0.4}));
+};
+
+SchemaDrawer.prototype.addTempConnection = function(connection) {
+	this.temp_connection = connection;
+};
+
+SchemaDrawer.prototype.removeTempConnection = function() {
+	this.invalidateRectangle(this.temp_connection.boundingBox().expand(0.1));
+	this.temp_connection = null;
 };
 
 /********************************************************************************************/
@@ -640,6 +657,7 @@ View.prototype.setDrawingArea = function(drawing_area) {
 View.prototype.beginDrag = function(point) {
 	if (this.current_hot_point) { // We are we creating a connection.
 		this.drawer.removeHighlight(this.current_hot_point.position);
+		this.drawer.draw();
 		var input_item; var input_num; var output_item; var output_num;
 		if (this.current_hot_point.type == "INPUT") {
 			input_item = this.current_hot_point.item;
@@ -649,6 +667,7 @@ View.prototype.beginDrag = function(point) {
 			output_num = this.current_hot_point.number;
 		}
 		this.new_connection = new Connection(input_item, input_num, output_item, output_num);
+		this.drawer.addTempConnection(this.new_connection);
 		this.new_connection.setDragPosition(point); // Not sure we need that.
 		this.drag_start_hot_point = this.current_hot_point;
 		this.current_hot_point = null;
@@ -665,13 +684,14 @@ View.prototype.beginDrag = function(point) {
 View.prototype.continueDrag = function(point) {
 	//Move the thing
 	if (this.new_connection) {
-		this.drawer.redrawRectangle(this.new_connection.boundingBox().expand(0.1), null, (this.current_hot_point ? this.current_hot_point.position : null));
+		this.drawer.invalidateRectangle(this.new_connection.boundingBox().expand(0.1));
 		this.new_connection.setDragPosition(point);
-		this.drawer.drawItem(this.new_connection);
 		// Are we over a hot point we could connect to
 		var hot_point = this.model.hotPoint(point);
 		if (hot_point && hot_point.type != this.drag_start_hot_point.type) {
 			this.updateHighlighting(hot_point);
+		} else if (!hot_point) {
+			this.updateHighlighting(null);
 		}
 	} else if (this.dragged_object) {
 		var d = point.minus(this.start_position);
@@ -679,10 +699,12 @@ View.prototype.continueDrag = function(point) {
 		this.dragged_object.setPosition(this.original_position.plus(d));
 		this.drawer.moveItem(this.dragged_object, old_bounding_box);
 	}
+	this.drawer.draw();
 };
 
 View.prototype.endDrag = function(point) {
 	if (this.new_connection) {
+		this.drawer.removeTempConnection();
 		var hot_point = this.model.hotPoint(point);
 		if (hot_point && hot_point.type != this.drag_start_hot_point.type) {
 			if (hot_point.type == "INPUT") {
@@ -699,11 +721,12 @@ View.prototype.endDrag = function(point) {
 		//Leave the thing in its new position
 		this.dragged_object = null;
 	}
+	this.drawer.draw();
 };
 
 View.prototype.cancelDrag = function() {
 	if (this.new_connection) {
-		this.drawer.redrawRectangle(this.new_connection.boundingBox().expand(0.1));
+		this.drawer.removeTempConnection();
 		this.new_connection = null;
 	} else if (this.dragged_object) {
 		//Dump the thing back in its original position
@@ -712,6 +735,7 @@ View.prototype.cancelDrag = function() {
 		this.drawer.moveItem(this.dragged_object, old_bounding_box);
 		this.dragged_object = null;
 	}
+	this.drawer.draw();
 };
 
 View.prototype.beginDragWithNewObject = function(point, object) {
@@ -722,19 +746,20 @@ View.prototype.addObject = function(type, at) {
 	var object = makeGate(type);
 	this.model.add(object);
 	object.setPosition(at);
-	this.drawer.drawItem(object)
+	this.drawer.invalidateRectangle(object.boundingBox());
+	this.drawer.draw();
 };
 
 View.prototype.updateHighlighting = function(hot_point) {
 	if (hot_point && this.current_hot_point) {
 		if (!hotPointsEqual(hot_point, this.current_hot_point)) {
 			this.drawer.removeHighlight(this.current_hot_point.position);
-			this.drawer.drawHighlight(hot_point.position);
+			this.drawer.addHighlight(hot_point.position);
 			this.current_hot_point = hot_point;
 		}
 	} else {
 		if (hot_point) {
-			this.drawer.drawHighlight(hot_point.position);
+			this.drawer.addHighlight(hot_point.position);
 			this.current_hot_point = hot_point;
 		} else if (this.current_hot_point) {
 			this.drawer.removeHighlight(this.current_hot_point.position);
@@ -749,6 +774,7 @@ View.prototype.updateHighlighting = function(hot_point) {
 View.prototype.mouseOver = function(position) {
 	var hot_point = this.model.hotPoint(position);
 	this.updateHighlighting(hot_point);
+	this.drawer.draw();
 };
 
 /********************************************************************************************/
