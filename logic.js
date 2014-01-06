@@ -78,8 +78,20 @@ Box.prototype.pointIn = function(point) {
 	return point.x >= this.left && point.x <= this.right && point.y >= this.top && point.y <= this.bottom;
 };
 
+function inInterval(number, interval) {
+	return number >= interval[0] && number <= interval[1];
+}
+
+function oneEndpointContainedIn(interval_1, interval_2) {
+	return inInterval(interval_1[0], interval_2) || inInterval(interval_1[1], interval_2);
+}
+
+function intervalsIntersect(interval_1, interval_2) {
+	return oneEndpointContainedIn(interval_1, interval_2) || oneEndpointContainedIn(interval_2, interval_1);
+}
+
 Box.prototype.intersects = function(other) {
-	return this.pointIn(other.topLeft()) || this.pointIn(other.bottomRight()) || this.pointIn(other.topRight()) || this.pointIn(other.bottomLeft());
+	return intervalsIntersect([this.top, this.bottom], [other.top, other.bottom]) && intervalsIntersect([this.left, this.right], [other.left, other.right]);
 };
 
 Box.prototype.width = function() {
@@ -90,12 +102,19 @@ Box.prototype.height = function() {
 	return Math.abs(this.bottom - this.top);
 };
 
+Box.prototype.expand = function(amount) {
+	var half_amount = amount / 2;
+	return new Box(this.left - half_amount, this.top - half_amount, this.right + half_amount, this.bottom + half_amount);
+};
+
 /********************************************************************************************/
 function DragableThing()
 /********************************************************************************************/
 {
 	this.top_left = new Point(0, 0);
 	this.model = null;
+	this.output_connections = [];
+	this.input_connections = [];
 }
 
 DragableThing.prototype.setModel = function(model) {
@@ -120,6 +139,14 @@ DragableThing.prototype.size = function() {
 DragableThing.prototype.boundingBox = function() {
 	return BoxFromPointAndSize(this.top_left, this.size());
 };
+
+DragableThing.prototype.drawWrapper = function(ctx, selected) {
+	var position = this.position();
+	ctx.save();
+	ctx.translate(position.x, position.y);
+	this.draw(ctx);
+	ctx.restore();
+}
 
 DragableThing.prototype.draw = function(ctx, selected) {
 	ctx.fillRect(0, 0, 1, 1);
@@ -147,6 +174,50 @@ DragableThing.prototype.LogicGateSingleInput = function() {
 
 DragableThing.prototype.LogicGateDoubleInput = function() {
 	return [this.top_left.plus(new Point(0.3, 0.95)), this.top_left.plus(new Point(0.7, 0.95))];
+};
+
+DragableThing.prototype.addConnection = function(connection) {
+	if (connection.input_item === this) {
+		this.input_connections[connection.input_num] = connection;
+	} else {
+		var number = connection.output_num;
+		if (!this.output_connections[number]) {
+			this.output_connections[number] = [connection];
+		} else {
+			this.output_connections.push(connection);
+		}
+	}
+};
+
+DragableThing.prototype.getConnections = function(type, number) {
+	if (type == "INPUT") {
+		return [this.input_connections[number]];
+	} else {
+		return this.output_connections[number];
+	}
+};
+
+DragableThing.prototype.allConnections = function() {
+	var all_connections = [];
+	for (var i = 0; i < this.input_connections.length; i++) {
+		if (this.input_connections[i]) {
+			all_connections.push(this.input_connections[i]);
+		}
+	}
+	for (var i = 0; i < this.output_connections.length; i++) {
+		if (this.output_connections[i]) {
+			all_connections = all_connections.concat(this.output_connections[i]);
+		}
+	}
+	return all_connections;
+}
+
+DragableThing.prototype.removeConnection = function(connection) {
+	if (connection.input_item === this) {
+		
+	} else {
+		
+	}
 };
 
 /********************************************************************************************/
@@ -189,8 +260,8 @@ NotGate.prototype.draw = function(ctx, selected) {
 	ctx.restore();
 };
 
-NotGate.prototype.input = DragableThing.prototype.LogicGateSingleInput;
-NotGate.prototype.output = DragableThing.prototype.LogicGateSingleOutput;
+NotGate.prototype.inputs = DragableThing.prototype.LogicGateSingleInput;
+NotGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
 
 /********************************************************************************************/
 function AndGate()
@@ -234,8 +305,8 @@ AndGate.prototype.draw = function(ctx, selected) {
 	ctx.restore();
 };
 
-AndGate.prototype.input = DragableThing.prototype.LogicGateSingleOutput;
-AndGate.prototype.output = DragableThing.prototype.LogicGateDoubleInput;
+AndGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
+AndGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
 
 /********************************************************************************************/
 function OrGate()
@@ -280,8 +351,8 @@ OrGate.prototype.draw = function(ctx, selected) {
 	ctx.restore();
 };
 
-OrGate.prototype.input = DragableThing.prototype.LogicGateSingleOutput;
-OrGate.prototype.output = DragableThing.prototype.LogicGateDoubleInput;
+OrGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
+OrGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
 
 
 function makeGate(type) {
@@ -305,8 +376,53 @@ function Connection(input_item, input_num, output_item, output_num)
 	this.output_num = output_num;
 }
 
+Connection.prototype.getPoints = function() {
+	var input;
+	var outputs;
+	if (this.input_item) {
+		input = this.input_item.inputs()[this.input_num];
+	} else {
+		input = this.drag_position;
+	}
+	if (this.output_item) {
+		output = this.output_item.outputs()[this.output_num];
+	} else {
+		output = this.drag_position;
+	}
+	return [input, output];
+}
+
 Connection.prototype.boundingBox = function() {
-	return BoxFromTwoPoints(this.input_item.inputs()[this.input_num], this.output_items.outputs()[this.output_num]);
+	var points = this.getPoints();
+	var input = points[0];
+	var output = points[1];
+	if (output.y >= input.y) {
+		return BoxFromTwoPoints(input, output);
+	} else {
+		console.log("below");
+		return BoxFromTwoPoints(input, output);
+	}
+};
+
+Connection.prototype.setDragPosition = function(position) {
+	this.drag_position = position;
+};
+
+Connection.prototype.drawWrapper = function(ctx) {
+	var points = this.getPoints();
+	var input = points[0];
+	var output = points[1];
+	if (output.y >= input.y) {
+		ctx.save();
+		ctx.lineWidth = 0.05;
+		ctx.beginPath();
+		ctx.moveTo(input.x, input.y);
+		ctx.bezierCurveTo(input.x, output.y, output.x, input.y, output.x, output.y);
+		ctx.stroke();
+		ctx.restore();
+	} else {
+		
+	}
 }
 
 /********************************************************************************************/
@@ -357,19 +473,28 @@ SchemaModel.prototype.hotPoint = function(point) {
 		var inputs = item.inputs();
 		for (var j = 0; j < inputs.length; j++) {
 			var input = inputs[j];
-			if (point.distance(input) < 0.05) {
+			if (point.distance(input) < 0.2) {
 				return { item: item, type: 'INPUT', number: j, position: input };
 			}
 		}
 		var outputs = item.outputs();
 		for (var j = 0; j < outputs.length; j++) {
 			var output = outputs[j];
-			if (point.distance(output) < 0.05) {
+			if (point.distance(output) < 0.2) {
 				return { item: item, type: 'OUTPUT', number: j, position: output };
 			}
 		}
 	}
 }
+
+function hotPointsEqual(a, b) {
+	return a.item === b.item && a.type === b.type && a.number === b.number;
+}
+
+SchemaModel.prototype.addConnection = function(connection) {
+	connection.input_item.addConnection(connection);
+	connection.output_item.addConnection(connection);
+};
 
 /********************************************************************************************/
 function SchemaDrawer(model, canvas_context, scale, drawing_area)
@@ -420,14 +545,10 @@ SchemaDrawer.prototype.draw = function() {
 };
 
 SchemaDrawer.prototype.drawItem = function(item) {
-	var position = item.position();
-	this.ctx.save();
-	this.ctx.translate(position.x, position.y);
-	item.draw(this.ctx);
-	this.ctx.restore();
+	item.drawWrapper(this.ctx);
 };
 
-SchemaDrawer.prototype.deleteItem = function(item) {
+SchemaDrawer.prototype.deleteItem = function(item) { // Todo this isn't used any more I dont think.
 	var position = item.position();
 	var size = item.size();
 	this.ctx.save();
@@ -437,10 +558,7 @@ SchemaDrawer.prototype.deleteItem = function(item) {
 	this.ctx.restore();
 };
 
-SchemaDrawer.prototype.redrawRectangle = function(rectangle, exclude_item) {
-	// Delete the old rectangle.
-	this.ctx.clearRect(rectangle.left, rectangle.top, rectangle.width(), rectangle.height());
-	
+SchemaDrawer.prototype.redrawRectangle = function(rectangle, exclude_item, highlight) {
 	// Set up the clip path.
 	this.ctx.save();
 	this.ctx.beginPath();
@@ -451,6 +569,9 @@ SchemaDrawer.prototype.redrawRectangle = function(rectangle, exclude_item) {
 	this.ctx.closePath();
 	this.ctx.clip();
 	
+	// Delete the old rectangle.
+	this.ctx.clearRect(rectangle.left, rectangle.top, rectangle.width(), rectangle.height());
+	
 	// Draw everything that might have been deleted or damaged by the clearRect.
 	var all_needing_redrawn = this.model.allObjectsTouchingBox(rectangle);
 	for (var i = 0; i < all_needing_redrawn.length; i++) {
@@ -458,6 +579,10 @@ SchemaDrawer.prototype.redrawRectangle = function(rectangle, exclude_item) {
 		if (list_item !== exclude_item) {
 			this.drawItem(list_item);
 		}
+	}
+	
+	if (highlight) {
+		this.drawHighlight(highlight);
 	}
 	
 	// Drop the clip path and draw item in new position.
@@ -472,13 +597,16 @@ SchemaDrawer.prototype.moveItem = function(item, old_bounding_box) {
 SchemaDrawer.prototype.drawHighlight = function(point) {
 	this.ctx.save();
 	this.ctx.globalAlpha = 0.5;
-	ctx.strokeStyle = "red";
-	this.ctx.arc(point.x, point.y, 0.05, 0, 2 * Math.PI);
+	this.ctx.strokeStyle = "red";
+	this.ctx.lineWidth = 0.1;
+	this.ctx.beginPath();
+	this.ctx.arc(point.x, point.y, 0.1, 0, 2 * Math.PI);
+	this.ctx.stroke()
 	this.ctx.restore();
 };
 
 SchemaDrawer.prototype.removeHighlight = function(point) {
-	this.redrawRectangle(BoxFromPointAndSize(point.minus(new Point(0.1, 0.1)), {x: 0.2, y: 0.2}));
+	this.redrawRectangle(BoxFromPointAndSize(point.minus(new Point(0.2, 0.2)), {width: 0.4, height: 0.4}));
 };
 
 /********************************************************************************************/
@@ -491,6 +619,8 @@ function View(model, canvas_context)
 	this.scale = 30;
 	this.ctx = canvas_context;
 	this.drawer = new SchemaDrawer(this.model, this.ctx, this.scale, this.drawing_area);
+	this.current_hot_point = null;
+	this.new_connection = null;
 }
 
 View.prototype.setScale = function(scale) {
@@ -508,18 +638,42 @@ View.prototype.setDrawingArea = function(drawing_area) {
 };
 
 View.prototype.beginDrag = function(point) {
-	//Locate the thing being draged
-	this.start_position = point;
-	var objects = this.model.hitTest(this.start_position);
-	if (objects.length > 0) {
-		this.dragged_object = objects[0];
-		this.original_position = this.dragged_object.position().copy();
+	if (this.current_hot_point) { // We are we creating a connection.
+		this.drawer.removeHighlight(this.current_hot_point.position);
+		var input_item; var input_num; var output_item; var output_num;
+		if (this.current_hot_point.type == "INPUT") {
+			input_item = this.current_hot_point.item;
+			input_num = this.current_hot_point.number;
+		} else {
+			output_item = this.current_hot_point.item;
+			output_num = this.current_hot_point.number;
+		}
+		this.new_connection = new Connection(input_item, input_num, output_item, output_num);
+		this.new_connection.setDragPosition(point); // Not sure we need that.
+		this.drag_start_hot_point = this.current_hot_point;
+		this.current_hot_point = null;
+	} else { // We are potentialy moving an item
+		this.start_position = point;
+		var objects = this.model.hitTest(this.start_position);
+		if (objects.length > 0) {
+			this.dragged_object = objects[0];
+			this.original_position = this.dragged_object.position().copy();
+		}
 	}
 };
 
 View.prototype.continueDrag = function(point) {
 	//Move the thing
-	if (this.dragged_object) {
+	if (this.new_connection) {
+		this.drawer.redrawRectangle(this.new_connection.boundingBox().expand(0.1), null, (this.current_hot_point ? this.current_hot_point.position : null));
+		this.new_connection.setDragPosition(point);
+		this.drawer.drawItem(this.new_connection);
+		// Are we over a hot point we could connect to
+		var hot_point = this.model.hotPoint(point);
+		if (hot_point && hot_point.type != this.drag_start_hot_point.type) {
+			this.updateHighlighting(hot_point);
+		}
+	} else if (this.dragged_object) {
 		var d = point.minus(this.start_position);
 		var old_bounding_box = this.dragged_object.boundingBox();
 		this.dragged_object.setPosition(this.original_position.plus(d));
@@ -528,13 +682,31 @@ View.prototype.continueDrag = function(point) {
 };
 
 View.prototype.endDrag = function(point) {
-	//Leave the thing in its new position
-	this.dragged_object = null;
+	if (this.new_connection) {
+		var hot_point = this.model.hotPoint(point);
+		if (hot_point && hot_point.type != this.drag_start_hot_point.type) {
+			if (hot_point.type == "INPUT") {
+				this.new_connection.input_item = hot_point.item;
+				this.new_connection.input_num = hot_point.number;
+			} else {
+				this.new_connection.output_item = hot_point.item;
+				this.new_connection.input_num = hot_point.numeber;
+			}
+			this.model.addConnection(this.new_connection);
+		}
+		this.new_connection = null;
+	} else {
+		//Leave the thing in its new position
+		this.dragged_object = null;
+	}
 };
 
 View.prototype.cancelDrag = function() {
-	//Dump the thing back in its original position
-	if (this.dragged_object) {
+	if (this.new_connection) {
+		this.drawer.redrawRectangle(this.new_connection.boundingBox().expand(0.1));
+		this.new_connection = null;
+	} else if (this.dragged_object) {
+		//Dump the thing back in its original position
 		var old_bounding_box = this.dragged_object.boundingBox();
 		this.dragged_object.setPosition(this.original_position);
 		this.drawer.moveItem(this.dragged_object, old_bounding_box);
@@ -551,6 +723,32 @@ View.prototype.addObject = function(type, at) {
 	this.model.add(object);
 	object.setPosition(at);
 	this.drawer.drawItem(object)
+};
+
+View.prototype.updateHighlighting = function(hot_point) {
+	if (hot_point && this.current_hot_point) {
+		if (!hotPointsEqual(hot_point, this.current_hot_point)) {
+			this.drawer.removeHighlight(this.current_hot_point.position);
+			this.drawer.drawHighlight(hot_point.position);
+			this.current_hot_point = hot_point;
+		}
+	} else {
+		if (hot_point) {
+			this.drawer.drawHighlight(hot_point.position);
+			this.current_hot_point = hot_point;
+		} else if (this.current_hot_point) {
+			this.drawer.removeHighlight(this.current_hot_point.position);
+			this.current_hot_point = null;
+		}
+	}
+};
+
+/* method mouseOver to be called when the mouse has moved and the widget is not currently in a drag
+  allows the view do do any drawing needed when the mouse hovers,
+  */
+View.prototype.mouseOver = function(position) {
+	var hot_point = this.model.hotPoint(position);
+	this.updateHighlighting(hot_point);
 };
 
 /********************************************************************************************/
@@ -572,7 +770,7 @@ function LogicWidget(canvas)
 			event.preventDefault();
 			// dont know if I want this event
 			//game.altClick(event.x - canvas.offsetLeft, event.y - canvas.offsetTop);
-			console.log(event.type);
+			//console.log(event.type);
 			return false;
 		}, false);
 	
@@ -680,11 +878,14 @@ LogicWidget.prototype.mouseup = function(point, event) {
 LogicWidget.prototype.mousemove = function(point, event) {
 	if (this.in_drag) {
 		this.view.continueDrag(point);
-	}
-	if (!this.in_drag && this.mouse_down) {
-		this.view.beginDrag(this.mouse_down_point);
-		this.view.continueDrag(point);
-		this.in_drag = true;
+	} else {
+		if (this.mouse_down) {
+			this.view.beginDrag(this.mouse_down_point);
+			this.view.continueDrag(point);
+			this.in_drag = true;
+		} else {
+			this.view.mouseOver(point);
+		}
 	}
 };
 
