@@ -26,6 +26,10 @@ Point.prototype.distance = function(other) {
 	return Math.sqrt(Math.pow(this.x - other.x, 2) + Math.pow(this.y - other.y, 2));
 }
 
+function midPoint(point1, point2) {
+	return new Point((point1.x + point2.x) / 2, (point1.y + point2.y) / 2);
+}
+
 /********************************************************************************************/
 function Box(left, top, right, bottom)
 /********************************************************************************************/
@@ -403,8 +407,7 @@ Connection.prototype.boundingBox = function() {
 	if (output.y >= input.y) {
 		return BoxFromTwoPoints(input, output);
 	} else {
-		console.log("below");
-		return BoxFromTwoPoints(input, output);
+		return new Box(smallest(input.x, output.x), output.y - 1, biggest(input.x, output.x), input.y + 1);
 	}
 };
 
@@ -421,11 +424,22 @@ Connection.prototype.drawWrapper = function(ctx) {
 		ctx.lineWidth = 0.05;
 		ctx.beginPath();
 		ctx.moveTo(input.x, input.y);
-		ctx.bezierCurveTo(input.x, output.y, output.x, input.y, output.x, output.y);
+		var half_way = (output.y + input.y) / 2;
+		ctx.bezierCurveTo(input.x, half_way, output.x, half_way, output.x, output.y);
 		ctx.stroke();
 		ctx.restore();
 	} else {
-		
+		ctx.save();
+		ctx.lineWidth = 0.05;
+		ctx.beginPath();
+		ctx.moveTo(output.x, output.y);
+		var mid_point = midPoint(input, output);
+		var second_control_point = midPoint(output, mid_point);
+		var third_control_point = midPoint(mid_point, input)
+		ctx.bezierCurveTo(output.x, output.y - 1, second_control_point.x, second_control_point.y, mid_point.x, mid_point.y);
+		ctx.bezierCurveTo(third_control_point.x, third_control_point.y, input.x, input.y + 1, input.x, input.y);
+		ctx.stroke();
+		ctx.restore();
 	}
 }
 
