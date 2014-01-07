@@ -450,11 +450,21 @@ SchemaModel.prototype.remove = function(object) {
 	}
 };
 
-SchemaModel.prototype.allObjectsTouchingBox = function(box) {
+SchemaModel.prototype.allObjectsTouchingBox = function(box, include_connections) {
 	var results = [];
 	for (var i = 0; i < this.objects.length; i++) {
-		if (this.objects[i].boundingBox().intersects(box)) {
-			results.push(this.objects[i]);
+		var object = this.objects[i];
+		if (object.boundingBox().intersects(box)) {
+			results.push(object);
+		}
+		if (include_connections) {
+			var connections = object.allConnections();
+			for (var j = 0; j < connections.length; j++) {
+				var connection = connections[j];
+				if (connection.boundingBox().intersects(box)) {
+					results.push(connection);
+				}
+			}
 		}
 	}
 	return results;
@@ -567,7 +577,7 @@ SchemaDrawer.prototype.draw = function(exclude_item) {
 		this.ctx.clearRect(this.invalid_rectangle.left, this.invalid_rectangle.top, this.invalid_rectangle.width(), this.invalid_rectangle.height());
 		
 		// Draw everything that might have been deleted or damaged by the clearRect.
-		var all_needing_redrawn = this.model.allObjectsTouchingBox(this.invalid_rectangle);
+		var all_needing_redrawn = this.model.allObjectsTouchingBox(this.invalid_rectangle, true);
 		for (var i = 0; i < all_needing_redrawn.length; i++) {
 			var list_item = all_needing_redrawn[i];
 			if (list_item !== exclude_item) {
@@ -590,9 +600,18 @@ SchemaDrawer.prototype.draw = function(exclude_item) {
 	}
 };
 
-SchemaDrawer.prototype.moveItem = function(item, old_bounding_box) {
-	this.invalidateRectangle(old_bounding_box, item);
+SchemaDrawer.prototype.invalidateItem = function(item) {
 	this.invalidateRectangle(item.boundingBox());
+	var connections = item.allConnections();
+	for (var i = 0; i < connections.length; i++) {
+		this.invalidateRectangle(connections[i].boundingBox().expand(0.1));
+	}
+}
+
+SchemaDrawer.prototype.moveItem = function(item, new_position) {
+	this.invalidateItem(item);
+	item.setPosition(new_position);
+	this.invalidateItem(item);
 };
 
 SchemaDrawer.prototype.drawHighlight = function(point) {
@@ -695,9 +714,7 @@ View.prototype.continueDrag = function(point) {
 		}
 	} else if (this.dragged_object) {
 		var d = point.minus(this.start_position);
-		var old_bounding_box = this.dragged_object.boundingBox();
-		this.dragged_object.setPosition(this.original_position.plus(d));
-		this.drawer.moveItem(this.dragged_object, old_bounding_box);
+		this.drawer.moveItem(this.dragged_object, this.original_position.plus(d));
 	}
 	this.drawer.draw();
 };
@@ -712,7 +729,7 @@ View.prototype.endDrag = function(point) {
 				this.new_connection.input_num = hot_point.number;
 			} else {
 				this.new_connection.output_item = hot_point.item;
-				this.new_connection.input_num = hot_point.numeber;
+				this.new_connection.output_num = hot_point.number;
 			}
 			this.model.addConnection(this.new_connection);
 		}
@@ -730,9 +747,7 @@ View.prototype.cancelDrag = function() {
 		this.new_connection = null;
 	} else if (this.dragged_object) {
 		//Dump the thing back in its original position
-		var old_bounding_box = this.dragged_object.boundingBox();
-		this.dragged_object.setPosition(this.original_position);
-		this.drawer.moveItem(this.dragged_object, old_bounding_box);
+		this.drawer.moveItem(this.dragged_object, this.original_position);
 		this.dragged_object = null;
 	}
 	this.drawer.draw();
