@@ -121,6 +121,9 @@ function DragableThing()
 {
 	this.top_left = new Point(0, 0);
 	this.model = null;
+}
+
+DragableThing.prototype.initDragableThing = function() {
 	this.output_connections = [];
 	this.input_connections = [];
 }
@@ -238,7 +241,8 @@ DragableThing.prototype.removeConnection = function(connection) {
 /********************************************************************************************/
 function NotGate()
 /********************************************************************************************/
-{	
+{
+	this.initDragableThing()
 	this.type = "NOT";
 }
 
@@ -282,6 +286,7 @@ NotGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
 function AndGate()
 /********************************************************************************************/
 {
+	this.initDragableThing()
 	this.type = "AND";
 }
 
@@ -327,6 +332,7 @@ AndGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
 function OrGate()
 /********************************************************************************************/
 {
+	this.initDragableThing()
 	this.type = "OR";
 }
 
@@ -752,6 +758,9 @@ View.prototype.beginDrag = function(point) {
 		this.drawer.draw();
 		var input_item; var input_num; var output_item; var output_num;
 		if (this.current_hot_point.type == "INPUT") {
+			if (this.current_hot_point.item.hasInputConnection(this.current_hot_point.number)) {
+				return;
+			}
 			input_item = this.current_hot_point.item;
 			input_num = this.current_hot_point.number;
 		} else {
