@@ -223,7 +223,8 @@ DragableThing.prototype.allConnections = function(just_inputs) {
 	return all_connections;
 }
 
-DragableThing.prototype.hasInputConnection = function() {
+DragableThing.prototype.hasInputConnection = function(number) {
+	return Boolean(this.input_connections[number]);	
 };
 
 DragableThing.prototype.removeConnection = function(connection) {
@@ -779,7 +780,10 @@ View.prototype.continueDrag = function(point) {
 		this.new_connection.setDragPosition(point);
 		// Are we over a hot point we could connect to
 		var hot_point = this.model.hotPoint(point);
-		if (hot_point && hot_point.type != this.drag_start_hot_point.type) {
+		if (hot_point
+			&& hot_point.type != this.drag_start_hot_point.type
+			&& (hot_point.type == "OUTPUT" || !hot_point.item.hasInputConnection(hot_point.number)))
+		{
 			this.updateHighlighting(hot_point);
 		} else if (!hot_point) {
 			this.updateHighlighting(null);
@@ -795,7 +799,10 @@ View.prototype.endDrag = function(point) {
 	if (this.new_connection) {
 		this.drawer.removeTempConnection();
 		var hot_point = this.model.hotPoint(point);
-		if (hot_point && hot_point.type != this.drag_start_hot_point.type) {
+		if	(hot_point
+			&& hot_point.type != this.drag_start_hot_point.type
+			&& (hot_point.type == "OUTPUT" || !hot_point.item.hasInputConnection(hot_point.number)))
+		{
 			if (hot_point.type == "INPUT") {
 				this.new_connection.input_item = hot_point.item;
 				this.new_connection.input_num = hot_point.number;
