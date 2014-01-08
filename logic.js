@@ -223,6 +223,9 @@ DragableThing.prototype.allConnections = function(just_inputs) {
 	return all_connections;
 }
 
+DragableThing.prototype.hasInputConnection = function() {
+};
+
 DragableThing.prototype.removeConnection = function(connection) {
 	if (connection.input_item === this) {
 		
