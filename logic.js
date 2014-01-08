@@ -255,7 +255,6 @@ NotGate.prototype.draw = function(ctx, selected) {
 	
 	// the circle
 	ctx.beginPath();
-	moveTo(0.5, 0.4);
 	ctx.arc(0.5, 0.3, 0.1, - Math.PI ,  Math.PI );
 	ctx.stroke();
 	
@@ -951,7 +950,7 @@ LogicWidget.prototype.mousemove = function(point, event) {
 };
 
 LogicWidget.prototype.drop = function(point, event) {
-	var type = event.dataTransfer.getData("gateType");
+	var type = event.dataTransfer.getData("Text");
 	this.view.addObject(type, point);
 };
 
@@ -984,7 +983,7 @@ function createPallet() {
 	//
 	function makeEventListener(type) {
 		return function (event) {
-			event.dataTransfer.setData("gateType", type);
+			event.dataTransfer.setData("Text", type);
 			event.dataTransfer.effectAllowed = 'move'; // only allow moves, what the fuck does that even mean?
 		}
 	}
