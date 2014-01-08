@@ -892,7 +892,7 @@ function LogicWidget(canvas)
 	this.origin = new Point(0, 0);
 	this.scale = 30;
 	this.view.setScale(this.scale);
-	this.canvasResized();
+	this.windowResized();
 	
 	canvas.addEventListener('contextmenu',
 		function(event) {
@@ -944,6 +944,7 @@ function LogicWidget(canvas)
 	canvas.addEventListener('drop',
 		function(event) {
 			that.drop(that.pointFromEvent(event), event);
+			event.preventDefault();
 			return false;
 		}, false);
 	
@@ -951,6 +952,11 @@ function LogicWidget(canvas)
 		function(event) {
 			event.preventDefault();
 			return false;
+		}, false);
+	
+	window.addEventListener('resize',
+		function(event) {
+			that.windowResized();
 		}, false);
 	
 	this.mouse_over = false;
@@ -976,9 +982,13 @@ LogicWidget.prototype.pointFromEvent = function(event) {
 	return new Point( (x / this.scale) + this.origin.x, (y / this.scale) + this.origin.y);
 };
 
-LogicWidget.prototype.canvasResized = function() {
+LogicWidget.prototype.windowResized = function() {
+	var canvas_div = document.getElementById("canvas_div");
+	var height = canvas_div.offsetHeight;
+	this.ctx.canvas.width = canvas_div.offsetWidth;
+	this.ctx.canvas.height = canvas_div.offsetHeight;
 	this.view.setDrawingArea(BoxFromPointAndSize(this.origin, { width: this.ctx.canvas.width * this.scale, height: this.ctx.canvas.height * this.scale }));
-};
+}
 
 LogicWidget.prototype.mouseover = function(point, event) {
 	this.mouse_over = true;
