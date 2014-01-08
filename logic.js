@@ -205,12 +205,15 @@ DragableThing.prototype.getConnections = function(type, number) {
 	}
 };
 
-DragableThing.prototype.allConnections = function() {
+DragableThing.prototype.allConnections = function(just_inputs) {
 	var all_connections = [];
 	for (var i = 0; i < this.input_connections.length; i++) {
 		if (this.input_connections[i]) {
 			all_connections.push(this.input_connections[i]);
 		}
+	}
+	if (just_inputs) {
+		return all_connections;
 	}
 	for (var i = 0; i < this.output_connections.length; i++) {
 		if (this.output_connections[i]) {
@@ -232,6 +235,7 @@ DragableThing.prototype.removeConnection = function(connection) {
 function NotGate()
 /********************************************************************************************/
 {	
+	this.type = "NOT";
 }
 
 NotGate.prototype = new DragableThing();
@@ -274,7 +278,7 @@ NotGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
 function AndGate()
 /********************************************************************************************/
 {
-	
+	this.type = "AND";
 }
 
 AndGate.prototype = new DragableThing();
@@ -319,7 +323,7 @@ AndGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
 function OrGate()
 /********************************************************************************************/
 {
-	
+	this.type = "OR";
 }
 
 OrGate.prototype = new DragableThing();
@@ -454,6 +458,8 @@ function SchemaModel()
 SchemaModel.prototype.add = function(object) {
 	this.objects.push(object);
 	object.setModel(this);
+	object.number = this.next_item_number;
+	this.next_item_number++;
 };
 
 SchemaModel.prototype.remove = function(object) {
@@ -527,6 +533,50 @@ SchemaModel.prototype.addConnection = function(connection) {
 	connection.output_item.addConnection(connection);
 	connection.number = this.next_connection_number;
 	this.next_connection_number ++;
+};
+
+SchemaModel.prototype.save = function() {
+	var saved = {};
+	var items = [];
+	var connections = [];
+	for (var i = 0; i < this.objects.length; i++) {
+		item = this.objects[i];
+		items.push([item.number, item.type, item.top_left]);
+		var conns = item.allConnections(true);
+		for (var j = 0; j < conns.length; j++) {
+			connection = conns[j];
+			connections.push([connection.input_item.number, connection.input_num, connection.output_item.number, connection.output_num]);
+		}
+	}
+	saved["items"] = items;
+	saved["connections"] = connections;
+	return saved;
+};
+
+SchemaModel.prototype.load = function(saved) {
+	var item_hash = {};
+	for (var i = 0; i < saved["items"].length; i++) {
+		var saved_item = saved["items"][i];
+		var restored_item = makeGate(saved_item[1]);
+		var number = saved_item[0];
+		restored_item.number = number;
+		if (number > this.next_item_number) {
+			this.next_item_number = number;
+		}
+		restored_item.setPosition(saved_item[2]); // I don't know if this will work.
+		restored_item.setModel(this);
+		this.objects.push(restored_item);
+		item_hash[number = restored_item];
+	}
+	for (var i = 0; i < saved["connections"].length; i++) {
+		var saved_connection = saved["connections"][i];
+		var input_item = item_hash[saved_connection[0]];
+		var input_num = saved_connection[1];
+		var output_item = item_hash[saved_connection[2]];
+		var output_num = saved_connection[3];
+		var restored_connection = new Connection(input_item, input_num, output_item, output_num);
+		this.addConnection(restored_connection);
+	}
 };
 
 /********************************************************************************************/
