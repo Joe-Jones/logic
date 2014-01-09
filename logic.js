@@ -1052,6 +1052,9 @@ function Pallet()
 function drawGate(canvas, type) {
 	var ctx = canvas.getContext("2d");
 	ctx.scale(canvas.width, canvas.height);
+	ctx.translate(0.5, 0.5);
+	ctx.rotate(Math.PI / 2);
+	ctx.translate(-0.5, -0.5);
 	var gate = makeGate(type)
 	gate.draw(ctx);
 }
