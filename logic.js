@@ -617,7 +617,7 @@ SchemaDrawer.prototype.setTransform = function() {
 	this.ctx.restore();
 	this.ctx.save();
 	this.ctx.scale(this.scale, this.scale);
-	this.ctx.translate(this.drawing_area.left, this.drawing_area.top);
+	this.ctx.translate(smallest(this.drawing_area.left, this.drawing_area.right), biggest(this.drawing_area.top, this.drawing_area.bottom));
 	this.invalid_rectangle = this.drawing_area;
 };
 
@@ -748,7 +748,7 @@ View.prototype.setScale = function(scale) {
 View.prototype.setDrawingArea = function(drawing_area) {
 	this.drawing_area = drawing_area;
 	this.drawer.setDrawingArea(drawing_area);
-	this.drawer.clear();
+	this.drawer.invalidateRectangle(drawing_area);
 	this.drawer.draw();
 };
 
@@ -978,16 +978,24 @@ LogicWidget.prototype.pointFromEvent = function(event) {
 	var x = event.pageX - offset_x;
 	var y = event.pageY - offset_y;
 	
+	// The rotation
+	var x_dash = y;
+	var y_dash = -x;
+	
 	// And now change the point into model coordinates
-	return new Point( (x / this.scale) + this.origin.x, (y / this.scale) + this.origin.y);
+	return new Point( (x_dash / this.scale) + this.origin.x, (y_dash / this.scale) + this.origin.y);
 };
 
 LogicWidget.prototype.windowResized = function() {
 	var canvas_div = document.getElementById("canvas_div");
-	var height = canvas_div.offsetHeight;
 	this.ctx.canvas.width = canvas_div.offsetWidth;
 	this.ctx.canvas.height = canvas_div.offsetHeight;
-	this.view.setDrawingArea(BoxFromPointAndSize(this.origin, { width: this.ctx.canvas.width * this.scale, height: this.ctx.canvas.height * this.scale }));
+	this.ctx.rotate(Math.PI / 2);
+	
+	var height = this.ctx.canvas.height * this.scale;
+	var width = this.ctx.canvas.width * this.scale;
+	var box_rotated = BoxFromTwoPoints(this.origin, new Point(this.origin.x + height, this.origin.y - width));
+	this.view.setDrawingArea(box_rotated);
 }
 
 LogicWidget.prototype.mouseover = function(point, event) {
