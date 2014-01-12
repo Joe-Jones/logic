@@ -238,6 +238,10 @@ DragableThing.prototype.removeConnection = function(connection) {
 	}
 };
 
+DragableThing.prototype.click = function() {
+	return false;
+};
+
 /********************************************************************************************/
 function NotGate()
 /********************************************************************************************/
@@ -509,7 +513,7 @@ XnorGate.prototype.draw = function(ctx, selected) {
 	ctx.beginPath();
 	ctx.moveTo(0.7, 0.95);
 	ctx.lineTo(0.7, 0.75);
-	ctx.stroke();
+	ctx.stroke();		
 	
 	// Output
 	ctx.beginPath();
@@ -539,38 +543,27 @@ Switch.prototype.draw = function(ctx, selected) {
 	ctx.save();
 	ctx.lineWidth = 0.05;
 
-	/*//	Inputs
-	ctx.beginPath();
-	ctx.moveTo(0.3, 0.95);
-	ctx.lineTo(0.3, 0.75);
-	ctx.stroke();
-	
-	ctx.beginPath();
-	ctx.moveTo(0.7, 0.95);
-	ctx.lineTo(0.7, 0.75);
-	ctx.stroke();
-	
-	// Body
-	ctx.beginPath();
-	ctx.moveTo(0.15, 0.8);
-	ctx.bezierCurveTo(0.3, 0.7, 0.7, 0.7, 0.85, 0.8);
-	ctx.lineTo(0.87, 0.5);
-	ctx.bezierCurveTo(0.87, 0.2, 0.6, 0.2,		0.5, 0.1);
-	ctx.bezierCurveTo(0.4, 0.2, 0.13, 0.2, 			0.15, 0.5);
-	ctx.lineTo(0.15, 0.8);
-	ctx.stroke();*/
+	ctx.fillRect(0.15, 0.15, 0.7, 0.7);
+	if(!this.on) {
+		ctx.clearRect(0.3, 0.3, 0.4, 0.4);
+	}
 	
 	// Output
 	ctx.beginPath();
-	ctx.moveTo(0.9, 0.15);
-	ctx.lineTo(0.9, 0.05);
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
 	ctx.stroke();
 	
 	ctx.restore();
 };
 
 Switch.prototype.outputs = function() {
-	return [this.top_left.plus(new Point(0.9, 0.05))];
+	return [this.top_left.plus(new Point(0.5, 0.05))];
+};
+
+Switch.prototype.click = function() {
+	this.on = !this.on;
+	return true;
 };
 
 /********************************************************************************************/
@@ -587,38 +580,23 @@ Bulb.prototype.draw = function(ctx, selected) {
 	ctx.save();
 	ctx.lineWidth = 0.05;
 	
-	//	Inputs
+	//	Input
 	ctx.beginPath();
-	ctx.moveTo(0.3, 0.95);
-	ctx.lineTo(0.3, 0.75);
+	ctx.moveTo(0.5, 0.95);
+	ctx.lineTo(0.5, 0.75);
 	ctx.stroke();
 	
-	ctx.beginPath();
-	ctx.moveTo(0.7, 0.95);
-	ctx.lineTo(0.7, 0.75);
-	ctx.stroke();
-	
-	// Body
-	ctx.beginPath();
-	ctx.moveTo(0.15, 0.8);
-	ctx.bezierCurveTo(0.3, 0.7, 0.7, 0.7, 0.85, 0.8);
-	ctx.lineTo(0.87, 0.5);
-	ctx.bezierCurveTo(0.87, 0.2, 0.6, 0.2,		0.5, 0.1);
-	ctx.bezierCurveTo(0.4, 0.2, 0.13, 0.2, 			0.15, 0.5);
-	ctx.lineTo(0.15, 0.8);
-	ctx.stroke();
-	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.15);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
+	ctx.fillRect(0.15, 0.15, 0.7, 0.7);
+	if(this.on) {
+		ctx.fillStyle = "red";
+		ctx.fillRect(0.3, 0.3, 0.4, 0.4);
+	}
 	
 	ctx.restore();
 };
 
 Bulb.prototype.inputs = function() {
-	return [this.top_left.plus(new Point(0.9, 0.95))];
+	return [this.top_left.plus(new Point(0.5, 0.95))];
 };
 
 function makeGate(type) {
@@ -1137,6 +1115,17 @@ View.prototype.mouseOver = function(position) {
 	this.drawer.draw();
 };
 
+View.prototype.click = function(position) {
+	var objects = this.model.hitTest(position);
+	if (objects.length > 0) {
+		object = objects[0];
+		if(object.click()) {
+			this.drawer.invalidateRectangle(object.boundingBox());
+		}
+	}
+	this.drawer.draw();
+}
+
 /********************************************************************************************/
 function LogicWidget(canvas)
 /********************************************************************************************/
@@ -1275,6 +1264,8 @@ LogicWidget.prototype.mouseup = function(point, event) {
 	this.mouse_down = false;
 	if (this.in_drag) {
 		this.view.endDrag(point);
+	} else {
+		this.view.click(point);
 	}
 	this.in_drag = false;
 };
