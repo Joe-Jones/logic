@@ -375,6 +375,251 @@ OrGate.prototype.draw = function(ctx, selected) {
 OrGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
 OrGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
 
+/********************************************************************************************/
+function NandGate()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+	this.type = "OR";
+}
+
+NandGate.prototype = new DragableThing();
+
+NandGate.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Inputs
+	ctx.beginPath();
+	ctx.moveTo(0.3, 0.95);
+	ctx.lineTo(0.3, 0.75);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, 0.95);
+	ctx.lineTo(0.7, 0.75);
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+NandGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
+NandGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
+
+/********************************************************************************************/
+function NorGate()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+	this.type = "OR";
+}
+
+NorGate.prototype = new DragableThing();
+
+NorGate.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Inputs
+	ctx.beginPath();
+	ctx.moveTo(0.3, 0.95);
+	ctx.lineTo(0.3, 0.75);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, 0.95);
+	ctx.lineTo(0.7, 0.75);
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+NorGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
+NorGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
+
+/********************************************************************************************/
+function XorGate()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+	this.type = "OR";
+}
+
+XorGate.prototype = new DragableThing();
+
+XorGate.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Inputs
+	ctx.beginPath();
+	ctx.moveTo(0.3, 0.95);
+	ctx.lineTo(0.3, 0.75);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, 0.95);
+	ctx.lineTo(0.7, 0.75);
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+XorGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
+XorGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
+
+/********************************************************************************************/
+function XnorGate()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+	this.type = "OR";
+}
+
+XnorGate.prototype = new DragableThing();
+
+XnorGate.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Inputs
+	ctx.beginPath();
+	ctx.moveTo(0.3, 0.95);
+	ctx.lineTo(0.3, 0.75);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, 0.95);
+	ctx.lineTo(0.7, 0.75);
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+XnorGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
+XnorGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
+
+
+/********************************************************************************************/
+function Switch()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+	this.type = "SWITCH";
+	this.on = false;
+}
+
+Switch.prototype = new DragableThing();
+
+Switch.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+
+	/*//	Inputs
+	ctx.beginPath();
+	ctx.moveTo(0.3, 0.95);
+	ctx.lineTo(0.3, 0.75);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, 0.95);
+	ctx.lineTo(0.7, 0.75);
+	ctx.stroke();
+	
+	// Body
+	ctx.beginPath();
+	ctx.moveTo(0.15, 0.8);
+	ctx.bezierCurveTo(0.3, 0.7, 0.7, 0.7, 0.85, 0.8);
+	ctx.lineTo(0.87, 0.5);
+	ctx.bezierCurveTo(0.87, 0.2, 0.6, 0.2,		0.5, 0.1);
+	ctx.bezierCurveTo(0.4, 0.2, 0.13, 0.2, 			0.15, 0.5);
+	ctx.lineTo(0.15, 0.8);
+	ctx.stroke();*/
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.9, 0.15);
+	ctx.lineTo(0.9, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+Switch.prototype.outputs = function() {
+	return [this.top_left.plus(new Point(0.9, 0.05))];
+};
+
+/********************************************************************************************/
+function Bulb()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+	this.type = "BULB";
+}
+
+Bulb.prototype = new DragableThing();
+
+Bulb.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Inputs
+	ctx.beginPath();
+	ctx.moveTo(0.3, 0.95);
+	ctx.lineTo(0.3, 0.75);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, 0.95);
+	ctx.lineTo(0.7, 0.75);
+	ctx.stroke();
+	
+	// Body
+	ctx.beginPath();
+	ctx.moveTo(0.15, 0.8);
+	ctx.bezierCurveTo(0.3, 0.7, 0.7, 0.7, 0.85, 0.8);
+	ctx.lineTo(0.87, 0.5);
+	ctx.bezierCurveTo(0.87, 0.2, 0.6, 0.2,		0.5, 0.1);
+	ctx.bezierCurveTo(0.4, 0.2, 0.13, 0.2, 			0.15, 0.5);
+	ctx.lineTo(0.15, 0.8);
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+Bulb.prototype.inputs = function() {
+	return [this.top_left.plus(new Point(0.9, 0.95))];
+};
 
 function makeGate(type) {
 	switch(type) {
@@ -384,6 +629,18 @@ function makeGate(type) {
 			return new OrGate();
 		case "NOT":
 			return new NotGate();
+		case "NAND":
+			return new NandGate();
+		case "NOR":
+			return new NorGate();
+		case "XOR":
+			return new XorGate();
+		case "XNOR":
+			return new XnorGate();
+		case "SWITCH":
+			return new Switch();
+		case "BULB":
+			return new Bulb();
 	}
 }
 
@@ -1060,7 +1317,7 @@ function drawGate(canvas, type) {
 }
 
 function createPallet() {
-	var gate_list = ["AND", "OR", "NOT"];
+	var gate_list = ["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR", "SWITCH", "BULB"];
 	
 	// Create the elements
 	var html = '<table>';
