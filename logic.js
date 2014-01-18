@@ -1,3 +1,116 @@
+initial_values = {
+	"AND": false,
+	"OR": false,
+	"NOT": true,
+	"NAND": true,
+	"NOR": true,
+	"XOR": false,
+	"XNOR": true,
+	"SWITCH": false,
+	"BULB": false
+};
+
+operations = {
+	"AND": function(a, b) {return a && b;},
+	"OR": function(a, b) {return a || b;},
+	"NOT": function(a, b) {return !a;},
+	"NAND": function(a, b) {return !(a && b);},
+	"NOR": function(a, b) {return !(a || b);},
+	"XOR": function(a, b) {return (a || b) && ! (a && b);},
+	"XNOR": function(a, b) {return (a && b) || (!a && !b);},
+	"BULB": function(a, b, c) {return a;},
+	"SWITCH": function(a, b, c) {return c;}
+};
+
+function runStep(gates, input_values) {
+	var outputs = [];
+	for (var i = 0; i < gates.length; i++) {
+		var gate = gates[i];
+		if (gate) {
+			outputs[i] = operations[gate[0]](input_values[gate[1]], input_values[gate[2]], input_values[i]);
+		}
+	}
+	return outputs;
+}
+
+function applyToArrays(func, a, b) {
+	output = [];
+	for (var i = 0; i < a.length; i++) {
+		output[i] = func(a[i], b[i]);
+	}
+	return output;
+}
+
+function any(a) {
+	for (var i = 0; i < a.length; i++) {
+		if (a[i]) {
+			return true;
+		}
+	}
+}
+
+/********************************************************************************************/
+function LogicSystem()
+/********************************************************************************************/
+{
+	this.gates = [];
+	this.output_values = [false];
+	this.transients = [false];
+	this.callbacks = [];
+}
+
+LogicSystem.prototype.addGate = function(id, type) {
+	this.gates[id] = [type, 0, 0];
+	this.output_values[id] = initial_values[type];
+	this.transients[id] = initial_values[type];
+};
+
+LogicSystem.prototype.removeGate = function(id) {
+	this.gates[id] = null; 
+};
+
+LogicSystem.prototype.makeConnection = function(output_id, input_id, input_number) {
+	this.gates[input_id][input_number + 1] = output_id;
+};
+
+LogicSystem.prototype.dropConnection = function(output_id, input_id, input_number) {
+	this.gate[input_id][input_number + 1] = 0;
+};
+
+LogicSystem.prototype.registerCallback = function(id, callback) {
+	this.callbacks[id] = callback;
+};
+
+LogicSystem.prototype.dropCallback = function(id) {
+	this.callbacks[i] = null;
+};
+
+LogicSystem.prototype.setOutput = function(n, value) {
+	this.transients[n] = true;
+	this.output_values[n] = value;
+};
+
+LogicSystem.prototype.runStep = function() {
+	var old_output_values = this.output_values;
+	this.output_values = runStep(this.gates, this.output_values);
+	this.transients = applyToArrays(operations["XOR"], this.output_values, old_output_values);
+};
+
+LogicSystem.prototype.runCallbacks = function() {
+	for (var i = 0; i < this.transients.length; i++) {
+		if (this.transients[i] && this.callbacks[i]) {
+			this.callbacks[i](this.output_values[i]);
+		}
+	}
+};
+
+LogicSystem.prototype.run = function() {
+	while (any(this.transients)) {
+		this.runStep();
+		this.runCallbacks();
+	}
+};
+
 /********************************************************************************************/
 function Point(x, y)
 /********************************************************************************************/
@@ -121,6 +234,7 @@ function DragableThing()
 {
 	this.top_left = new Point(0, 0);
 	this.model = null;
+	this.DisplaysState = false;
 }
 
 DragableThing.prototype.initDragableThing = function() {
@@ -563,6 +677,9 @@ Switch.prototype.outputs = function() {
 
 Switch.prototype.click = function() {
 	this.on = !this.on;
+	if (this.stateChanged) {
+		this.stateChanged(this.on);
+	}
 	return true;
 };
 
@@ -572,6 +689,7 @@ function Bulb()
 {
 	this.initDragableThing()
 	this.type = "BULB";
+	this.DisplaysState = true;
 }
 
 Bulb.prototype = new DragableThing();
@@ -594,6 +712,10 @@ Bulb.prototype.draw = function(ctx, selected) {
 	
 	ctx.restore();
 };
+
+Bulb.prototype.setState = function (state) {
+	this.on = state;
+}
 
 Bulb.prototype.inputs = function() {
 	return [this.top_left.plus(new Point(0.5, 0.95))];
@@ -696,15 +818,33 @@ function SchemaModel()
 /********************************************************************************************/
 {
 	this.objects = [];
-	this.next_item_number = 0;
+	this.next_item_number = 1; // 0 is reserved for use by the logic system.
 	this.next_connection_number = 0;
+	this.logic_system = new LogicSystem();
 }
 
 SchemaModel.prototype.add = function(object) {
+	that = this;
 	this.objects.push(object);
 	object.setModel(this);
 	object.number = this.next_item_number;
 	this.next_item_number++;
+	
+	//Add it to the LogicSystem
+	this.logic_system.addGate(object.number, object.type);
+	if (object.DisplaysState) {
+		this.logic_system.registerCallback(object.number,
+			function (new_state) {
+				object.setState(new_state);
+				that.drawer.invalidateRectangle(object.boundingBox());
+			});
+	}
+	if (object.type == "SWITCH") {
+		object.stateChanged = function (new_state) {
+			that.logic_system.setOutput(object.number, new_state);
+			that.logic_system.run();
+		};
+	}
 };
 
 SchemaModel.prototype.remove = function(object) {
@@ -778,6 +918,10 @@ SchemaModel.prototype.addConnection = function(connection) {
 	connection.output_item.addConnection(connection);
 	connection.number = this.next_connection_number;
 	this.next_connection_number ++;
+	
+	// Add to the LogicSystem
+	this.logic_system.makeConnection(connection.output_item.number, connection.input_item.number, connection.input_num);
+	this.logic_system.run();
 };
 
 SchemaModel.prototype.save = function() {
@@ -971,6 +1115,7 @@ function View(model, canvas_context)
 	this.drawer = new SchemaDrawer(this.model, this.ctx, this.scale, this.drawing_area);
 	this.current_hot_point = null;
 	this.new_connection = null;
+	this.model.drawer = this.drawer;
 }
 
 View.prototype.setScale = function(scale) {
