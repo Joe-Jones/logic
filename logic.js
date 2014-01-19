@@ -90,6 +90,10 @@ LogicSystem.prototype.setOutput = function(n, value) {
 	this.output_values[n] = value;
 };
 
+LogicSystem.prototype.injectTransient = function(n) {
+	this.transients[n] = true;
+};
+
 LogicSystem.prototype.runStep = function() {
 	var old_output_values = this.output_values;
 	this.output_values = runStep(this.gates, this.output_values);
@@ -921,6 +925,7 @@ SchemaModel.prototype.addConnection = function(connection) {
 	
 	// Add to the LogicSystem
 	this.logic_system.makeConnection(connection.output_item.number, connection.input_item.number, connection.input_num);
+	this.logic_system.injectTransient(connection.input_item.number);
 	this.logic_system.run();
 };
 
