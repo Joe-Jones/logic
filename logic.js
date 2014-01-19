@@ -498,7 +498,7 @@ function NandGate()
 /********************************************************************************************/
 {
 	this.initDragableThing()
-	this.type = "OR";
+	this.type = "NAND";
 }
 
 NandGate.prototype = new DragableThing();
@@ -535,7 +535,7 @@ function NorGate()
 /********************************************************************************************/
 {
 	this.initDragableThing()
-	this.type = "OR";
+	this.type = "NOR";
 }
 
 NorGate.prototype = new DragableThing();
@@ -572,7 +572,7 @@ function XorGate()
 /********************************************************************************************/
 {
 	this.initDragableThing()
-	this.type = "OR";
+	this.type = "XOR";
 }
 
 XorGate.prototype = new DragableThing();
@@ -609,7 +609,7 @@ function XnorGate()
 /********************************************************************************************/
 {
 	this.initDragableThing()
-	this.type = "OR";
+	this.type = "XNOR";
 }
 
 XnorGate.prototype = new DragableThing();
