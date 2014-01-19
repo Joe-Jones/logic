@@ -709,8 +709,8 @@ Bulb.prototype.draw = function(ctx, selected) {
 	ctx.stroke();
 	
 	ctx.fillRect(0.15, 0.15, 0.7, 0.7);
-	if(this.on) {
-		ctx.fillStyle = "red";
+	if(!this.on) {
+		ctx.fillStyle = "white";
 		ctx.fillRect(0.3, 0.3, 0.4, 0.4);
 	}
 	
