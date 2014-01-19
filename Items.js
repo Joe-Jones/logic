@@ -515,6 +515,42 @@ function makeGate(type) {
 }
 
 /********************************************************************************************/
+function SubCircit()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+
+}
+
+SubCircit.prototype = new DragableThing();
+
+SubCircit.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+
+	ctx.fillRect(0.15, 0.15, 0.7, 0.7);
+	if(!this.on) {
+		ctx.clearRect(0.3, 0.3, 0.4, 0.4);
+	}
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.15);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+SubCircit.prototype.outputs = function() {
+	return [this.top_left.plus(new Point(0.5, 0.05))];
+};
+
+SubCircit.prototype.inputs = function() {
+	return [this.top_left.plus(new Point(0.5, 0.05))];
+};
+
+/********************************************************************************************/
 function Connection(input_item, input_num, output_item, output_num)
 /********************************************************************************************/
 {
