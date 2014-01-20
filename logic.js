@@ -180,7 +180,7 @@ function drawGate(canvas, type) {
 }
 
 function createPallet() {
-	var gate_list = ["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR", "SWITCH", "BULB"];
+	var gate_list = ["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR", "SWITCH", "BULB", "INPUT", "OUTPUT"];
 	
 	// Create the elements
 	var html = '<table>';

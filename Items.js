@@ -491,6 +491,81 @@ Bulb.prototype.inputs = function() {
 	return [this.top_left.plus(new Point(0.5, 0.95))];
 };
 
+/********************************************************************************************/
+function Input()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+	this.type = "INPUT";
+}
+
+Input.prototype = new DragableThing();
+
+Input.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.05);
+	ctx.lineTo(0.5, 0.3);
+	ctx.stroke();
+	
+	// Circle
+	ctx.moveTo(0.7, 0.5);
+	ctx.arc(0.5, 0.5, 0.2, 0, Math.PI *2);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+Input.prototype.setState = function (state) {
+	this.on = state;
+}
+
+Input.prototype.outputs = function() {
+	return [this.top_left.plus(new Point(0.5, 0.05))];
+};
+
+/********************************************************************************************/
+function Output()
+/********************************************************************************************/
+{
+	this.initDragableThing()
+	this.type = "OUTPUT";
+	this.DisplaysState = true;
+}
+
+Output.prototype = new DragableThing();
+
+Output.prototype.draw = function(ctx, selected) {
+	ctx.save();
+	ctx.lineWidth = 0.05;
+	
+	//	Input
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.95);
+	ctx.lineTo(0.5, 0.7);
+	ctx.stroke();
+	
+	// Circle
+	ctx.moveTo(0.7, 0.5);
+	ctx.arc(0.5, 0.5, 0.2, 0, Math.PI *2);
+	ctx.stroke();
+	
+	ctx.restore();
+};
+
+Output.prototype.setState = function (state) {
+	this.on = state;
+}
+
+Output.prototype.inputs = function() {
+	return [this.top_left.plus(new Point(0.5, 0.95))];
+};
+
+
+
 function makeGate(type) {
 	switch(type) {
 		case "AND":
@@ -511,6 +586,10 @@ function makeGate(type) {
 			return new Switch();
 		case "BULB":
 			return new Bulb();
+		case "INPUT":
+			return new Input();
+		case "OUTPUT":
+			return new Output();
 	}
 }
 
