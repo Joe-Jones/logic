@@ -533,7 +533,6 @@ function Output()
 {
 	this.initDragableThing()
 	this.type = "OUTPUT";
-	this.DisplaysState = true;
 }
 
 Output.prototype = new DragableThing();
