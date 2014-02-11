@@ -20,7 +20,7 @@ SchemaModel.prototype.add = function(object) {
 	this.next_item_number++;
 	
 	//Add it to the LogicSystem
-	this.logic_system.addGate(object.number, object.type);
+	this.logic_system.addGate(object.type); //Todo, need to save the id that is returned by this method call
 	if (object.DisplaysState) {
 		this.logic_system.registerCallback(object.number,
 			function (new_state) {
@@ -158,31 +158,4 @@ SchemaModel.prototype.load = function(saved) {
 	}
 };
 
-SchemaModel.prototype.loadTemplate = function(template) {
-	var start_gate = this.next_item_number;
-	var gate_count = template["gates"].length;
-	for (var i = 0; i < template["gates"].length; i++) {
-		var item = template["gates"][i];
-		var id = this.nextItemId();
-		this.logic_system.addGate(id, item);
-	}
-	for (var i = 0; i < template["connections"].length; i++) {
-		var connection = template["connections"][i];
-		this.makeConnection(connection[0] + start_gate, connection[1] + start_gate, connection[2]);
-	}
-	var inputs = [];
-	for (var i = 0; i < template["inputs"]; i++) {
-		var input = template["inputs"][i];
-		inputs.push([ input[0] + start_gate, input[1]]);
-	}
-	return {
-		start_gate: start_gate,
-		gate_count: gate_count,
-		inputs: inputs,
-		outputs: template["outputs"]
-	};
-};
 
-SchemaModel.prototype.createTemplate = function() {
-	
-};

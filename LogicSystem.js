@@ -19,7 +19,9 @@ operations = {
 	"XOR": function(a, b) {return (a || b) && ! (a && b);},
 	"XNOR": function(a, b) {return (a && b) || (!a && !b);},
 	"BULB": function(a, b, c) {return a;},
-	"SWITCH": function(a, b, c) {return c;}
+	"SWITCH": function(a, b, c) {return c;},
+	"INPUT": function() {return false;},
+	"OUTPUT": function() {return false;}
 };
 
 function runStep(gates, input_values) {
@@ -53,16 +55,18 @@ function any(a) {
 function LogicSystem()
 /********************************************************************************************/
 {
-	this.gates = [];
+	this.gates = [null];
 	this.output_values = [false];
 	this.transients = [false];
 	this.callbacks = [];
 }
 
-LogicSystem.prototype.addGate = function(id, type) {
-	this.gates[id] = [type, 0, 0];
+LogicSystem.prototype.addGate = function(type) {
+	var id = this.gates.length;
+	this.gates.push([type, 0, 0]);
 	this.output_values[id] = initial_values[type];
 	this.transients[id] = initial_values[type];
+	return id;
 };
 
 LogicSystem.prototype.removeGate = function(id) {
@@ -85,13 +89,13 @@ LogicSystem.prototype.dropCallback = function(id) {
 	this.callbacks[i] = null;
 };
 
-LogicSystem.prototype.setOutput = function(n, value) {
-	this.transients[n] = true;
-	this.output_values[n] = value;
+LogicSystem.prototype.setOutput = function(id, value) {
+	this.transients[id] = true;
+	this.output_values[id] = value;
 };
 
-LogicSystem.prototype.injectTransient = function(n) {
-	this.transients[n] = true;
+LogicSystem.prototype.injectTransient = function(id) {
+	this.transients[id] = true;
 };
 
 LogicSystem.prototype.runStep = function() {
@@ -115,3 +119,71 @@ LogicSystem.prototype.run = function() {
 	}
 };
 
+LogicSystem.prototype.saveAsTemplate = function() {
+	var gate_map = {};
+	var inputs = {};
+	var outputs = {};
+	var counter = 0;
+	for (var i = 0; i < this.gates.length; i++) {
+		var gate = this.gates[i];
+		if (gate) {
+			if (gate[0] == "INPUT") {
+				inputs[i] = [];
+			} else if (gate[0] != "OUTPUT") {
+				gate_map[i] = counter;
+				counter ++;
+			}
+		}
+	}
+	var template = [];
+	for (var i = 0; i < this.gates.length; i++) {
+		var gate = this.gates[i];
+		if (gate) {
+			if (gate[0] == "OUTPUT") {
+				outputs[i] = gate_map[gate[1]];
+			} else if (gate[0] != "INPUT") {
+				var gate_to_save = [gate[0], 0, 0]
+				for (var input_num = 0; input_num <= 1; input_num++) {
+					var connected_to = gate[input_num + 1]; 
+					if (inputs[connected_to]) {
+						inputs[connected_to].push([gate_map[i], input_num]);
+					} else {
+						gate_to_save[input_num + 1] = gate_map[gate[input_num + 1]];
+					}
+				}
+				template.push(gate_to_save);
+			}
+		}
+	}
+	return {
+		"inputs": inputs,
+		"output": outputs,
+		"gates": template
+	};
+};
+
+LogicSystem.prototype.addTemplate = function(template) {
+	var start_gate = this.gates.length;
+	var gate_count = template["gates"].length;
+	for (var i = 0; i < gate_count; i++) {
+		var gate = template["gates"][i];
+		var id = this.addGate(gate[0]);
+		for (var j = 1; i <= 2; j++) {
+			if (this.gates[id][j]) {
+				this.gates[id][j] = gate[j] + start_gate;
+			}
+		}
+	}
+	var inputs = {};
+	_.each(_.keys(template["inputs"]), function(input_id) {
+		inputs[input_id] = _.map(template["inputs"][input_id], function(gate) { return [gate[0] + start_gate, gate[1]]; });
+	});
+	var outputs = {};
+	_.each(_.keys(template["outputs"]), function(output_id) {
+		outputs[output_id] = template["outputs"][output_id] + start_gate;
+	});
+	return {
+		inputs: inputs,
+		outputs: outputs
+	};
+};
