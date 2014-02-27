@@ -6,6 +6,7 @@ function SchemaView(model, canvas_context)
 	this.dragged_object = null;
 	this.drawing_area = BoxFromPointAndSize(new Point(0, 0), {width: 30, height: 30 }); 
 	this.scale = 30;
+	this.origin = new Point(0, 0);
 	this.ctx = canvas_context;
 	this.drawer = new SchemaDrawer(this.model, this.ctx, this.scale, this.drawing_area);
 	this.current_hot_point = null;
