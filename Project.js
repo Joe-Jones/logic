@@ -1,11 +1,11 @@
 
 
 /********************************************************************************************/
-function Sheet(canvas_context)
+function Sheet()
 /********************************************************************************************/
 {
 	this.model = new SchemaModel();
-	this.view = new SchemaView(this.model, canvas_context);
+	this.view = new SchemaView(this.model);
 }
 
 Sheet.prototype.template = function () {
@@ -36,14 +36,17 @@ Sheet.prototype.save = function () {
 };
 
 /********************************************************************************************/
-function Project(canvas)
+function Project()
 /********************************************************************************************/
 {
 	this.sheets = [];
-	this.widget = new LogicWidget(canvas)
 }
 
-Project.prototype.save  = function() {
+Project.prototype.addSheet = function() {
+	this.sheets.push(new Sheet());
+};
+
+Project.prototype.save = function() {
 	var that = this;
 	return {
 		'sheets':  _.map(that.sheets, function(sheet) { return sheet.save(); })
@@ -53,36 +56,44 @@ Project.prototype.save  = function() {
 Project.prototype.load = function (saved_project) {
 	var that = this;
 	this.sheets = _.map(saved_projects, function(sheet) {
-		var sheet = new Sheet(that.widget.ctx);
+		var sheet = new Sheet();
 		sheet.load(sheet);
 		return sheet;
 	});
 };
 
+/********************************************************************************************/
 var ProjectView = Backbone.View.extend({
-	tagName: 'div',
+/********************************************************************************************/
+	tagName: 'body',
+	
+	el: $('body'),
 	
 	
 	events: {
 		'click button#new_project': 'newProject'
 	},
 	
-	initialize: function(list) {
+	initialize: function(project) {
 		// _.bindAll(this, 'render'); // Turorial says I'm going to need this.
-		this.list = list;
+		this.project = project;
 		this.render();
+		this.widget.setSheet(this.project.sheets[0]);
 	},
 	
 	render: function() {
-		var html = "<div><canvas width="300" 
-		this.$el.html("<button id='new_project'>New Project</button>");
+		var html =	"<div id='pallet' class='layout'></div>" +
+					'<div id="canvas_div" class="layout"><canvas id="logic_canvas" width="100" height="100"></div>'
+		this.$el.html(html);
+		createPallet();
+		this.widget = new LogicWidget($('#logic_canvas')[0]);
 	},
 		
 		
 		
 });
 
-var ProjectList = Backbone.Collection.extend({
+/*var ProjectList = Backbone.Collection.extend({
 	model: ProjectListItem,
 	
 	constructor: function() {
@@ -96,7 +107,7 @@ var ProjectList = Backbone.Collection.extend({
 	addItem: function() {
 		console.log("in the event handler");
 	}
-});
+});*/
 
 
 var ProjectListItemView = Backbone.View.extend({
@@ -143,8 +154,11 @@ var ProjectListView = Backbone.View.extend({
 });
 
 
-var project_list;
-var project_list_view;
+//var project_list;
+//var project_list_view;
+
+var project;
+var project_view;
 
 $(document).ready(function() {
 		
@@ -167,8 +181,12 @@ $(document).ready(function() {
 
 	
 	
-	project_list = new ProjectList();
-	project_list_view = new ProjectListView(project_list);
+	//project_list = new ProjectList();
+	//project_list_view = new ProjectListView(project_list);
+	
+	project = new Project();
+	project.addSheet();
+	project_view = new ProjectView(project);
 	
 	
 		

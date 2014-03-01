@@ -1,16 +1,17 @@
 /********************************************************************************************/
-function SchemaDrawer(model, canvas_context, scale, drawing_area)
+function SchemaDrawer(model, scale, drawing_area)
 /********************************************************************************************/
 {
 	this.model = model;
-	this.ctx = canvas_context;
-	this.scale = scale;
 	this.drawing_area = drawing_area;
-	this.ctx.save()
-	this.setTransform();
 	this.highlight = null;
 	this.temp_connection = null;
 }
+
+SchemaDrawer.prototype.setContext = function(ctx) {
+	this.ctx = ctx;
+	this.setTransform();
+};
 
 SchemaDrawer.prototype.setScale = function(scale) {
 	this.scale = scale;

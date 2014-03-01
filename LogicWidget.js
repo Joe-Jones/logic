@@ -5,12 +5,12 @@ function LogicWidget(canvas)
 	var that = this;
 	this.canvas = canvas;
 	this.ctx = canvas.getContext("2d");
+	this.ctx.save()
 	//var model = new SchemaModel();
 	//this.view = new SchemaView(model, this.ctx);
 	//this.origin = new Point(0, 0);
 	//this.scale = 30;
-	this.view.setScale(this.scale);
-	this.windowResized();
+	
 	
 	canvas.addEventListener('contextmenu',
 		function(event) {
@@ -161,10 +161,13 @@ LogicWidget.prototype.drop = function(point, event) {
 	this.view.addObject(type, point);
 };
 
-LogicWidget.prototype.switchSheet = function (sheet) {
+LogicWidget.prototype.setSheet = function (sheet) {
 	this.view = sheet.view;
 	this.scale = sheet.view.scale;
 	this.origin = sheet.view.origin;
-}
+	this.view.setContext(this.ctx);	
+	this.view.setScale(this.scale);
+	this.windowResized();
+};
 
 
