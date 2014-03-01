@@ -1,4 +1,6 @@
+syntax: glob
 a.out
-logic.html~
-logic.js~
-logic.css~
+*~
+all-javascript.js
+closure/compiler-latest.zip
+logic-compiled.js.gz
