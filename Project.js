@@ -62,13 +62,26 @@ Project.prototype.load = function (saved_project) {
 	});
 };
 
+var sheetView = Backbone.View.extend({
+		
+	tagName: 'canvas',
+	id: 'canvas',
+	
+	initialize: function(sheet) {
+		this.sheet = sheet;
+	},
+	
+	render: function() {
+		this.logic_widget = new LogicWidget(this.el);
+		this.logic_widget.setSheet(this.sheet);
+	}
+		
+});
+
 /********************************************************************************************/
 var ProjectView = Backbone.View.extend({
 /********************************************************************************************/
-	tagName: 'body',
-	
-	el: $('body'),
-	
+	tagName: 'div',
 	
 	events: {
 		'click button#new_project': 'newProject'
@@ -82,13 +95,16 @@ var ProjectView = Backbone.View.extend({
 	},
 	
 	render: function() {
-		var html =	"<div id='pallet' class='layout'></div>" +
-					'<div id="canvas_div" class="layout"><canvas id="logic_canvas" width="100" height="100"></div>'
+		var html =	"";
 		this.$el.html(html);
 		createPallet();
 		this.widget = new LogicWidget($('#logic_canvas')[0]);
 	},
+	
+	addSheet: function(sheet) {
 		
+		
+	}
 		
 		
 });
@@ -157,7 +173,7 @@ var ProjectListView = Backbone.View.extend({
 //var project_list;
 //var project_list_view;
 
-var project;
+/*var project;
 var project_view;
 
 $(document).ready(function() {
@@ -190,7 +206,7 @@ $(document).ready(function() {
 	
 	
 		
-});
+});*/
 
 
 

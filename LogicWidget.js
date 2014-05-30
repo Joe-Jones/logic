@@ -105,7 +105,7 @@ LogicWidget.prototype.pointFromEvent = function(event) {
 };
 
 LogicWidget.prototype.windowResized = function() {
-	var canvas_div = document.getElementById("canvas_div");
+	var canvas_div = document.getElementById("canvas");
 	this.ctx.canvas.width = canvas_div.offsetWidth;
 	this.ctx.canvas.height = canvas_div.offsetHeight;
 	this.ctx.rotate(Math.PI / 2);
