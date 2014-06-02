@@ -18,6 +18,63 @@ var Wrapper = Backbone.View.extend({
 	
 });
 
+var VBox = Backbone.View.extend({
+		
+	className: 'VBox',
+		
+	initialize: function() {
+		this._children = [];
+		this._vivified = false;
+	},
+		
+	render: function() {
+		var that = this;
+		_.each(this._children, function(child) {
+			that.$el.append(child.$el);
+			child.render();
+		});
+		this._vivified = true;
+		return this;
+	},
+	
+	addChild: function(child) {
+		this._children.push(child);
+		if (this._vivified) {
+			this.$el.append(child.$el);
+			child.render();
+		}
+	}
+	
+});
+
+var Canvas = Backbone.View.extend({
+
+		
+	initialize: function() {
+		this._vivified = false;
+		_.bindAll(this, "_resized");
+	},
+		
+	render: function() {
+		this.$el.html("<canvas>");
+		this.$canvas = this.$("canvas");
+		this.canvas = this.$canvas[0];
+		this.ctx = this.canvas.getContext("2d");
+		this._resized();
+		window.addEventListener('resize', this._resized, false);
+	},
+	
+	_resized: function() {
+		console.log(this.$el.width());
+		this.canvas.width = this.$el.width();
+		this.canvas.height = this.$el.height();
+		if (this.onresize) {
+			this.onresize();
+		}
+	}
+	
+});
+
 var W2Toolbar = Backbone.View.extend({
 	
 	tag: 'div',
@@ -29,7 +86,7 @@ var W2Toolbar = Backbone.View.extend({
 	render: function() {
 		this.$el.w2toolbar(this.template);
 	}
-		
+
 });
 
 var W2Layout = Backbone.View.extend({
@@ -64,3 +121,4 @@ var W2Layout = Backbone.View.extend({
 	}
 	
 });
+

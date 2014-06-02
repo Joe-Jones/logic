@@ -80,8 +80,8 @@ $(document).ready(function() {
 		var layout = new W2Layout({
 				name: 'mainLayout',
 				panels: [
-					{ type: 'top',  size: 50, resizable: false, style: '', content: 'top' },
-					{ type: 'left', size: 200, resizable: true, style: pstyle, content: 'left' },
+					//{ type: 'top',  size: 32, resizable: false, style: '', content: 'top' },
+					{ type: 'left', size: 75, resizable: false, style: pstyle, content: 'left' },
 					{ type: 'main', style: pstyle, content: 'main' },
 					/*{ type: 'preview', size: '50%', resizable: true, style: pstyle, content: 'preview' },
 					{ type: 'right', size: 200, resizable: true, style: pstyle, content: 'right' },
@@ -103,12 +103,16 @@ $(document).ready(function() {
 		var pallet = new Pallet();
 		
 		var sheet = new Sheet();
-		var view = new sheetView(sheet);
+		var view = new LogicWidget(sheet);
 		
-		layout.setChild("top", menu);
+		//layout.setChild("top", menu);
 		layout.setChild("left", pallet);
 		layout.setChild("main", view);
 		
+		vbox = new VBox();
 		
-		body.setChild(layout);
+		vbox.addChild(menu);
+		vbox.addChild(layout);
+		
+		body.setChild(vbox);
 });
