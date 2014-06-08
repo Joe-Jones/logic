@@ -33,59 +33,59 @@ SketchPad = JakeKit.Canvas.extend({
 	},
 	
 	pan_left: function() {
-		this.ctx.translate(5, 0);
+		this.translate(5, 0);
 		this.invalidate();
 		this.doDraw();
 	},
 	
 	pan_right: function() {
-		this.ctx.translate(-5, 0);
+		this.translate(-5, 0);
 		this.invalidate();
 		this.doDraw();
 	},
 	
 	pan_up: function() {
-		this.ctx.translate(0, -5);
+		this.translate(0, -5);
 		this.invalidate();
 		this.doDraw();
 	},
 	
 	pan_down: function() {
-		this.ctx.translate(0, 5);
+		this.translate(0, 5);
 		this.invalidate();
 		this.doDraw();
 	},
 	
 	zoom_in: function() {
-		this.scale(1.1);
+		this.do_scale(1.1);
 	},
 	
 	zoom_out: function() {
-		this.scale(0.9);
+		this.do_scale(0.9);
 	},
 	
-	scale: function(factor) {
+	do_scale: function(factor) {
 		var centre = this.centre();
-		this.ctx.translate(centre.multiply(factor));
-		this.ctx.scale(factor, factor);
-		this.ctx.translate($V([0, 0, 1]).subtract(centre).multiply(factor));
+		this.translate(centre.multiply(factor));
+		this.scale(factor, factor);
+		this.translate($V([0, 0, 1]).subtract(centre).multiply(factor));
 		this.invalidate();
 		this.doDraw();
 	},
 	
 	rotate_right: function() {
-		this.rotate(0.1);
+		this.do_rotate(0.1);
 	},
 	
 	rotate_left: function() {
-		this.rotate(-0.1);
+		this.do_rotate(-0.1);
 	},
 	
-	rotate: function(angle) {
+	do_rotate: function(angle) {
 		var centre = this.centre();
-		this.ctx.translate(centre);
-		this.ctx.rotate(angle);
-		this.ctx.translate($V([0, 0, 1]).subtract(centre));
+		this.translate(centre);
+		this.rotate(angle);
+		this.translate($V([0, 0, 1]).subtract(centre));
 		this.invalidate();
 		this.doDraw();
 	},

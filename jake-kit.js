@@ -130,65 +130,57 @@ JakeKit = {};
 			this.canvas = this.$canvas[0];
 			this.ctx = this.canvas.getContext("2d");
 			
-			// Override the context methods that changes the transformation.
-			var that = this;
-			this._original_methods = _.pick(this.ctx, "save", "restore", "scale", "rotate", "translate", "transform", "setTransform");
-			var replacement_methods = {
-				
-				save: function() {
-					that._saveCanvasAttributes();
-					that._canvas_state_stack.push({ transformation: _.last(that.matrix_stack).dup(), attributes: {} });
-					that._original_methods.save.call(that.ctx);
-				},
-					
-				restore: function() {
-					that._original_methods.restore.call(that.ctx);
-					if (that._canvas_state_stack.length > 1) {
-						that._canvas_state_stack.pop();
-						that._current_inverse = _.last(that._canvas_state_stack).transformation.inv();
-					}
-				},
-				
-				scale: function(x, y) {
-					that._original_methods.scale.call(that.ctx, x, y);
-					that._changeMatrix(function(matrix) { return matrix.multiply($M([[x, 0, 0], [0, y, 0], [0, 0, 1]])); });
-				},
-				
-				rotate: function(angle) {
-					that._original_methods.rotate.call(that.ctx, angle);
-					that._modifyMatrix($M([[Math.cos(angle), -Math.sin(angle), 0], [Math.sin(angle), Math.cos(angle), 0], [0, 0, 1]]));
-				},
-				
-				translate: function(x, y) {
-					var x_, y_;
-					if (_.isNumber(x)) {
-						x_ = x;
-						y_ = y;
-					} else {
-						x_ = x.elements[0];
-						y_ = x.elements[1];
-					}
-					that._original_methods.translate.call(that.ctx, x_, y_);
-					that._changeMatrix(function(matrix) { return matrix.multiply($M([[1, 0, x_], [0, 1, y_], [0, 0, 1]])); });
-				},
-				
-				transform: function(m11, m12, m21, m22, dx, dy) {
-					that._original_methods.transform.call(that.ctx, m11, m12, m21, m22, dx, dy);
-				},
-				
-				setTransform: function(m11, m12, m21, m22, dx, dy) {
-					that._original_methods.setTransform.call(that.ctx, m11, m12, m21, m22, dx, dy);
-				}
-					
-			};
-			_.extend(this.ctx, replacement_methods);
-			
 			this._canvas_state_stack = [{ transformation: Matrix.I(3), attributes: {} }];
 			this._current_inverse = Matrix.I(3);
 			
 			this._resized();
 			window.addEventListener('resize', this._resized, false);
 			this.draw(this.ctx);
+		},
+		
+		save: function() {
+			this._saveCanvasAttributes();
+			this._canvas_state_stack.push({ transformation: _.last(this._canvas_state_stack).transformation.dup(), attributes: {} });
+			this.ctx.save();
+		},
+			
+		restore: function() {
+			this.ctx.restore();
+			if (this._canvas_state_stack.length > 1) {
+				this._canvas_state_stack.pop();
+				this._current_inverse = _.last(this._canvas_state_stack).transformation.inv();
+			}
+		},
+		
+		scale: function(x, y) {
+			this.ctx.scale(x, y);
+			this._modifyMatrix($M([[x, 0, 0], [0, y, 0], [0, 0, 1]]));
+		},
+		
+		rotate: function(angle) {
+			this.ctx.rotate(angle);
+			this._modifyMatrix($M([[Math.cos(angle), -Math.sin(angle), 0], [Math.sin(angle), Math.cos(angle), 0], [0, 0, 1]]));
+		},
+		
+		translate: function(x, y) {
+			var x_, y_;
+			if (_.isNumber(x)) {
+				x_ = x;
+				y_ = y;
+			} else {
+				x_ = x.elements[0];
+				y_ = x.elements[1];
+			}
+			this.ctx.translate(x_, y_);
+			this._modifyMatrix($M([[1, 0, x_], [0, 1, y_], [0, 0, 1]]));
+		},
+		
+		transform: function(m11, m12, m21, m22, dx, dy) {
+			this.ctx.transform(m11, m12, m21, m22, dx, dy);
+		},
+		
+		setTransform: function(m11, m12, m21, m22, dx, dy) {
+			this.ctx.setTransform(m11, m12, m21, m22, dx, dy);
 		},
 		
 		_changeMatrix: function(f) {
@@ -211,7 +203,7 @@ JakeKit = {};
 			var that = this;
 			_.each(this._canvas_state_stack, function(state, index) {
 				var T = state.transformation;
-				that._original_methods.setTransform.call(that.ctx, T.e(1, 1), T.e(2, 1), T.e(1, 2), T.e(2, 2), T.e(1, 3), T.e(2, 3));
+				that.ctx.setTransform(T.e(1, 1), T.e(2, 1), T.e(1, 2), T.e(2, 2), T.e(1, 3), T.e(2, 3));
 				// Todo, recreate all the other state here.
 				if (index != that._canvas_state_stack.length - 1) {
 					that._original_methods.save.call(that.ctx);
