@@ -7,6 +7,8 @@ JakeKit = {};
 		
 		initialize: function(element) {
 			this.$el = element;
+			_.bindAll(this, "_resized");
+			window.addEventListener('resize', this._resized, false);
 		},
 		
 		render: function() {
@@ -18,6 +20,13 @@ JakeKit = {};
 			this.$el.empty()
 			this.$el.append(this.child.$el);
 			this.child.render();
+			this._resized();
+		},
+		
+		_resized: function() {
+			if (_.isObject(this.child) && _.isFunction(this.child._resized)) {
+				this.child._resized();
+			}
 		}
 		
 	});
@@ -47,6 +56,21 @@ JakeKit = {};
 				this.$el.append(child.$el);
 				child.render();
 			}
+		},
+		
+		_resized: function() {
+			var height = this.$el.height();
+			var last_index = this._children.length - 1;
+			_.each(this._children, function(child, index) {
+				if (index != last_index) {
+					height -= child.$el.height();
+				} else {
+					child.$el.height(height);
+				}
+				if (_.isFunction(child._resized)) {
+					child._resized();
+				}
+			});
 		}
 		
 	});
@@ -76,6 +100,21 @@ JakeKit = {};
 				this.$el.append(child.$el);
 				child.render();
 			}
+		},
+		
+		_resized: function() {
+			var width = this.$el.width();
+			var last_index = this._children.length - 1;
+			_.each(this._children, function(child, index) {
+				if (index != last_index) {
+					width -= child.$el.width();
+				} else {
+					child.$el.width(width);
+				}
+				if (_.isFunction(child._resized)) {
+					child._resized();
+				}
+			});
 		}
 		
 	});
@@ -84,6 +123,8 @@ JakeKit = {};
 	
 		tag: 'div',
 		
+		className: '.Jake-Kit-Layout',
+		
 		initialize: function(template) {
 			this.template = template;
 			this.name = _.uniqueId("JakeKit_W2Toolbar");
@@ -91,7 +132,8 @@ JakeKit = {};
 		
 		render: function() {
 			var that = this;
-			this.$el.w2toolbar({ name: this.name, items: this.template});
+			this.$el.html("<div>");
+			this.$("div").w2toolbar({ name: this.name, items: this.template});
 			w2ui[this.name].on("click", function(event) {
 				that.trigger(event.target);	
 			});
@@ -161,7 +203,6 @@ JakeKit = {};
 			
 		initialize: function() {
 			this._vivified = false;
-			_.bindAll(this, "_resized");
 		},
 			
 		render: function() {
@@ -174,7 +215,6 @@ JakeKit = {};
 			this._current_inverse = Matrix.I(3);
 			
 			this._resized();
-			window.addEventListener('resize', this._resized, false);
 			if (_.isFunction(this.ready)) {
 				this.ready();
 			}
