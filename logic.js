@@ -89,8 +89,7 @@ $(document).ready(function() {
 	
 	var pallet = new Pallet();
 	
-	var sheet = new Sheet();
-	var view = new LogicWidget(sheet);
+	var view = new SchemaView();
 	
 	vbox = new JakeKit.VBox();
 	hbox = new JakeKit.HBox();
