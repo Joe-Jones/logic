@@ -45,19 +45,19 @@ SchemaModel.prototype.remove = function(object) {
 	}
 };
 
-SchemaModel.prototype.allObjectsTouchingBox = function(box, include_connections) {
+SchemaModel.prototype.allObjectsTouchingBox = function(box, include_connections) { // This just gets everything now
 	var results = [];
 	var connection_numbers = [];
 	for (var i = 0; i < this.objects.length; i++) {
 		var object = this.objects[i];
-		if (object.boundingBox().intersects(box)) {
+		if (true || object.boundingBox().intersects(box)) {
 			results.push(object);
 		}
 		if (include_connections) {
 			var connections = object.allConnections();
 			for (var j = 0; j < connections.length; j++) {
 				var connection = connections[j];
-				if (connection.boundingBox().intersects(box) && !connection_numbers[connection.number]) {
+				if ((true || connection.boundingBox().intersects(box)) && !connection_numbers[connection.number]) {
 					results.push(connection);
 					connection_numbers[connection.number] = true;
 				}

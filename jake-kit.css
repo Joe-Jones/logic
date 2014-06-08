@@ -10,6 +10,14 @@
 	height: 100%;
 }
 
+.Jake-Kit-HBox {
+	height: 100%;
+}
+
+.Jake-Kit-HBox > * {
+	float: left;
+}
+
 .Jake-Kit-Canvas {
 	height: 100%;
 	overflow: hidden;

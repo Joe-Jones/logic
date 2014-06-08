@@ -51,6 +51,35 @@ JakeKit = {};
 		
 	});
 	
+	JakeKit.HBox = Backbone.View.extend({
+			
+		className: 'Jake-Kit-Layout Jake-Kit-HBox',
+			
+		initialize: function() {
+			this._children = [];
+			this._vivified = false;
+		},
+		
+		render: function() {
+			var that = this;
+			_.each(this._children, function(child) {
+				that.$el.append(child.$el);
+				child.render();
+			});
+			this._vivified = true;
+			return this;
+		},
+		
+		addChild: function(child) {
+			this._children.push(child);
+			if (this._vivified) {
+				this.$el.append(child.$el);
+				child.render();
+			}
+		}
+		
+	});
+	
 	JakeKit.W2Toolbar = Backbone.View.extend({
 	
 		tag: 'div',
@@ -73,6 +102,17 @@ JakeKit = {};
 	var pointFromEvent = function(event) {
 		// This code is bases on the snipit found in https://bugzilla.mozilla.org/show_bug.cgi?id=122665#c3
 		// There is some more background in https://bugzilla.mozilla.org/show_bug.cgi?id=69787
+		
+		// Get the position out of the event
+		var event_x, event_y;
+		if (event.type == "drop") {
+			event_x = event.originalEvent.pageX;
+			event_y = event.originalEvent.pageY;
+		} else {
+			event_x = event.pageX;
+			event_y = event.pageY;
+		}
+		
 		var element = event.target;
 		var offset_x = 0;
 		var offset_y = 0;
@@ -81,8 +121,8 @@ JakeKit = {};
 			offset_y += element.offsetTop;
 			element = element.offsetParent;
 		}
-		var x = event.pageX - offset_x;
-		var y = event.pageY - offset_y;
+		var x = event_x - offset_x;
+		var y = event_y - offset_y;
 		return($V([x, y, 1]));
 	};
 		
@@ -105,12 +145,12 @@ JakeKit = {};
 		
 		constructor: function() {
 			var that = this;
-			Backbone.View.apply(this, []);
+			Backbone.View.apply(this, arguments);
 			var mouse_events = {};
 			_.each(_.keys(this.mouseEvents), function(key) {
 				var f = that.mouseEvents[key];
 				if (!_.isFunction(f)) {
-					f = that[key];
+					f = that[f];
 				}
 				f = wrapMouseHandler(f, that);
 				mouse_events[key] = f;
@@ -135,6 +175,9 @@ JakeKit = {};
 			
 			this._resized();
 			window.addEventListener('resize', this._resized, false);
+			if (_.isFunction(this.ready)) {
+				this.ready();
+			}
 			this.draw(this.ctx);
 		},
 		

@@ -74,45 +74,32 @@ var MainView = Backbone.View.extend({
 	
 var body;
 $(document).ready(function() {
-		body = new Wrapper($('body'));
-		
-		var pstyle = 'background-color: #F5F6F7; border: 1px solid #dfdfdf; padding: 5px;';
-		var layout = new W2Layout({
-				name: 'mainLayout',
-				panels: [
-					//{ type: 'top',  size: 32, resizable: false, style: '', content: 'top' },
-					{ type: 'left', size: 75, resizable: false, style: pstyle, content: 'left' },
-					{ type: 'main', style: pstyle, content: 'main' },
-					/*{ type: 'preview', size: '50%', resizable: true, style: pstyle, content: 'preview' },
-					{ type: 'right', size: 200, resizable: true, style: pstyle, content: 'right' },
-					{ type: 'bottom', size: 50, resizable: true, style: pstyle, content: 'bottom' }*/]});
-		
-		var menu = new W2Toolbar({
-			name: "menu",
-			items: [
-				{ type: "menu", id: "project_menu", caption: "Project", items: [
-					{ text: "New" },
-					{ text: "Rename" },
-					{ text: "Open" },
-					{ text: "Save" }
-				]},
-				{ type: "menu", id: "sheet_nemu", caption: "Schema", items: [
-					{ text: "New" },
-					{ text: "Rename" }]}]});
-		
-		var pallet = new Pallet();
-		
-		var sheet = new Sheet();
-		var view = new LogicWidget(sheet);
-		
-		//layout.setChild("top", menu);
-		layout.setChild("left", pallet);
-		layout.setChild("main", view);
-		
-		vbox = new VBox();
-		
-		vbox.addChild(menu);
-		vbox.addChild(layout);
-		
-		body.setChild(vbox);
+	body = new JakeKit.Wrapper($('body'));
+
+	var menu = new JakeKit.W2Toolbar([
+			{ type: "menu", id: "project_menu", caption: "Project", items: [
+				{ text: "New" },
+				{ text: "Rename" },
+				{ text: "Open" },
+				{ text: "Save" }
+			]},
+			{ type: "menu", id: "sheet_nemu", caption: "Schema", items: [
+				{ text: "New" },
+				{ text: "Rename" }]}]);
+	
+	var pallet = new Pallet();
+	
+	var sheet = new Sheet();
+	var view = new LogicWidget(sheet);
+	
+	vbox = new JakeKit.VBox();
+	hbox = new JakeKit.HBox();
+	
+	hbox.addChild(pallet);
+	hbox.addChild(view);
+	
+	vbox.addChild(menu);
+	vbox.addChild(hbox);
+	
+	body.setChild(vbox);
 });

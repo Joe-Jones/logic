@@ -4,38 +4,22 @@ function SchemaView(model)
 {
 	this.model = model;
 	this.dragged_object = null;
-	this.drawing_area = BoxFromPointAndSize(new Point(0, 0), {width: 30, height: 30 }); 
-	this.scale = 30;
-	this.origin = new Point(0, 0);
-	this.drawer = new SchemaDrawer(this.model, this.scale, this.drawing_area);
+	this.drawer = new SchemaDrawer(this.model);
 	this.current_hot_point = null;
 	this.new_connection = null;
 	this.model.drawer = this.drawer;
 }
 
-SchemaView.prototype.setContext = function (ctx) {
+SchemaView.prototype.setContext = function (ctx, widget) {
+	this.widget = widget;
 	this.ctx = ctx;
 	this.drawer.setContext(ctx);
-};
-
-SchemaView.prototype.setScale = function(scale) {
-	this.scale = scale;
-	this.drawer.setScale(scale);
-	this.drawer.clear();
-	this.drawer.draw();
-};
-
-SchemaView.prototype.setDrawingArea = function(drawing_area) {
-	this.drawing_area = drawing_area;
-	this.drawer.setDrawingArea(drawing_area);
-	this.drawer.invalidateRectangle(drawing_area);
-	this.drawer.draw();
 };
 
 SchemaView.prototype.beginDrag = function(point) {
 	if (this.current_hot_point) { // We are we creating a connection.
 		this.drawer.removeHighlight(this.current_hot_point.position);
-		this.drawer.draw();
+		this.widget.invalidate();
 		var input_item; var input_num; var output_item; var output_num;
 		if (this.current_hot_point.type == "INPUT") {
 			if (this.current_hot_point.item.hasInputConnection(this.current_hot_point.number)) {
@@ -106,7 +90,7 @@ SchemaView.prototype.endDrag = function(point) {
 		//Leave the thing in its new position
 		this.dragged_object = null;
 	}
-	this.drawer.draw();
+	this.widget.invalidate();
 };
 
 SchemaView.prototype.cancelDrag = function() {
@@ -118,7 +102,7 @@ SchemaView.prototype.cancelDrag = function() {
 		this.drawer.moveItem(this.dragged_object, this.original_position);
 		this.dragged_object = null;
 	}
-	this.drawer.draw();
+	this.widget.invalidate();
 };
 
 SchemaView.prototype.beginDragWithNewObject = function(point, object) {
@@ -129,8 +113,8 @@ SchemaView.prototype.addObject = function(type, at) {
 	var object = makeGate(type);
 	this.model.add(object);
 	object.setPosition(at);
-	this.drawer.invalidateRectangle(object.boundingBox());
-	this.drawer.draw();
+	//this.drawer.invalidateRectangle(object.boundingBox());
+	this.widget.invalidate();
 };
 
 SchemaView.prototype.updateHighlighting = function(hot_point) {
@@ -157,7 +141,7 @@ SchemaView.prototype.updateHighlighting = function(hot_point) {
 SchemaView.prototype.mouseOver = function(position) {
 	var hot_point = this.model.hotPoint(position);
 	this.updateHighlighting(hot_point);
-	this.drawer.draw();
+	this.widget.invalidate();
 };
 
 SchemaView.prototype.click = function(position) {
@@ -165,9 +149,9 @@ SchemaView.prototype.click = function(position) {
 	if (objects.length > 0) {
 		object = objects[0];
 		if(object.click()) {
-			this.drawer.invalidateRectangle(object.boundingBox());
+			//this.drawer.invalidateRectangle(object.boundingBox());
 		}
 	}
-	this.drawer.draw();
+	this.widget.invalidate();
 };
 

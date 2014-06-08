@@ -10,7 +10,7 @@ function SchemaDrawer(model, scale, drawing_area)
 
 SchemaDrawer.prototype.setContext = function(ctx) {
 	this.ctx = ctx;
-	this.setTransform();
+	//this.setTransform();
 };
 
 SchemaDrawer.prototype.setScale = function(scale) {
@@ -21,14 +21,6 @@ SchemaDrawer.prototype.setScale = function(scale) {
 SchemaDrawer.prototype.setDrawingArea = function(drawing_area) {
 	this.drawing_area = drawing_area;
 	this.setTransform();
-};
-
-SchemaDrawer.prototype.setTransform = function() {
-	this.ctx.restore();
-	this.ctx.save();
-	this.ctx.scale(this.scale, this.scale);
-	this.ctx.translate(smallest(this.drawing_area.left, this.drawing_area.right), biggest(this.drawing_area.top, this.drawing_area.bottom));
-	this.invalid_rectangle = this.drawing_area;
 };
 
 SchemaDrawer.prototype.clear = function() { // We can probably do without this now.
@@ -48,22 +40,22 @@ SchemaDrawer.prototype.invalidateRectangle = function(rectangle) {
 };
 
 SchemaDrawer.prototype.draw = function(exclude_item) {
-	if (this.temp_connection) {
+	/*if (this.temp_connection) {
 		this.invalidateRectangle(this.temp_connection.boundingBox().expand(0.1));
-	}
-	if (this.invalid_rectangle) {
+	}*/
+	if (true || this.invalid_rectangle) {
 		// Set up the clip path.
-		this.ctx.save();
+		/*this.ctx.save();
 		this.ctx.beginPath();
 		this.ctx.moveTo(this.invalid_rectangle.left, this.invalid_rectangle.top);
 		this.ctx.lineTo(this.invalid_rectangle.right, this.invalid_rectangle.top);
 		this.ctx.lineTo(this.invalid_rectangle.right, this.invalid_rectangle.bottom);
 		this.ctx.lineTo(this.invalid_rectangle.left, this.invalid_rectangle.bottom);
 		this.ctx.closePath();
-		this.ctx.clip();
+		this.ctx.clip();*/
 		
 		// Delete the old rectangle.
-		this.ctx.clearRect(this.invalid_rectangle.left, this.invalid_rectangle.top, this.invalid_rectangle.width(), this.invalid_rectangle.height());
+		//this.ctx.clearRect(this.invalid_rectangle.left, this.invalid_rectangle.top, this.invalid_rectangle.width(), this.invalid_rectangle.height());
 		
 		// Draw everything that might have been deleted or damaged by the clearRect.
 		var all_needing_redrawn = this.model.allObjectsTouchingBox(this.invalid_rectangle, true);
@@ -83,7 +75,7 @@ SchemaDrawer.prototype.draw = function(exclude_item) {
 		}
 		
 		// Drop the clip path and draw item in new position.
-		this.ctx.restore();
+		//this.ctx.restore();
 		
 		this.invalid_rectangle = null;
 	}
