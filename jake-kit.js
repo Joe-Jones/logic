@@ -119,7 +119,67 @@ JakeKit = {};
 		
 	});
 	
-	JakeKit.W2Toolbar = Backbone.View.extend({
+	JakeKit.Stack = Backbone.View.extend({
+		
+		className: 'Jake-Kit-Layout Jake-Kit-Stack',
+		
+		initialize: function() {
+			this._children = {};
+			this._vivified = false;
+		},                             
+		
+		render: function() {
+			var that = this;
+			this._vivified = true;
+			_.each(this._children, function(child) {
+				that._addChild(child);
+			});
+			if (this._active_child) {
+				this.makeActive(this._active_child);
+			}
+			this._resized();
+		},
+		
+		_resized: function() {
+			if (this._active_child) {
+				var view = this._active_child
+				var $el = view.$el;
+				$el.height(this.$el.height());
+				$el.width(this.$el.width());
+				view._resized();
+			}
+		},
+		
+		addChild: function(child) {
+			var new_child = { view: child, id: _.uniqueId("JakeKit_Stack") };
+			this._children[child.cid] = new_child;
+			if (this._vivified) {
+				this._addChild(new_child);
+			}
+		},
+		
+		_addChild: function(child) {
+			child.view.render();
+			this.$el.append(child.view.$el);
+			child.view.$el.hide();
+		},
+		
+		makeActive: function(child) {
+			if (this._vivified) {
+				if (this._active_child) {
+					this._active_child.$el.hide();
+				}
+				this._children[child.cid].view.$el.show();
+				this._active_child = child;
+				this._resized();
+			} else {
+				this._active_child = child;
+			}
+		}
+			
+	});
+	
+	JakeKit.w2toolbar = Backbone.View.extend({
 	
 		tag: 'div',
 		
@@ -127,7 +187,7 @@ JakeKit = {};
 		
 		initialize: function(template) {
 			this.template = template;
-			this.name = _.uniqueId("JakeKit_W2Toolbar");
+			this.name = _.uniqueId("JakeKit_w2toolbar");
 		},
 		
 		render: function() {
@@ -139,6 +199,92 @@ JakeKit = {};
 			});
 		}
 	
+	});
+	
+	JakeKit.w2tabs = Backbone.View.extend({
+		
+		className: 'Jake-Kit-Layout',
+		
+		initialize: function() {
+			this.name = _.uniqueId("JakeKit_w2tabs");
+			this._tabs = [];
+			this._vivified = false;
+		},
+		
+		render: function() {
+			var that = this;
+			this.$el.html("<div>");;
+			this.$("div").w2tabs({ 
+				name: this.name,
+				onClick: function(event) {
+					var id = event.target;
+					if (id != that._active_tab) {
+						that._active_tab = id;
+						that.trigger("tabChanged", id);
+					}
+				}
+			});
+			this._vivified = true;
+			_.each(this._tabs, function(tab) {
+				that._addTab(tab);
+			});
+			if (this._active_tab) {
+				this.makeActive(this._active_tab);
+			}
+		},
+		
+		_resized: function() {
+			
+		},
+		
+		addTab: function(id, caption) {
+			var new_tab = { id: id, caption: caption };
+			this._tabs.push(new_tab);
+			if (this._vivified) {
+				this._addTab(new_tab);
+			}
+		},
+		
+		_addTab: function(tab) {
+			w2ui[this.name].add({ id: tab.id, caption: tab.caption});
+		},
+		
+		makeActive: function(id) {
+			if (this._vivified) {
+				w2ui[this.name].select(id);
+			}
+			this._active_tab = id;
+		}
+		
+	});
+	
+	JakeKit.w2tabstack = JakeKit.VBox.extend({
+		
+		initialize: function() {
+			JakeKit.VBox.prototype.initialize.call(this);
+			this._tabs = new JakeKit.w2tabs();
+			JakeKit.VBox.prototype.addChild.call(this, this._tabs);
+			this._stack = new JakeKit.Stack();
+			JakeKit.VBox.prototype.addChild.call(this, this._stack);
+			this._views = {};
+			this.listenTo(this._tabs, "tabChanged", this._tabChanged);
+		},
+		
+		addChild: function(view, caption) {
+			this._views[view.cid] = view;
+			this._tabs.addTab(view.cid, caption);
+			this._stack.addChild(view);
+		},
+		
+		makeActive: function(view) {
+			this._tabs.makeActive(view.cid);
+			this._stack.makeActive(view);
+		},
+		
+		_tabChanged: function(id) {
+			this._stack.makeActive(this._views[id]);
+		}
+		
 	});
 	
 	var pointFromEvent = function(event) {

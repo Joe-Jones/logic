@@ -76,7 +76,7 @@ var body;
 $(document).ready(function() {
 	body = new JakeKit.Wrapper($('body'));
 
-	var menu = new JakeKit.W2Toolbar([
+	var menu = new JakeKit.w2toolbar([
 			{ type: "menu", id: "project_menu", caption: "Project", items: [
 				{ text: "New" },
 				{ text: "Rename" },
@@ -89,13 +89,28 @@ $(document).ready(function() {
 	
 	var pallet = new Pallet();
 	
-	var view = new SchemaView();
+	view1 = new SchemaView();
+	view2 = new SchemaView();
+	view3 = new SchemaView();
+	
+	var tabs = new JakeKit.w2tabstack();
+	tabs.addChild(view1, "Scheama 1");
+	tabs.addChild(view2, "Scheama 2");
+	tabs.addChild(view3, "Scheama 3");
+	tabs.makeActive(view1);
+	
+	//stack = new JakeKit.Stack();
+	//stack.addChild(view1);
+	//stack.addChild(view2);
+	//stack.addChild(view3);
+	//stack.makeActive(view1);
 	
 	vbox = new JakeKit.VBox();
 	hbox = new JakeKit.HBox();
 	
 	hbox.addChild(pallet);
-	hbox.addChild(view);
+	hbox.addChild(tabs);
+	//hbox.addChild(view1);
 	
 	vbox.addChild(menu);
 	vbox.addChild(hbox);
