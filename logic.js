@@ -48,72 +48,41 @@ Pallet = Backbone.View.extend({
 });
 
 /********************************************************************************************/
-var MainView = Backbone.View.extend({
+var MainView = JakeKit.VBox.extend({
 /********************************************************************************************/
-		
-	tagName: 'body',
-	
-	el: $('body'),
 	
 	initialize: function() {
-		this.menu = new Menu(main_menu);
-		this.render();
-	},
+		JakeKit.VBox.prototype.initialize.call(this);
+		
+		var menu = new JakeKit.w2toolbar([
+				{ type: "menu", id: "project_menu", caption: "Project", items: [
+						{ text: "New" },
+						{ text: "Rename" },
+						{ text: "Open" },
+						{ text: "Save" }
+				]},
+				{ type: "menu", id: "sheet_nemu", caption: "Schema", items: [
+						{ text: "New" },
+		{ text: "Rename" }]}]);
+		
+		var pallet = new Pallet();
+		
+		var project_view = new ProjectView();
 	
-	render: function() {
-		var html = 	"<table><tr><td id='main_menu'></td></tr><table>" +
-					"<div id='pallet' class='layout'></div>" +
-					'<div id="project_div" class="layout"></div>';
-		this.$el.html(html);
-		createPallet();
-		this.$el.find("#main_menu").replaceWith(this.menu.$el);
-		return this;
-	}
+		hbox = new JakeKit.HBox();
+		
+		hbox.addChild(pallet);
+		hbox.addChild(project_view);
+		
+		this.addChild(menu);
+		this.addChild(hbox);
+	},
 		
 });
 	
 var body;
 $(document).ready(function() {
 	body = new JakeKit.Wrapper($('body'));
-
-	var menu = new JakeKit.w2toolbar([
-			{ type: "menu", id: "project_menu", caption: "Project", items: [
-				{ text: "New" },
-				{ text: "Rename" },
-				{ text: "Open" },
-				{ text: "Save" }
-			]},
-			{ type: "menu", id: "sheet_nemu", caption: "Schema", items: [
-				{ text: "New" },
-				{ text: "Rename" }]}]);
-	
-	var pallet = new Pallet();
-	
-	view1 = new SchemaView();
-	view2 = new SchemaView();
-	view3 = new SchemaView();
-	
-	var tabs = new JakeKit.w2tabstack();
-	tabs.addChild(view1, "Scheama 1");
-	tabs.addChild(view2, "Scheama 2");
-	tabs.addChild(view3, "Scheama 3");
-	tabs.makeActive(view1);
-	
-	//stack = new JakeKit.Stack();
-	//stack.addChild(view1);
-	//stack.addChild(view2);
-	//stack.addChild(view3);
-	//stack.makeActive(view1);
-	
-	vbox = new JakeKit.VBox();
-	hbox = new JakeKit.HBox();
-	
-	hbox.addChild(pallet);
-	hbox.addChild(tabs);
-	//hbox.addChild(view1);
-	
-	vbox.addChild(menu);
-	vbox.addChild(hbox);
-	
-	body.setChild(vbox);
+	main_view = new MainView();
+	body.setChild(main_view);
 });

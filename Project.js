@@ -78,36 +78,6 @@ var sheetView = Backbone.View.extend({
 		
 });
 
-/********************************************************************************************/
-var ProjectView = Backbone.View.extend({
-/********************************************************************************************/
-	tagName: 'div',
-	
-	events: {
-		'click button#new_project': 'newProject'
-	},
-	
-	initialize: function(project) {
-		// _.bindAll(this, 'render'); // Turorial says I'm going to need this.
-		this.project = project;
-		this.render();
-		this.widget.setSheet(this.project.sheets[0]);
-	},
-	
-	render: function() {
-		var html =	"";
-		this.$el.html(html);
-		createPallet();
-		this.widget = new LogicWidget($('#logic_canvas')[0]);
-	},
-	
-	addSheet: function(sheet) {
-		
-		
-	}
-		
-		
-});
 
 /*var ProjectList = Backbone.Collection.extend({
 	model: ProjectListItem,
