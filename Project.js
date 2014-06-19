@@ -1,5 +1,3 @@
-
-
 /********************************************************************************************/
 function Sheet()
 /********************************************************************************************/
@@ -36,9 +34,9 @@ Sheet.prototype.save = function () {
 };
 
 /********************************************************************************************/
-function Project()
+//function Project()
 /********************************************************************************************/
-{
+/*{
 	this.sheets = [];
 }
 
@@ -60,40 +58,58 @@ Project.prototype.load = function (saved_project) {
 		sheet.load(sheet);
 		return sheet;
 	});
+};*/
+
+var database = {
+	id: "blojic",
+	description: "wert wert wert",
+	migrations: [
+		{
+			version: "1.1",
+			migrate: function(transaction, versionRequest, next) {
+				var db = transaction.db;
+				db.createObjectStore("projects", { keyPath: "id", autoIncrement : true });
+			
+				var schemas = db.createObjectStore("schemas", { keyPath: "id", autoIncrement : true });
+				schemas.createIndex("project_id", "project_id", { unique: false});
+			
+				db.createObjectStore("template_data", { keyPath: "id", autoIncrement : true });
+			
+				db.createObjectStore("schema_data", { keyPath: "id", autoIncrement : true });
+			}
+		}
+	]
+	
 };
 
-var sheetView = Backbone.View.extend({
-		
-	tagName: 'canvas',
-	id: 'canvas',
-	
-	initialize: function(sheet) {
-		this.sheet = sheet;
-	},
-	
-	render: function() {
-		this.logic_widget = new LogicWidget(this.el);
-		this.logic_widget.setSheet(this.sheet);
-	}
+var Project = Backbone.Model.extend({
+	storeName: "projects",
+	database:	database
 		
 });
 
+//p = new Project({test: "it works"});
+//p.save();
 
-/*var ProjectList = Backbone.Collection.extend({
-	model: ProjectListItem,
+var ProjectList = Backbone.Collection.extend({
+	database: database,
+	storeName: "projects",
+	model: Project
 	
-	constructor: function() {
+	/*constructor: function() {
 		//Backbone.Model.apply(arguments);
-	},
+	},*/
 	
 	//events: {
 		//add: 'addItem'
 	//},
 	
-	addItem: function() {
-		console.log("in the event handler");
-	}
-});*/
+	//addItem: function() {
+	//	console.log("in the event handler");
+	//}
+});
+
+
 
 
 var ProjectListItemView = Backbone.View.extend({
@@ -139,44 +155,39 @@ var ProjectListView = Backbone.View.extend({
 
 });
 
+function DataInterface() {
+	//this.createDatabase();
+}
 
-//var project_list;
-//var project_list_view;
-
-/*var project;
-var project_view;
-
-$(document).ready(function() {
+DataInterface.prototype = {
+	
+	createDatabase: function() {
 		
-	var db;
-	var open_db_request = indexedDB.open("projects", 1);
-	open_db_request.onerror = function(event) {
-		console.log("we may as well die right here");
-	};
-	open_db_request.onupgradeneeded = function(event) {
-		var db = event.target.result;
-		var projects = db.createObjectStore("projects", { autoIncrement : true });
-		var project_list = db.createObjectStore("project_list", { keyPath: "project_id"});
-		project_list.createIndex("name", "name", { unique: false});
-		project_list.createIndex("created", "created", { unique: false});
-		project_list.createIndex("last_modified", "last_modified", { unique: false});
-	};
-	onsuccess = function(event) {
-		db = open_db_request.result;
-	};
+		var db;
+		var open_db_request = indexedDB.open("logic", 1);
+		open_db_request.onerror = function(event) {
+			console.log("we may as well die right here");
+		};
+		open_db_request.onupgradeneeded = function(event) {
+			var db = event.target.result;
+			
+			db.createObjectStore("projects", { keyPath: "id", autoIncrement : true });
+			
+			var schemas = db.createObjectStore("schemas", { keyPath: "id", autoIncrement : true });
+			schemas.createIndex("project_id", "project_id", { unique: false});
+			
+			db.createObjectStore("template_data", { keyPath: "id", autoIncrement : true });
+			
+			db.createObjectStore("schema_data", { keyPath: "id", autoIncrement : true });
+		};
+		onsuccess = function(event) {
+			db = open_db_request.result;
+		};
 
+	},
 	
-	
-	//project_list = new ProjectList();
-	//project_list_view = new ProjectListView(project_list);
-	
-	project = new Project();
-	project.addSheet();
-	project_view = new ProjectView(project);
-	
-	
+	loadProjectList: function() {
 		
-});*/
-
-
-
+	},
+	
+};

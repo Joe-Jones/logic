@@ -159,8 +159,8 @@ JakeKit = {};
 		},
 		
 		_addChild: function(child) {
-			child.view.render();
 			this.$el.append(child.view.$el);
+			child.view.render();
 			child.view.$el.hide();
 		},
 		
@@ -174,6 +174,16 @@ JakeKit = {};
 				this._resized();
 			} else {
 				this._active_child = child;
+			}
+		},
+		
+		removeChild: function(child) {
+			delete this._children[child.cid];
+			if (this._active_child === child) {
+				this._active_child = false;
+			}
+			if (this._vivified) {
+				child.$el.detach();
 			}
 		}
 			
@@ -195,10 +205,14 @@ JakeKit = {};
 			this.$el.html("<div>");
 			this.$("div").w2toolbar({ name: this.name, items: this.template});
 			w2ui[this.name].on("click", function(event) {
-				that.trigger(event.target);	
+				if (_.isObject(event.subItem)) {
+					that.trigger(event.subItem.id);
+				} else {
+					that.trigger(event.target);
+				}
 			});
 		}
-	
+		
 	});
 	
 	JakeKit.w2tabs = Backbone.View.extend({
@@ -285,6 +299,82 @@ JakeKit = {};
 			this._stack.makeActive(this._views[id]);
 		}
 		
+	});
+	
+	JakeKit.w2popup = Backbone.View.extend({
+	
+		initialize: function(template) {
+			this._name = _.uniqueId("JakeKit_w2popup");
+			if (_.isObject(template)) {
+				this._template = template;
+			} else {
+				this._template = {};
+			}
+			this._template.body = "<div class=\"Jake-Kit-Layout\" style=\"width: 100%; height: 350px;\" id=\"" + this._name + "\"></div>";
+			//this._template.name = this._name;
+			this.vivified = false;
+		},
+		
+		render: function() {
+			w2popup.open(this._template);
+			this.$el = $("#" + this._name);
+			this._vivfied = true;
+			this._setChild();
+		},
+		
+		setChild: function(child) {
+			this._child = child;
+			if (this._vivified) {
+				this._setChild();
+			}
+		},
+		
+		_setChild: function() {
+			this.$el.empty()
+			this.$el.append(this._child.$el);
+			this._child.render();
+			this._resized();
+		},
+		
+		_resized: function() {
+			if (_.isObject(this._child)) {
+				this._child._resized();
+			}
+		}
+		
+	});
+	
+	JakeKit.w2grid = Backbone.View.extend({
+	
+		initialize: function(template) {
+			this._name = _.uniqueId("JakeKit_w2grid");
+			this._options = {
+				name: this._name
+			};
+			_.extend(this._options, _.pick(template, "columns", "records"));
+		},
+		
+		render: function() {
+			this.$el.html("<div>");
+			this.$el.w2grid(this._options);
+			var that = this;
+			w2ui[this._name].on('click', function(event) {
+				that.trigger('click', event);
+			});
+		},
+		
+		_resized: function() {
+			w2ui[this._name].resize();
+		},
+		
+		add: function() {
+			w2ui[this._name].add.apply(w2ui[this._name], arguments);
+		},
+		
+		destroy: function() {
+			w2ui[this._name].destroy();
+		}
+	
 	});
 	
 	var pointFromEvent = function(event) {
