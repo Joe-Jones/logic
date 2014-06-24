@@ -54,10 +54,14 @@ var MainView = JakeKit.Stack.extend({
 	initialize: function() {
 		JakeKit.Stack.prototype.initialize.call(this);
 		
+		_.bindAll(this, "setProject");
+		
+		// Create the user interface
+		
 		var menu = new JakeKit.w2toolbar([
 				{ type: "menu", id: "project_menu", caption: "Project", items: [
 						{ text: "New", id: "new_project" },
-						{ text: "Rename" },
+						{ text: "Rename", id: "rename_project" },
 						{ text: "Open", id: "open_project" },
 						{ text: "Save" }
 				]},
@@ -67,15 +71,18 @@ var MainView = JakeKit.Stack.extend({
 						
 		this.listenTo(menu, "new_project", this.newProject);
 		this.listenTo(menu, "open_project", this.showOpenProjectWindow);
+		this.listenTo(menu, "rename_project", this.showRenameProjectWindow);
+		this.listenTo(menu, "new_schema", this.newSchema);
+		this.listenTo(menu, "rename_schema", this.showRenameSchemaWindow);
 		
 		var pallet = new Pallet();
 		
-		var project_view = new ProjectView();
+		this.project_view = new ProjectView();
 	
 		var hbox = new JakeKit.HBox();
 		
 		hbox.addChild(pallet);
-		hbox.addChild(project_view);
+		hbox.addChild(this.project_view);
 		
 		this.main_window = new JakeKit.VBox();
 		
@@ -85,11 +92,46 @@ var MainView = JakeKit.Stack.extend({
 		this.addChild(this.main_window);
 		this.makeActive(this.main_window);
 		
-		this.data_interface = new DataInterface();
+		// Load data
+		
+		this.config = new Config({id: 0});
+		
+		var that = this;
+		this.config.fetch({
+			success: function() {
+				that.openProject(this.config.get("active_project"));
+			},
+			error: function(config, error_text) {
+				if (error_text == "Not Found") {
+					// This is not an error, we are being run for the first time, need to create the config object.
+					that.newProject();
+				}
+		}});
+	
 	},
 	
 	newProject: function() {
+		project = new Project({
+			cdate: Date(),
+			mdate: Date(),
+			adate: Date(),
+			name: "New Project",
+			open_tabs: []
+		});
+		project.save({}, { success: this.setProject	});
+	},
 	
+	openProject: function(project_id) {
+		var project = new Project({ id: project_id });
+		project.fetch({
+			success: this.setProject
+		});
+	},
+	
+	setProject: function(project) {
+		this.activeProject = project;
+		this.config.save({ active_project: project.id });
+		this.project_view.setProject(project);
 	},
 	
 	showOpenProjectWindow: function() {
@@ -119,11 +161,11 @@ var MainView = JakeKit.Stack.extend({
 			});
 			that.grid.add(records);
 		}});
-		this.listenTo(this.grid, "click", this.openProject);
+		this.listenTo(this.grid, "click", this.ProjectPicked);
 
 	},
 	
-	openProject: function(event) {
+	ProjectPicked: function(event) {
 		var project_id = event.recid;
 		
 		// Remove open dialog from the display
@@ -136,6 +178,41 @@ var MainView = JakeKit.Stack.extend({
 		
 		// Now load the Project
 		
+		
+	},
+	
+	showRenameProjectWindow: function() {
+	
+		var that = this;
+	
+		var RenameWindow = Backbone.View.extend({
+		
+			initialize: function() {
+			},
+			
+			render: function() {
+				this.$el.html('<input type="text"></input><button id="save_button">Save</button><button id="cancel_button">Cancel</button>');
+				this.$("#cancel_button").on("click", function() {
+					that.removeChild(that.rename_window);
+					delete that.rename_window;
+					that.makeActive(that.main_window);
+				});
+					
+			}
+		
+		});
+		
+		this.rename_window = new RenameWindow();
+		this.addChild(this.rename_window);
+		this.makeActive(this.rename_window);
+	
+	},
+	
+	newSchema: function() {
+		this.projectView.newTab();
+	},
+	
+	openRennameSchemaWindow: function() {
 		
 	}
 		

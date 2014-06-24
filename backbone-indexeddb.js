@@ -254,6 +254,7 @@
             var store = writeTransaction.objectStore(storeName);
             var json = object.toJSON();
             var writeRequest;
+            var id;
 
             if (json.id === undefined && !store.autoIncrement) json.id = guid();
 
@@ -261,6 +262,8 @@
                 options.error(e);
             };
             writeTransaction.oncomplete = function (e) {
+                if (json.id === undefined)
+                    json.id = id;
                 options.success(json);
             };
 
@@ -268,6 +271,10 @@
                 writeRequest = store.add(json, json.id);
             else
                 writeRequest = store.add(json);
+                
+            writeRequest.onsuccess = function(e) {
+                id = e.target.result;
+            }
         },
 
         // Writes the json to the storeName in db. It is an update operation, which means it will overwrite the value if the key already exist
@@ -609,7 +616,7 @@
             next();
         }
 
-    	return promise;
+        return promise;
     };
 
     Backbone.ajaxSync = Backbone.sync;

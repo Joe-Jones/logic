@@ -61,13 +61,16 @@ Project.prototype.load = function (saved_project) {
 };*/
 
 var database = {
-	id: "blojic",
-	description: "wert wert wert",
+	id: "logic",
+	description: "This is where all the data is kept, its a database.",
 	migrations: [
 		{
-			version: "1.1",
+			version: "1.0",
 			migrate: function(transaction, versionRequest, next) {
 				var db = transaction.db;
+				
+				db.createObjectStore("config", { keyPath: "id" });
+				
 				db.createObjectStore("projects", { keyPath: "id", autoIncrement : true });
 			
 				var schemas = db.createObjectStore("schemas", { keyPath: "id", autoIncrement : true });
@@ -82,14 +85,15 @@ var database = {
 	
 };
 
+var Config = Backbone.Model.extend({
+	storeName: "config",
+	database: database
+});
+
 var Project = Backbone.Model.extend({
 	storeName: "projects",
 	database:	database
-		
 });
-
-//p = new Project({test: "it works"});
-//p.save();
 
 var ProjectList = Backbone.Collection.extend({
 	database: database,
@@ -109,7 +113,26 @@ var ProjectList = Backbone.Collection.extend({
 	//}
 });
 
+var Schema = BackBone.Model.extend({
+	storeName:	"schemas",
+	database:	database
+});
 
+var SchemaList = BackBone.Collection.extend({
+	database:	database,
+	storeName:	"schemas",
+	model:		Schema
+});
+
+var SchemaData = BackBone.Mode({
+	database:	database,
+	storeName:	"schema_data"
+});
+
+var TemplateData = BackBone.Model({
+	database:	database,
+	storeName:	"template_data"
+});
 
 
 var ProjectListItemView = Backbone.View.extend({
@@ -159,7 +182,7 @@ function DataInterface() {
 	//this.createDatabase();
 }
 
-DataInterface.prototype = {
+/*DataInterface.prototype = {
 	
 	createDatabase: function() {
 		
@@ -191,3 +214,4 @@ DataInterface.prototype = {
 	},
 	
 };
+*/
