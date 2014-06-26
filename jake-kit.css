@@ -1,0 +1,30 @@
+			
+.Jake-Kit-Layout {
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+	
+}
+
+.Jake-Kit-VBox {
+	height: 100%;
+}
+
+.Jake-Kit-HBox {
+	height: 100%;
+}
+
+.Jake-Kit-HBox > * {
+	float: left;
+}
+
+.Jake-Kit-Canvas {
+	height: 100%;
+	overflow: hidden;
+}
+
+.Jake-Kit-Stack {
+	height: 100%;
+}
+
+

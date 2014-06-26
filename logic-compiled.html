@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Logic!</title>
+		<style>
+			body, div, canvas {
+				margin: 0px;
+				padding: 0px;
+				border: 0px;
+			}
+			div.layout {
+				position: absolute;
+			}
+			#pallet {
+				left: 0;
+			}
+			#canvas_div {
+				right: 0;
+				left: 30px;
+				height: 100%;
+				width: auto;
+			}
+		</style>
+	</head>
+	<body id="body">
+		<div id="pallet" class="layout"></div>
+		<div id="canvas_div" class="layout"><canvas id="logic_canvas" width="100" height="100"></div>
+		<script src="logic-compiled.js"></script>
+	</body>
+</html>
