@@ -1,6 +1,3 @@
-/********************************************************************************************/
-//function SchemaView(model)
-/********************************************************************************************/
 SchemaView = JakeKit.Canvas.extend({
 		
 	mouseEvents: {
@@ -23,8 +20,12 @@ SchemaView = JakeKit.Canvas.extend({
 		return false;
 	},
 	
-	initialize: function() {
+	initialize: function(schema) {
 		JakeKit.Canvas.prototype.initialize.call(this);
+		
+		var that = this;
+		
+		_.bindAll(this, "loadSchema");
 		
 		this.mouse_over = false;
 		this.mouse_down = false;
@@ -37,6 +38,22 @@ SchemaView = JakeKit.Canvas.extend({
 		this.current_hot_point = null;
 		this.new_connection = null;
 		this.model.drawer = this.drawer;
+		
+		this.schema = schema;
+		if (this.schema.has("data_id")) {
+			this.schema_data = new SchemaData({ id: this.schema.get("data_id") });
+			this.schema_data.fetch({ success: this.loadSchema });
+		} else {
+			this.schema_data = new SchemaData({ data: this.model.save() });
+			this.schema_data.save({}, { success: function() {
+				that.schema.save({ data_id: that.schema_data.id });
+			}});
+		}
+	},
+	
+	loadSchema: function() {
+		this.model.load(this.schema_data.get("data"));
+		// Need to arrange a redraw me thinks
 	},
 	
 	ready: function() {

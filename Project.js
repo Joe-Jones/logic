@@ -113,23 +113,23 @@ var ProjectList = Backbone.Collection.extend({
 	//}
 });
 
-var Schema = BackBone.Model.extend({
+var Schema = Backbone.Model.extend({
 	storeName:	"schemas",
 	database:	database
 });
 
-var SchemaList = BackBone.Collection.extend({
+var SchemaList = Backbone.Collection.extend({
 	database:	database,
 	storeName:	"schemas",
 	model:		Schema
 });
 
-var SchemaData = BackBone.Mode({
+var SchemaData = Backbone.Model.extend({
 	database:	database,
 	storeName:	"schema_data"
 });
 
-var TemplateData = BackBone.Model({
+var TemplateData = Backbone.Model.extend({
 	database:	database,
 	storeName:	"template_data"
 });

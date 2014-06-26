@@ -268,6 +268,10 @@ JakeKit = {};
 				w2ui[this.name].select(id);
 			}
 			this._active_tab = id;
+		},
+		
+		removeTab(id) {
+			w2ui[this.name].
 		}
 		
 	});

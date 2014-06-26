@@ -94,12 +94,12 @@ var MainView = JakeKit.Stack.extend({
 		
 		// Load data
 		
-		this.config = new Config({id: 0});
+		this.config = new Config({id: 1});
 		
 		var that = this;
 		this.config.fetch({
 			success: function() {
-				that.openProject(this.config.get("active_project"));
+				that.openProject(that.config.get("active_project"));
 			},
 			error: function(config, error_text) {
 				if (error_text == "Not Found") {
@@ -209,7 +209,7 @@ var MainView = JakeKit.Stack.extend({
 	},
 	
 	newSchema: function() {
-		this.projectView.newTab();
+		this.project_view.newTab();
 	},
 	
 	openRennameSchemaWindow: function() {

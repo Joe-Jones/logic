@@ -4,15 +4,6 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		JakeKit.w2tabstack.prototype.initialize.call(this);
 		this.views = {};
 		_.bindAll(this, "openTab");
-
-		//this.view1 = new SchemaView();
-		//this.view2 = new SchemaView();
-		//this.view3 = new SchemaView();
-		
-		//this.addChild(this.view1, "Scheama 1");
-		//this.addChild(this.view2, "Scheama 2");
-		//this.addChild(this.view3, "Scheama 3");
-		//this.makeActive(this.view1);
 	},
 	
 	setProject: function(project) {
@@ -28,16 +19,22 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		
 		this.schemas = new SchemaList();
 		this.schemas.fetch({
-			conditions: { projectid: this.data.id },
+			conditions: { project_id: this.data.id },
 			success: function() {
 				var open_tabs = that.data.get("open_tabs");
 				if (_.size(open_tabs) == 0) {
-					that.newSchema();
+					that.newTab();
 				} else {
 					_.each(open_tabs, function(schema_id) {
-						that.openTab(schema_id);
+						var schema = new Schema( {id: schema_id} );
+						schema.fetch({ success: that.openTab });
+						//that.openTab(schema_id);
 					});
 				}
+			},
+			error: function() {
+				console.log("error");
+				console.log(arguments);
 			}
 		});
 		
@@ -50,12 +47,20 @@ var ProjectView = JakeKit.w2tabstack.extend({
 			contains_recursive:	[],
 			name:				"New Schema"
 		});
-		new_schema.save({}, success: this.openTab);
-		this
+		new_schema.save({}, { success: this.openTab });
 	},
 	
 	openTab: function(schema) {
-	
+		var new_view = new SchemaView(schema);
+		this.views[schema.id] = new_view;
+		this.addChild(new_view, schema.get("name"));
+		this.makeActive(new_view);
+		
+		var open_tabs = this.data.get("open_tabs");
+		if (! _.contains(open_tabs, schema.id)) {
+			this.data.set("open_tabs", open_tabs.concat(new_view.id));
+			this.data.save();
+		}
 	}
 		
 });
