@@ -268,10 +268,12 @@ JakeKit = {};
 				w2ui[this.name].select(id);
 			}
 			this._active_tab = id;
+			this.trigger("tabChanged", id);
 		},
 		
-		removeTab(id) {
-			w2ui[this.name].
+		removeTab: function(id) {
+			w2ui[this.name].remove(id);
+			this._tabs = _.filter(this._tabs, function(tab) { return tab.id != id; });
 		}
 		
 	});
@@ -301,6 +303,7 @@ JakeKit = {};
 		
 		_tabChanged: function(id) {
 			this._stack.makeActive(this._views[id]);
+			//this.trigger("tabChanged", id);
 		}
 		
 	});

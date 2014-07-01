@@ -4,6 +4,7 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		JakeKit.w2tabstack.prototype.initialize.call(this);
 		this.views = {};
 		_.bindAll(this, "openTab");
+		this.listenTo(this, "tabChanged", this._tabChanged);
 	},
 	
 	setProject: function(project) {
@@ -28,7 +29,6 @@ var ProjectView = JakeKit.w2tabstack.extend({
 					_.each(open_tabs, function(schema_id) {
 						var schema = new Schema( {id: schema_id} );
 						schema.fetch({ success: that.openTab });
-						//that.openTab(schema_id);
 					});
 				}
 			},
@@ -59,8 +59,10 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		var open_tabs = this.data.get("open_tabs");
 		if (! _.contains(open_tabs, schema.id)) {
 			this.data.set("open_tabs", open_tabs.concat(new_view.id));
-			this.data.save();
 		}
+		this.data.set("selected_tab", new_view.id);
+		this.selected_schema = schema;
+		this.data.save();
 	}
 		
 });

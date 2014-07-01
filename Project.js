@@ -66,7 +66,7 @@ var database = {
 	migrations: [
 		{
 			version: "1.0",
-			migrate: function(transaction, versionRequest, next) {
+			migrate: function(transaction, next) {
 				var db = transaction.db;
 				
 				db.createObjectStore("config", { keyPath: "id" });
@@ -79,6 +79,8 @@ var database = {
 				db.createObjectStore("template_data", { keyPath: "id", autoIncrement : true });
 			
 				db.createObjectStore("schema_data", { keyPath: "id", autoIncrement : true });
+				
+				next();
 			}
 		}
 	]
