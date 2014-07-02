@@ -3,8 +3,9 @@ var ProjectView = JakeKit.w2tabstack.extend({
 	initialize: function() {
 		JakeKit.w2tabstack.prototype.initialize.call(this);
 		this.views = {};
+		this.schemas = {};
 		_.bindAll(this, "openTab");
-		this.listenTo(this, "tabChanged", this._tabChanged);
+		this.listenTo(this, "viewSelected", this.viewSelected);
 	},
 	
 	setProject: function(project) {
@@ -25,11 +26,19 @@ var ProjectView = JakeKit.w2tabstack.extend({
 				var open_tabs = that.data.get("open_tabs");
 				if (_.size(open_tabs) == 0) {
 					that.newTab();
+					//need to select the tab as well
 				} else {
+					var defereds = [];
 					_.each(open_tabs, function(schema_id) {
 						var schema = new Schema( {id: schema_id} );
-						schema.fetch({ success: that.openTab });
+						defereds.push(schema.fetch({ success: that.openTab }));
 					});
+					var selected_tab = that.data.get("selected_tab");
+					if (!selected_tab) {
+						selected_tab = open_tabs[0].schema_id;
+						this.data.set("selected_tab", selected_tab);
+					}
+					$.when.apply(this, defereds).done(function() { that.selectTab(that.views[selected_tab]); });
 				}
 			},
 			error: function() {
@@ -60,8 +69,18 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		if (! _.contains(open_tabs, schema.id)) {
 			this.data.set("open_tabs", open_tabs.concat(new_view.id));
 		}
-		this.data.set("selected_tab", new_view.id);
-		this.selected_schema = schema;
+		//
+		//
+	},
+	
+	selectTab: function(view) {
+		this.data.set("selected_tab", view.schema_data.id);
+		this.data.save();
+		this.makeActive(view);
+	},
+	
+	viewSelected: function(view) {
+		this.data.set("selected_tab", view.schema_data.id);
 		this.data.save();
 	}
 		

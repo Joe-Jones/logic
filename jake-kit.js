@@ -303,7 +303,7 @@ JakeKit = {};
 		
 		_tabChanged: function(id) {
 			this._stack.makeActive(this._views[id]);
-			//this.trigger("tabChanged", id);
+			this.trigger("viewSelected", this._views[id]);
 		}
 		
 	});
