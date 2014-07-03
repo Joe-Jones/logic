@@ -63,7 +63,6 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		var new_view = new SchemaView(schema);
 		this.views[schema.id] = new_view;
 		this.addChild(new_view, schema.get("name"));
-		this.makeActive(new_view);
 		
 		var open_tabs = this.data.get("open_tabs");
 		if (! _.contains(open_tabs, schema.id)) {
