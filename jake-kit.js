@@ -274,7 +274,11 @@ JakeKit = {};
 		removeTab: function(id) {
 			w2ui[this.name].remove(id);
 			this._tabs = _.filter(this._tabs, function(tab) { return tab.id != id; });
-		}
+		},
+		
+		setCaption: function(id, caption) {
+			w2ui[this.name].set(id, { caption: caption });
+		},
 		
 	});
 	
@@ -299,10 +303,20 @@ JakeKit = {};
 		makeActive: function(view) {
 			this._tabs.makeActive(view.cid);
 			this._stack.makeActive(view);
+			this._active_view = view;
+		},
+		
+		activeView: function() {
+			return this._active_view;
+		},
+		
+		setCaption: function(view, caption) {
+			this._tabs.setCaption(view.cid, caption);
 		},
 		
 		_tabChanged: function(id) {
 			this._stack.makeActive(this._views[id]);
+			this._active_view = this._views[id];
 			this.trigger("viewSelected", this._views[id]);
 		}
 		

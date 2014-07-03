@@ -218,12 +218,22 @@ var MainView = JakeKit.Stack.extend({
 	
 		var RenameWindow = Backbone.View.extend({
 		
-			initialize: function() {
+			initialize: function(model) {
+				this.model = model;
 			},
 			
 			render: function() {
-				this.$el.html('<input type="text"></input><button id="save_button">Save</button><button id="cancel_button">Cancel</button>');
+				this.$el.html('<input type="text" value="' + _.escape(this.model.get("name")) + '">' +
+							  '<button id="save_button">Save</button><button id="cancel_button">Cancel</button>');
 				this.$("#cancel_button").on("click", function() {
+					that.removeChild(that.rename_window);
+					delete that.rename_window;
+					that.makeActive(that.main_window);
+				});
+				var rename_window = this;
+				this.$("#save_button").on("click", function() {
+					rename_window.model.set("name", rename_window.$("input")[0].value);
+					rename_window.model.save();
 					that.removeChild(that.rename_window);
 					delete that.rename_window;
 					that.makeActive(that.main_window);
@@ -235,7 +245,7 @@ var MainView = JakeKit.Stack.extend({
 		
 		});
 		
-		this.rename_window = new RenameWindow();
+		this.rename_window = new RenameWindow(this.project_view.activeSchema());
 		this.addChild(this.rename_window);
 		this.makeActive(this.rename_window);
 		
