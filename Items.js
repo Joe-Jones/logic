@@ -1,3 +1,5 @@
+"use strict";
+
 /********************************************************************************************/
 function DragableThing()
 /********************************************************************************************/
@@ -652,8 +654,7 @@ function Connection(input_item, input_num, output_item, output_num)
 }
 
 Connection.prototype.getPoints = function() {
-	var input;
-	var outputs;
+	var input, output;
 	if (this.input_item) {
 		input = this.input_item.inputs()[this.input_num];
 	} else {

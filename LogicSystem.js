@@ -1,4 +1,6 @@
-initial_values = {
+"use strict";
+
+var initial_values = {
 	"AND": false,
 	"OR": false,
 	"NOT": true,
@@ -10,7 +12,7 @@ initial_values = {
 	"BULB": false
 };
 
-operations = {
+var operations = {
 	"AND": function(a, b) {return a && b;},
 	"OR": function(a, b) {return a || b;},
 	"NOT": function(a, b) {return !a;},
@@ -36,7 +38,7 @@ function runStep(gates, input_values) {
 }
 
 function applyToArrays(func, a, b) {
-	output = [];
+	var output = [];
 	for (var i = 0; i < a.length; i++) {
 		output[i] = func(a[i], b[i]);
 	}

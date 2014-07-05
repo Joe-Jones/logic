@@ -1,3 +1,5 @@
+"use strict";
+
 /********************************************************************************************/
 function SchemaModel()
 /********************************************************************************************/
@@ -13,7 +15,7 @@ SchemaModel.prototype.nextItemId = function() {
 }
 
 SchemaModel.prototype.add = function(object) {
-	that = this;
+	var that = this;
 	this.objects.push(object);
 	object.setModel(this);
 	object.number = this.next_item_number;
@@ -120,7 +122,7 @@ SchemaModel.prototype.save = function() {
 	var items = [];
 	var connections = [];
 	for (var i = 0; i < this.objects.length; i++) {
-		item = this.objects[i];
+		var item = this.objects[i];
 		var saved_item = [item.number, item.type, item.top_left];
 		if (item.HasState) {
 			saved_item.push(item.getState());
@@ -128,7 +130,7 @@ SchemaModel.prototype.save = function() {
 		items.push(saved_item);
 		var conns = item.allConnections(true);
 		for (var j = 0; j < conns.length; j++) {
-			connection = conns[j];
+			var connection = conns[j];
 			connections.push([connection.input_item.number, connection.input_num, connection.output_item.number, connection.output_num]);
 		}
 	}

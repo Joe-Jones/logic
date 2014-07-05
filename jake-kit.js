@@ -1,5 +1,6 @@
+"use strict";
 
-JakeKit = {};
+var JakeKit = {};
 
 (function() {
 
@@ -608,7 +609,7 @@ JakeKit = {};
 		},
 		
 		_clearBoundingRect: function() {
-			var x_min, x_max, y_min, ymax;
+			var x_min, x_max, y_min, y_max;
 			x_min = x_max = y_min = y_max = NaN;
 			_.each(arguments, function(point) {
 				var pick = function(a, b, f) {

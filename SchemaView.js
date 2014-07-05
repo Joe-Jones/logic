@@ -1,4 +1,6 @@
-SchemaView = JakeKit.Canvas.extend({
+"use strict";
+
+var SchemaView = JakeKit.Canvas.extend({
 		
 	mouseEvents: {
 		"mousedown"		: "mousedown",
@@ -246,7 +248,7 @@ SchemaView = JakeKit.Canvas.extend({
 	click: function(position) {
 		var objects = this.model.hitTest(position);
 		if (objects.length > 0) {
-			object = objects[0];
+			var object = objects[0];
 			if(object.click()) {
 				this.saveSchema();
 				//this.drawer.invalidateRectangle(object.boundingBox());

@@ -1,3 +1,5 @@
+"use strict";
+
 var ProjectView = JakeKit.w2tabstack.extend({
 	
 	initialize: function() {
