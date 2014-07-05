@@ -2,12 +2,13 @@
 function Point(x, y)
 /********************************************************************************************/
 {
-	if (typeof y == 'undefined') { // Copy Constructor
+	if (_.isUndefined(y)) { // Copy Constructor
 		this.x = x.x;
 		this.y = x.y;
+	} else {
+		this.x = x;
+		this.y = y;
 	}
-	this.x = x;
-	this.y = y;
 }
 
 Point.prototype.copy = function() {

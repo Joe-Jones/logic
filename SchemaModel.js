@@ -3,7 +3,7 @@ function SchemaModel()
 /********************************************************************************************/
 {
 	this.objects = [];
-	this.next_item_number = 1; // 0 is reserved for use by the logic system.
+	this.next_item_number = 1;
 	this.next_connection_number = 0;
 	this.logic_system = new LogicSystem();
 }
@@ -20,9 +20,10 @@ SchemaModel.prototype.add = function(object) {
 	this.next_item_number++;
 	
 	//Add it to the LogicSystem
-	this.logic_system.addGate(object.type); //Todo, need to save the id that is returned by this method call
+	object.logic_id = this.logic_system.addGate(object.type);
+	
 	if (object.DisplaysState) {
-		this.logic_system.registerCallback(object.number,
+		this.logic_system.registerCallback(object.logic_id,
 			function (new_state) {
 				object.setState(new_state);
 				that.drawer.invalidateRectangle(object.boundingBox());
@@ -30,7 +31,7 @@ SchemaModel.prototype.add = function(object) {
 	}
 	if (object.type == "SWITCH") {
 		object.stateChanged = function (new_state) {
-			that.logic_system.setOutput(object.number, new_state);
+			that.logic_system.setOutput(object.logic_id, new_state);
 			that.logic_system.run();
 		};
 	}
@@ -109,8 +110,8 @@ SchemaModel.prototype.addConnection = function(connection) {
 	this.next_connection_number ++;
 	
 	// Add to the LogicSystem
-	this.logic_system.makeConnection(connection.output_item.number, connection.input_item.number, connection.input_num);
-	this.logic_system.injectTransient(connection.input_item.number);
+	this.logic_system.makeConnection(connection.output_item.logic_id, connection.input_item.logic_id, connection.input_num);
+	this.logic_system.injectTransient(connection.input_item.logic_id);
 	this.logic_system.run();
 };
 
@@ -134,18 +135,20 @@ SchemaModel.prototype.save = function() {
 
 SchemaModel.prototype.load = function(saved) {
 	var item_hash = {};
+	var max_item_number = 1;
 	for (var i = 0; i < saved["items"].length; i++) {
 		var saved_item = saved["items"][i];
 		var restored_item = makeGate(saved_item[1]);
 		var number = saved_item[0];
+		max_item_number = max_item_number > number ? max_item_number : number;
 		restored_item.number = number;
-		if (number > this.next_item_number) {
-			this.next_item_number = number;
-		}
-		restored_item.setPosition(saved_item[2]); // I don't know if this will work.
+		restored_item.setPosition(new Point(saved_item[2])); // I don't know if this will work.
 		restored_item.setModel(this);
 		this.objects.push(restored_item);
-		item_hash[number = restored_item];
+		item_hash[number] = restored_item;
+		
+		// Add it to the logic system
+		restored_item.logic_id = this.logic_system.addGate(saved_item[1]);
 	}
 	for (var i = 0; i < saved["connections"].length; i++) {
 		var saved_connection = saved["connections"][i];
@@ -156,6 +159,7 @@ SchemaModel.prototype.load = function(saved) {
 		var restored_connection = new Connection(input_item, input_num, output_item, output_num);
 		this.addConnection(restored_connection);
 	}
+	this.next_item_number = max_item_number + 1;
 };
 
 

@@ -52,8 +52,14 @@ SchemaView = JakeKit.Canvas.extend({
 	},
 	
 	loadSchema: function() {
+		console.log(this.schema_data.get("data"));
 		this.model.load(this.schema_data.get("data"));
 		// Need to arrange a redraw me thinks
+	},
+	
+	saveSchema: function() {
+		this.schema_data.set("data", this.model.save());
+		this.schema_data.save();
 	},
 	
 	ready: function() {
@@ -183,12 +189,13 @@ SchemaView = JakeKit.Canvas.extend({
 					this.new_connection.output_item = hot_point.item;
 					this.new_connection.output_num = hot_point.number;
 				}
-				this.model.addConnection(this.new_connection);
+				this.addConnection(this.new_connection);
 			}
 			this.new_connection = null;
 		} else {
 			//Leave the thing in its new position
 			this.dragged_object = null;
+			this.saveSchema();
 		}
 		this.invalidate();
 	},
@@ -207,14 +214,6 @@ SchemaView = JakeKit.Canvas.extend({
 	
 	beginDragWithNewObject: function(point, object) {
 		//Add a new object at position (x,y), it is being dragged
-	},
-	
-	addObject: function(type, at) {
-		var object = makeGate(type);
-		this.model.add(object);
-		object.setPosition(at);
-		//this.drawer.invalidateRectangle(object.boundingBox());
-		this.invalidate();
 	},
 	
 	updateHighlighting: function(hot_point) {
@@ -253,6 +252,37 @@ SchemaView = JakeKit.Canvas.extend({
 			}
 		}
 		this.invalidate();
+	},
+	
+	///////////////////////////////////////////////////////////////////////////
+	// Actions that we record so that they can be undone
+	
+	addObject: function(type, at) {
+		//console.log(type, at);
+		var object = makeGate(type);
+		this.model.add(object);
+		object.setPosition(at);
+		//this.drawer.invalidateRectangle(object.boundingBox());
+		this.invalidate();
+		this.saveSchema();
+	},
+	
+	deleteObject: function() {
+	
+	},
+	
+	moveObject: function() {
+	
+	},
+	
+	addConnection: function(connection) {
+		//console.log(connection);
+		this.model.addConnection(connection);
+		this.saveSchema();
+	},
+	
+	deleteConnection: function(connection) {
+	
 	},
 	
 });
