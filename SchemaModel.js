@@ -135,20 +135,13 @@ SchemaModel.prototype.save = function() {
 
 SchemaModel.prototype.load = function(saved) {
 	var item_hash = {};
-	var max_item_number = 1;
 	for (var i = 0; i < saved["items"].length; i++) {
 		var saved_item = saved["items"][i];
 		var restored_item = makeGate(saved_item[1]);
 		var number = saved_item[0];
-		max_item_number = max_item_number > number ? max_item_number : number;
-		restored_item.number = number;
-		restored_item.setPosition(new Point(saved_item[2])); // I don't know if this will work.
-		restored_item.setModel(this);
-		this.objects.push(restored_item);
+		restored_item.setPosition(new Point(saved_item[2]));
+		this.add(restored_item);
 		item_hash[number] = restored_item;
-		
-		// Add it to the logic system
-		restored_item.logic_id = this.logic_system.addGate(saved_item[1]);
 	}
 	for (var i = 0; i < saved["connections"].length; i++) {
 		var saved_connection = saved["connections"][i];
@@ -159,7 +152,6 @@ SchemaModel.prototype.load = function(saved) {
 		var restored_connection = new Connection(input_item, input_num, output_item, output_num);
 		this.addConnection(restored_connection);
 	}
-	this.next_item_number = max_item_number + 1;
 };
 
 
