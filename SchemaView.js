@@ -248,6 +248,7 @@ SchemaView = JakeKit.Canvas.extend({
 		if (objects.length > 0) {
 			object = objects[0];
 			if(object.click()) {
+				this.saveSchema();
 				//this.drawer.invalidateRectangle(object.boundingBox());
 			}
 		}

@@ -121,7 +121,11 @@ SchemaModel.prototype.save = function() {
 	var connections = [];
 	for (var i = 0; i < this.objects.length; i++) {
 		item = this.objects[i];
-		items.push([item.number, item.type, item.top_left]);
+		var saved_item = [item.number, item.type, item.top_left];
+		if (item.HasState) {
+			saved_item.push(item.getState());
+		}
+		items.push(saved_item);
 		var conns = item.allConnections(true);
 		for (var j = 0; j < conns.length; j++) {
 			connection = conns[j];
@@ -141,6 +145,9 @@ SchemaModel.prototype.load = function(saved) {
 		var number = saved_item[0];
 		restored_item.setPosition(new Point(saved_item[2]));
 		this.add(restored_item);
+		if (restored_item.HasState) {
+			restored_item.setState(saved_item[3]);
+		}
 		item_hash[number] = restored_item;
 	}
 	for (var i = 0; i < saved["connections"].length; i++) {

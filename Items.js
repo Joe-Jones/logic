@@ -5,6 +5,7 @@ function DragableThing()
 	this.top_left = new Point(0, 0);
 	this.model = null;
 	this.DisplaysState = false;
+	this.HasState = false;
 }
 
 DragableThing.prototype.initDragableThing = function() {
@@ -419,6 +420,7 @@ function Switch()
 	this.initDragableThing()
 	this.type = "SWITCH";
 	this.on = false;
+	this.HasState = true;
 }
 
 Switch.prototype = new DragableThing();
@@ -452,6 +454,17 @@ Switch.prototype.click = function() {
 	}
 	return true;
 };
+
+Switch.prototype.getState = function() {
+	return this.on;
+}
+
+Switch.prototype.setState = function(state) {
+	this.on = state;
+	if (this.stateChanged) {
+		this.stateChanged(this.on);
+	}
+}
 
 /********************************************************************************************/
 function Bulb()
