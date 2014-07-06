@@ -1,6 +1,0 @@
-syntax: glob
-a.out
-*~
-all-javascript.js
-closure/compiler-latest.zip
-logic-compiled.js.gz
