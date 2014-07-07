@@ -18,8 +18,15 @@ SchemaModel.prototype.add = function(object) {
 	var that = this;
 	this.objects.push(object);
 	object.setModel(this);
-	object.number = this.next_item_number;
-	this.next_item_number++;
+	
+	// Number the object
+	if (object.number) {
+		if (object.number >= this.next_item_number) {
+			this.next_item_number = object.number + 1;
+		}
+	} else {
+		object.number = this.nextItemId();
+	}
 	
 	//Add it to the LogicSystem
 	object.logic_id = this.logic_system.addGate(object.type);
@@ -145,6 +152,7 @@ SchemaModel.prototype.load = function(saved) {
 		var saved_item = saved["items"][i];
 		var restored_item = makeGate(saved_item[1]);
 		var number = saved_item[0];
+		restored_item.number = number;
 		restored_item.setPosition(new Point(saved_item[2]));
 		this.add(restored_item);
 		if (restored_item.HasState) {

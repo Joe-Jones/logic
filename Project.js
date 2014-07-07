@@ -20,6 +20,11 @@ var database = {
 			
 				db.createObjectStore("schema_data", { keyPath: "id", autoIncrement : true });
 				
+				var actions = db.createObjectStore("actions", { keyPath: "id", autoIncrement: true });
+				actions.createIndex("project_id", "project_id", {unique: false});
+				actions.createIndex("schema_id", "schema_id", {unique: false});
+				//actions.createIndex("
+				
 				next();
 			}
 		}

@@ -290,3 +290,17 @@ var SchemaView = JakeKit.Canvas.extend({
 	
 });
 
+var Action = Backbone.Model.extend({
+	//database:	database,
+	storeName:	"actions",
+	
+	inverse: function() {
+		
+	},
+	
+	doTo: function(model) {
+	
+	}
+	
+});
+

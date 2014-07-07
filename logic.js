@@ -70,8 +70,11 @@ var MainView = JakeKit.Stack.extend({
 				]},
 				{ type: "menu", id: "schema_menu", caption: "Schema", items: [
 						{ text: "New", id: "new_schema"},
-						{ text: "Rename", id: "rename_schema" }]}]);
-						
+						{ text: "Rename", id: "rename_schema" }]},
+				{ type: "menu", id: "edit_menu", caption: "Edit", items: [
+						{ text:	"Undo", id: "undo"},
+						{ text: "Redo", id: "redo"}]}]);
+		
 		this.listenTo(menu, "new_project", this.newProject);
 		this.listenTo(menu, "open_project", this.showOpenProjectWindow);
 		this.listenTo(menu, "rename_project", this.showRenameProjectWindow);
