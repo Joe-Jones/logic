@@ -95,6 +95,10 @@ DragableThing.prototype.getConnections = function(type, number) {
 	}
 };
 
+DragableThing.prototype.getInput = function(n) {
+	return this.input_connections[n];
+};
+
 DragableThing.prototype.allConnections = function(just_inputs) {
 	var all_connections = [];
 	for (var i = 0; i < this.input_connections.length; i++) {
@@ -117,12 +121,12 @@ DragableThing.prototype.hasInputConnection = function(number) {
 	return Boolean(this.input_connections[number]);	
 };
 
-DragableThing.prototype.removeConnection = function(connection) {
-	if (connection.input_item === this) {
-		
-	} else {
-		
-	}
+DragableThing.prototype.removeInput = function(input) {
+	delete this.input_connections[input];
+};
+
+DragableThing.prototype.removeOutput = function(output, connection) {
+	this.output_connections[output] = _.without(this.output_connections[output], connection);
 };
 
 DragableThing.prototype.click = function() {

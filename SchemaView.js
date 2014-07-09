@@ -22,12 +22,12 @@ var SchemaView = JakeKit.Canvas.extend({
 		return false;
 	},
 	
-	initialize: function(schema) {
+	initialize: function(schema, action_recorder) {
 		JakeKit.Canvas.prototype.initialize.call(this);
-		
 		var that = this;
-		
 		_.bindAll(this, "loadSchema");
+		
+		this.action_recorder = action_recorder;
 		
 		this.mouse_over = false;
 		this.mouse_down = false;
@@ -261,10 +261,15 @@ var SchemaView = JakeKit.Canvas.extend({
 	// Actions that we record so that they can be undone
 	
 	addObject: function(type, at) {
-		//console.log(type, at);
-		var object = makeGate(type);
-		this.model.add(object);
-		object.setPosition(at);
+		var action = new Action({
+			project_id: this.schema.get("project_id"),
+			schema_id: this.schema.id,
+			type: "ADD_GATE",
+			gate_type:	type,
+			position: at
+		});
+		this.action_recorder.record(action);
+		action.doTo(this.model);
 		//this.drawer.invalidateRectangle(object.boundingBox());
 		this.invalidate();
 		this.saveSchema();
@@ -279,8 +284,17 @@ var SchemaView = JakeKit.Canvas.extend({
 	},
 	
 	addConnection: function(connection) {
-		//console.log(connection);
-		this.model.addConnection(connection);
+		var action = new Action({
+			project_id: 	this.schema.get("project_id"),
+			schema_id:		this.schema.id,
+			type:			"ADD_CONNECTION",
+			input_item:		connection.input_item.number,
+			input_num:		connection.input_num,
+			output_item:	connection.output_item.number,
+			output_num:		connection.output_num
+		});
+		this.action_recorder.record(action);
+		action.doTo(this.model);
 		this.saveSchema();
 	},
 	
@@ -290,17 +304,58 @@ var SchemaView = JakeKit.Canvas.extend({
 	
 });
 
-var Action = Backbone.Model.extend({
-	//database:	database,
-	storeName:	"actions",
+function Action(args) {
+	if (args.json) {
+		
+	} else {
+		_.extend(this, args);
+	}
+}
+
+Action.prototype = {
+
+	toJSON: function() {
+		return {};
+	},
 	
 	inverse: function() {
-		
+		switch (this.type) {
+			case "ADD_GATE":
+				return new Action({
+					project_id:		this.project_id,
+					schema_id:		this.schema_id,
+					type:			"REMOVE_LAST_GATE"
+				});
+			case "ADD_CONNECTION":
+				return new Action({
+					project_id:		this.project_id,
+					schema_id:		this.schema_id,
+					type:			"REMOVE_CONNECTION",
+					input_item:		this.input_item,
+					input_num:		this.input_num,
+					output_item:	this.output_item,
+					output_num:		this.output_num
+				});
+		}
 	},
 	
 	doTo: function(model) {
-	
+		switch (this.type) {
+			case "ADD_GATE":
+				var object = makeGate(this.gate_type);
+				model.add(object);
+				object.setPosition(this.position);
+				break;
+			case "REMOVE_LAST_GATE":
+				model.removeLastGate();
+				break;
+			case "ADD_CONNECTION":
+				model.addConnection(this.input_item, this.input_num, this.output_item, this.output_num);
+				break;
+			case "REMOVE_CONNECTION":
+				model.removeConnection(this.input_item, this.input_num, this.output_item, this.output_num);
+				break;
+		}
 	}
 	
-});
-
+};

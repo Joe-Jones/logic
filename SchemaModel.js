@@ -4,7 +4,7 @@
 function SchemaModel()
 /********************************************************************************************/
 {
-	this.objects = [];
+	this.objects = {};
 	this.next_item_number = 1;
 	this.next_connection_number = 0;
 	this.logic_system = new LogicSystem();
@@ -16,8 +16,6 @@ SchemaModel.prototype.nextItemId = function() {
 
 SchemaModel.prototype.add = function(object) {
 	var that = this;
-	this.objects.push(object);
-	object.setModel(this);
 	
 	// Number the object
 	if (object.number) {
@@ -27,6 +25,9 @@ SchemaModel.prototype.add = function(object) {
 	} else {
 		object.number = this.nextItemId();
 	}
+	
+	object.setModel(this);
+	this.objects[object.number] = object;
 	
 	//Add it to the LogicSystem
 	object.logic_id = this.logic_system.addGate(object.type);
@@ -46,20 +47,26 @@ SchemaModel.prototype.add = function(object) {
 	}
 };
 
+SchemaModel.prototype.removeLastGate = function() {
+	this.next_item_number--;
+	this.remove(this.next_item_number);
+}
+
 SchemaModel.prototype.remove = function(object) {
-	for (var i = 0; i < this.objects.length; i++) {
-		if (this.objects[i] === object) {
-			this.objects.splice(i, 1);
-			break;
-		}
+	if (!_.isObject(object)) {
+		object = this.objects[object];
 	}
+	delete this.objects[object.number];
+	if (object.DisplaysState) {
+		this.logic_system.dropCallback(object.logic_id);
+	}
+	this.logic_system.removeGate(object.logic_id);
 };
 
 SchemaModel.prototype.allObjectsTouchingBox = function(box, include_connections) { // This just gets everything now
 	var results = [];
 	var connection_numbers = [];
-	for (var i = 0; i < this.objects.length; i++) {
-		var object = this.objects[i];
+	_.each(this.objects, function(object) {
 		if (true || object.boundingBox().intersects(box)) {
 			results.push(object);
 		}
@@ -73,17 +80,17 @@ SchemaModel.prototype.allObjectsTouchingBox = function(box, include_connections)
 				}
 			}
 		}
-	}
+	});
 	return results;
 };
 
 SchemaModel.prototype.hitTest = function(point) {
 	var results = [];
-	for (var i = 0; i < this.objects.length; i++) {
-		if (this.objects[i].boundingBox().pointIn(point)) {
-			results.push(this.objects[i]);
+	_.each(this.objects, function(object) {
+		if (object.boundingBox().pointIn(point)) {
+			results.push(object);
 		}
-	}
+	});
 	return results;
 };
 
@@ -112,7 +119,12 @@ function hotPointsEqual(a, b) {
 	return a.item === b.item && a.type === b.type && a.number === b.number;
 }
 
-SchemaModel.prototype.addConnection = function(connection) {
+SchemaModel.prototype.addConnection = function(input_item_num, input_num, output_item_num, output_num) {
+	var input_item = this.objects[input_item_num];
+	var output_item = this.objects[output_item_num];
+	
+	var connection = new Connection(input_item, input_num, output_item, output_num);
+	
 	connection.input_item.addConnection(connection);
 	connection.output_item.addConnection(connection);
 	connection.number = this.next_connection_number;
@@ -124,12 +136,22 @@ SchemaModel.prototype.addConnection = function(connection) {
 	this.logic_system.run();
 };
 
+SchemaModel.prototype.removeConnection = function(input_item_num, input_num, output_item_num, output_num) {
+	var input_item = this.objects[input_item_num];
+	var output_item = this.objects[output_item_num];
+	
+	var connection = input_item.getInput(input_num);
+	
+	input_item.removeInput(input_num);
+	output_item.removeOutput(output_num, connection);
+	this.logic_system.removeConnection(input_item.logic_id, input_num);
+};
+
 SchemaModel.prototype.save = function() {
 	var saved = {};
 	var items = [];
 	var connections = [];
-	for (var i = 0; i < this.objects.length; i++) {
-		var item = this.objects[i];
+	_.each(this.objects, function(item) {
 		var saved_item = [item.number, item.type, item.top_left];
 		if (item.HasState) {
 			saved_item.push(item.getState());
@@ -140,14 +162,13 @@ SchemaModel.prototype.save = function() {
 			var connection = conns[j];
 			connections.push([connection.input_item.number, connection.input_num, connection.output_item.number, connection.output_num]);
 		}
-	}
+	});
 	saved["items"] = items;
 	saved["connections"] = connections;
 	return saved;
 };
 
 SchemaModel.prototype.load = function(saved) {
-	var item_hash = {};
 	for (var i = 0; i < saved["items"].length; i++) {
 		var saved_item = saved["items"][i];
 		var restored_item = makeGate(saved_item[1]);
@@ -158,16 +179,10 @@ SchemaModel.prototype.load = function(saved) {
 		if (restored_item.HasState) {
 			restored_item.setState(saved_item[3]);
 		}
-		item_hash[number] = restored_item;
 	}
 	for (var i = 0; i < saved["connections"].length; i++) {
 		var saved_connection = saved["connections"][i];
-		var input_item = item_hash[saved_connection[0]];
-		var input_num = saved_connection[1];
-		var output_item = item_hash[saved_connection[2]];
-		var output_num = saved_connection[3];
-		var restored_connection = new Connection(input_item, input_num, output_item, output_num);
-		this.addConnection(restored_connection);
+		this.addConnection(saved_connection[0], saved_connection[1], saved_connection[2], saved_connection[3]);
 	}
 };
 

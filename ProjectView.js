@@ -6,6 +6,8 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		JakeKit.w2tabstack.prototype.initialize.call(this);
 		this.views = {};
 		this.schemas = {};
+		this.history = [];
+		this.history_position = 0;
 		_.bindAll(this, "openTab", "schemaNameChanged");
 		this.listenTo(this, "viewSelected", this.viewSelected);
 	},
@@ -62,7 +64,7 @@ var ProjectView = JakeKit.w2tabstack.extend({
 	},
 	
 	openTab: function(schema) {
-		var new_view = new SchemaView(schema);
+		var new_view = new SchemaView(schema, this);
 		this.views[schema.id] = new_view;
 		this.addChild(new_view, schema.get("name"));
 		
@@ -89,6 +91,35 @@ var ProjectView = JakeKit.w2tabstack.extend({
 	
 	schemaNameChanged: function(schema) {
 		this.setCaption(this.views[schema.id], schema.get("name"));
+	},
+	
+	record: function(action) {
+		if (this.history_position != this.history.length) { // We need to get rid of redo history
+			this.history = _.first(this.history, this.history_position);
+		}
+		this.history.push(action);
+		this.history_position++;
+	},
+	
+	undo: function() {
+		if (this.history_position > 0) {
+			var last_action = this.history[this.history_position - 1];
+			var undo_action = last_action.inverse();
+			undo_action.doTo(this.views[undo_action.schema_id].model);
+			this.history_position--;
+			
+			this.views[undo_action.schema_id].saveSchema();
+		}
+	},
+	
+	redo: function() {
+		if (this.history_position < this.history.length) {
+			var action = this.history[this.history_position];
+			action.doTo(this.views[action.schema_id].model);
+			this.history_position++;
+			
+			this.views[action.schema_id].saveSchema();
+		}
 	}
 		
 });

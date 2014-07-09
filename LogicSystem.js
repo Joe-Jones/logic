@@ -79,8 +79,8 @@ LogicSystem.prototype.makeConnection = function(output_id, input_id, input_numbe
 	this.gates[input_id][input_number + 1] = output_id;
 };
 
-LogicSystem.prototype.dropConnection = function(output_id, input_id, input_number) {
-	this.gate[input_id][input_number + 1] = 0;
+LogicSystem.prototype.removeConnection = function(input_id, input_number) {
+	this.gates[input_id][input_number + 1] = 0;
 };
 
 LogicSystem.prototype.registerCallback = function(id, callback) {
@@ -88,7 +88,7 @@ LogicSystem.prototype.registerCallback = function(id, callback) {
 };
 
 LogicSystem.prototype.dropCallback = function(id) {
-	this.callbacks[i] = null;
+	this.callbacks[id] = null;
 };
 
 LogicSystem.prototype.setOutput = function(id, value) {

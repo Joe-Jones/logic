@@ -84,6 +84,9 @@ var MainView = JakeKit.Stack.extend({
 		var pallet = new Pallet();
 		
 		this.project_view = new ProjectView();
+		
+		this.project_view.listenTo(menu, "undo", this.project_view.undo);
+		this.project_view.listenTo(menu, "redo", this.project_view.redo);
 	
 		var hbox = new JakeKit.HBox();
 		
