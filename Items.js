@@ -38,7 +38,7 @@ DragableThing.prototype.boundingBox = function() {
 	return BoxFromPointAndSize(this.top_left, this.size());
 };
 
-DragableThing.prototype.drawWrapper = function(ctx, selected) {
+DragableThing.prototype.drawWrapper = function(ctx) {
 	var position = this.position();
 	ctx.save();
 	ctx.translate(position.x, position.y);
@@ -46,7 +46,7 @@ DragableThing.prototype.drawWrapper = function(ctx, selected) {
 	ctx.restore();
 }
 
-DragableThing.prototype.draw = function(ctx, selected) {
+DragableThing.prototype.draw = function(ctx) {
 	ctx.fillRect(0, 0, 1, 1);
 };
 
@@ -133,6 +133,14 @@ DragableThing.prototype.click = function() {
 	return false;
 };
 
+DragableThing.prototype.select = function() {
+	this.selected = true;
+};
+
+DragableThing.prototype.unselect = function() {
+	this.selected = false;
+};
+
 /********************************************************************************************/
 function NotGate()
 /********************************************************************************************/
@@ -143,9 +151,9 @@ function NotGate()
 
 NotGate.prototype = new DragableThing();
 
-NotGate.prototype.draw = function(ctx, selected) {
+NotGate.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	ctx.beginPath();
 	
 	//	Input
@@ -187,9 +195,9 @@ function AndGate()
 
 AndGate.prototype = new DragableThing();
 
-AndGate.prototype.draw = function(ctx, selected) {
+AndGate.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Inputs
 	ctx.beginPath();
@@ -233,9 +241,9 @@ function OrGate()
 
 OrGate.prototype = new DragableThing();
 
-OrGate.prototype.draw = function(ctx, selected) {
+OrGate.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Inputs
 	ctx.beginPath();
@@ -280,9 +288,9 @@ function NandGate()
 
 NandGate.prototype = new DragableThing();
 
-NandGate.prototype.draw = function(ctx, selected) {
+NandGate.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Inputs
 	ctx.beginPath();
@@ -317,9 +325,9 @@ function NorGate()
 
 NorGate.prototype = new DragableThing();
 
-NorGate.prototype.draw = function(ctx, selected) {
+NorGate.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Inputs
 	ctx.beginPath();
@@ -354,9 +362,9 @@ function XorGate()
 
 XorGate.prototype = new DragableThing();
 
-XorGate.prototype.draw = function(ctx, selected) {
+XorGate.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Inputs
 	ctx.beginPath();
@@ -391,9 +399,9 @@ function XnorGate()
 
 XnorGate.prototype = new DragableThing();
 
-XnorGate.prototype.draw = function(ctx, selected) {
+XnorGate.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Inputs
 	ctx.beginPath();
@@ -431,9 +439,9 @@ function Switch()
 
 Switch.prototype = new DragableThing();
 
-Switch.prototype.draw = function(ctx, selected) {
+Switch.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 
 	ctx.fillRect(0.15, 0.15, 0.7, 0.7);
 	if(!this.on) {
@@ -483,9 +491,9 @@ function Bulb()
 
 Bulb.prototype = new DragableThing();
 
-Bulb.prototype.draw = function(ctx, selected) {
+Bulb.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Input
 	ctx.beginPath();
@@ -520,9 +528,9 @@ function Input()
 
 Input.prototype = new DragableThing();
 
-Input.prototype.draw = function(ctx, selected) {
+Input.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Output
 	ctx.beginPath();
@@ -556,9 +564,9 @@ function Output()
 
 Output.prototype = new DragableThing();
 
-Output.prototype.draw = function(ctx, selected) {
+Output.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
 	//	Input
 	ctx.beginPath();
@@ -621,9 +629,9 @@ function SubCircit()
 
 SubCircit.prototype = new DragableThing();
 
-SubCircit.prototype.draw = function(ctx, selected) {
+SubCircit.prototype.draw = function(ctx) {
 	ctx.save();
-	ctx.lineWidth = 0.05;
+	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 
 	ctx.fillRect(0.15, 0.15, 0.7, 0.7);
 	if(!this.on) {

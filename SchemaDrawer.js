@@ -60,7 +60,7 @@ SchemaDrawer.prototype.draw = function(exclude_item) {
 		//this.ctx.clearRect(this.invalid_rectangle.left, this.invalid_rectangle.top, this.invalid_rectangle.width(), this.invalid_rectangle.height());
 		
 		// Draw everything that might have been deleted or damaged by the clearRect.
-		var all_needing_redrawn = this.model.allObjectsTouchingBox(this.invalid_rectangle, true);
+		var all_needing_redrawn = this.model.allObjectsTouchingBox(this.invalid_rectangle, true, true);
 		for (var i = 0; i < all_needing_redrawn.length; i++) {
 			var list_item = all_needing_redrawn[i];
 			if (list_item !== exclude_item) {
@@ -78,6 +78,13 @@ SchemaDrawer.prototype.draw = function(exclude_item) {
 		
 		// Drop the clip path and draw item in new position.
 		//this.ctx.restore();
+		
+		if (this.selection_box) {
+			this.ctx.save();
+			this.ctx.lineWidth = 0.05;
+			this.ctx.strokeRect(this.selection_box.left, this.selection_box.top, this.selection_box.width(), this.selection_box.height());
+			this.ctx.restore();
+		}
 		
 		this.invalid_rectangle = null;
 	}
@@ -126,4 +133,12 @@ SchemaDrawer.prototype.addTempConnection = function(connection) {
 SchemaDrawer.prototype.removeTempConnection = function() {
 	this.invalidateRectangle(this.temp_connection.boundingBox().expand(0.1));
 	this.temp_connection = null;
+};
+
+SchemaDrawer.prototype.setSelectionBox = function(box) {
+	if (box) {
+		this.selection_box = box;
+	} else if (this.selection_box) {
+		delete this.selection_box;
+	}
 };

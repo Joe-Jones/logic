@@ -63,11 +63,11 @@ SchemaModel.prototype.remove = function(object) {
 	this.logic_system.removeGate(object.logic_id);
 };
 
-SchemaModel.prototype.allObjectsTouchingBox = function(box, include_connections) { // This just gets everything now
+SchemaModel.prototype.allObjectsTouchingBox = function(box, include_connections, get_all) { // need to get rid of get_all
 	var results = [];
 	var connection_numbers = [];
 	_.each(this.objects, function(object) {
-		if (true || object.boundingBox().intersects(box)) {
+		if (get_all || object.boundingBox().intersects(box)) {
 			results.push(object);
 		}
 		if (include_connections) {

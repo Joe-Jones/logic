@@ -40,6 +40,7 @@ var SchemaView = JakeKit.Canvas.extend({
 		this.current_hot_point = null;
 		this.new_connection = null;
 		this.model.drawer = this.drawer;
+		this.selection = [];
 		
 		this.schema = schema;
 		if (this.schema.has("data_id")) {
@@ -144,12 +145,17 @@ var SchemaView = JakeKit.Canvas.extend({
 			this.new_connection.setDragPosition(point); // Not sure we need that.
 			this.drag_start_hot_point = this.current_hot_point;
 			this.current_hot_point = null;
-		} else { // We are potentialy moving an item
+		} else {
+			// We are either moving an item, or creating a selection.
 			this.start_position = point;
 			var objects = this.model.hitTest(this.start_position);
 			if (objects.length > 0) {
+				// We are dragging an object
 				this.dragged_object = objects[0];
 				this.original_position = this.dragged_object.position().copy();
+			} else {
+				// We are creating a selection
+				this.corner = point;
 			}
 		}
 	},
@@ -172,6 +178,12 @@ var SchemaView = JakeKit.Canvas.extend({
 		} else if (this.dragged_object) {
 			var d = point.minus(this.start_position);
 			this.drawer.moveItem(this.dragged_object, this.original_position.plus(d));
+		} else if (this.corner) {
+			this.selection_box = BoxFromTwoPoints(this.corner, point);
+			_.each(this.selection, function(item) { item.unselect(); });
+			this.selection = this.model.allObjectsTouchingBox(this.selection_box, false);
+			_.each(this.selection, function(item) { item.select(); });
+			this.drawer.setSelectionBox(this.selection_box);
 		}
 		this.drawer.draw();
 	},
@@ -194,6 +206,10 @@ var SchemaView = JakeKit.Canvas.extend({
 				this.addConnection(this.new_connection);
 			}
 			this.new_connection = null;
+		} else if (this.corner) {
+			// Leave the selected stuff selected.
+			delete this.corner;
+			this.drawer.setSelectionBox();
 		} else {
 			//Leave the thing in its new position
 			this.dragged_object = null;
@@ -210,6 +226,11 @@ var SchemaView = JakeKit.Canvas.extend({
 			//Dump the thing back in its original position
 			this.drawer.moveItem(this.dragged_object, this.original_position);
 			this.dragged_object = null;
+		} else if (this.corner) {
+			_.each(this.selection, function(item) { item.unselect(); });
+			this.selection = [];
+			delete this.corner;
+			this.drawer.setSelectionBox();
 		}
 		this.invalidate();
 	},
