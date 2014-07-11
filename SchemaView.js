@@ -323,6 +323,41 @@ var SchemaView = JakeKit.Canvas.extend({
 	
 	},
 	
+	deleteSelection: function() {
+		if (this.selection.length > 0) {
+			var connections = [];
+			_.each(this.selection, function(item) {	connections = _.union(connections, item.allConnections()); });
+			var actions = [];
+			var schema = this.schema;
+			_.each(connections, function(connection) {
+				actions.push(new Action({
+					project_id: 	schema.get("project_id"),
+					schema_id:		schema.id,
+					type:			"REMOVE_CONNECTION",
+					input_item:		connection.input_item.number,
+					input_num:		connection.input_num,
+					output_item:	connection.output_item.number,
+					output_num:		connection.output_num
+				}));
+			});
+			_.each(this.selection, function(gate) {
+				actions.push(new Action({
+					project_id: 	schema.get("project_id"),
+					schema_id:		schema.id,
+					type:			"REMOVE_NUMBERED_GATE",
+					number:			gate.number,
+					gate_type:		gate.type,
+					position:		gate.position()
+				}));
+			});
+			var action = new GroupedActions(actions);
+			this.action_recorder.record(action);
+			action.doTo(this.model);
+			this.saveSchema();	
+			this.selection = [];
+		}
+	}
+	
 });
 
 function Action(args) {
@@ -345,7 +380,7 @@ Action.prototype = {
 				return new Action({
 					project_id:		this.project_id,
 					schema_id:		this.schema_id,
-					type:			"REMOVE_LAST_GATE"
+					type:			"REMOVE_GATE"
 				});
 			case "ADD_CONNECTION":
 				return new Action({
@@ -357,6 +392,25 @@ Action.prototype = {
 					output_item:	this.output_item,
 					output_num:		this.output_num
 				});
+			case "REMOVE_CONNECTION":
+				return new Action({
+					project_id:		this.project_id,
+					schema_id:		this.schema_id,
+					type:			"ADD_CONNECTION",
+					input_item:		this.input_item,
+					input_num:		this.input_num,
+					output_item:	this.output_item,
+					output_num:		this.output_num
+				});
+			case "REMOVE_NUMBERED_GATE":
+				return new Action({
+					project_id:		this.project_id,
+					schema_id:		this.schema_id,
+					type:			"ADD_NUMBERED_GATE",
+					number:			this.number,
+					gate_type:		this.gate_type,
+					position:		this.position
+				});
 		}
 	},
 	
@@ -367,7 +421,7 @@ Action.prototype = {
 				model.add(object);
 				object.setPosition(this.position);
 				break;
-			case "REMOVE_LAST_GATE":
+			case "REMOVE_GATE":
 				model.removeLastGate();
 				break;
 			case "ADD_CONNECTION":
@@ -376,7 +430,46 @@ Action.prototype = {
 			case "REMOVE_CONNECTION":
 				model.removeConnection(this.input_item, this.input_num, this.output_item, this.output_num);
 				break;
+			case "REMOVE_NUMBERED_GATE":
+				model.remove(this.number);
+				break;
+			case "ADD_NUMBERED_GATE":
+				var object = makeGate(this.gate_type);
+				object.number = this.number;
+				model.add(object);
+				object.setPosition(this.position);
+				break;
 		}
+	},
+	
+	schemaID: function() {
+		return this.schema_id;
 	}
 	
+};
+
+function GroupedActions(actions) {
+	this.actions = actions;
+}
+
+GroupedActions.prototype = {
+
+	toJSON: function() {
+		return {};
+	},
+	
+	inverse: function() {
+		var actions = [];
+		_.each(this.actions, function(action) { actions.unshift(action.inverse()); });
+		return new GroupedActions(actions);
+	},
+	
+	doTo: function(model) {
+		_.each(this.actions, function(action) { action.doTo(model) });
+	},
+	
+	schemaID: function() {
+		return this.actions[0].schema_id;
+	}
+
 };

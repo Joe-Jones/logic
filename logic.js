@@ -65,15 +65,16 @@ var MainView = JakeKit.Stack.extend({
 				{ type: "menu", id: "project_menu", caption: "Project", items: [
 						{ text: "New", id: "new_project" },
 						{ text: "Rename", id: "rename_project" },
-						{ text: "Open", id: "open_project" },
-						{ text: "Save" }
+						{ text: "Open", id: "open_project" }
 				]},
 				{ type: "menu", id: "schema_menu", caption: "Schema", items: [
 						{ text: "New", id: "new_schema"},
 						{ text: "Rename", id: "rename_schema" }]},
 				{ type: "menu", id: "edit_menu", caption: "Edit", items: [
 						{ text:	"Undo", id: "undo"},
-						{ text: "Redo", id: "redo"}]}]);
+						{ text: "Redo", id: "redo"},
+						{ text: "Delete", id: "delete"}
+				]}]);
 		
 		this.listenTo(menu, "new_project", this.newProject);
 		this.listenTo(menu, "open_project", this.showOpenProjectWindow);
@@ -87,6 +88,7 @@ var MainView = JakeKit.Stack.extend({
 		
 		this.project_view.listenTo(menu, "undo", this.project_view.undo);
 		this.project_view.listenTo(menu, "redo", this.project_view.redo);
+		this.project_view.listenTo(menu, "delete", this.project_view.deleteSelection);
 	
 		var hbox = new JakeKit.HBox();
 		

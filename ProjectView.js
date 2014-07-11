@@ -105,21 +105,25 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		if (this.history_position > 0) {
 			var last_action = this.history[this.history_position - 1];
 			var undo_action = last_action.inverse();
-			undo_action.doTo(this.views[undo_action.schema_id].model);
+			undo_action.doTo(this.views[undo_action.schemaID()].model);
 			this.history_position--;
 			
-			this.views[undo_action.schema_id].saveSchema();
+			this.views[undo_action.schemaID()].saveSchema();
 		}
 	},
 	
 	redo: function() {
 		if (this.history_position < this.history.length) {
 			var action = this.history[this.history_position];
-			action.doTo(this.views[action.schema_id].model);
+			action.doTo(this.views[action.schemaID()].model);
 			this.history_position++;
 			
-			this.views[action.schema_id].saveSchema();
+			this.views[action.schemaID()].saveSchema();
 		}
+	},
+	
+	deleteSelection: function() {
+		this.activeView().deleteSelection();
 	}
 		
 });
