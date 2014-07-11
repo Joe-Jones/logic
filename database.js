@@ -5,7 +5,7 @@ var database = {
 	description: "This is where all the data is kept, its a database.",
 	migrations: [
 		{
-			version: "1.0",
+			version: 1.0,
 			migrate: function(transaction, next) {
 				var db = transaction.db;
 				

@@ -122,7 +122,7 @@ var MainView = JakeKit.Stack.extend({
 	},
 	
 	newProject: function() {
-		project = new Project({
+		var project = new Project({
 			cdate: Date(),
 			mdate: Date(),
 			adate: Date(),
