@@ -128,3 +128,28 @@ var ProjectView = JakeKit.w2tabstack.extend({
 		
 });
 
+var ComponentView = Backbone.View.extend({
+
+	render: function() {
+		var html = "Hi you bam pots";
+		this.$el.html(html);
+		
+		return this;
+	}
+
+});
+
+var ComponentList = Backbone.View.extend({
+
+	render: function() {
+		this.collection.each(function(component) {
+			var component_view = new ComponentView({ model: component });
+			this.$el.append(component_view.render().el);
+		}, this);
+	}
+	
+});
+
+
+
+
