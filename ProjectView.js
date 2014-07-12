@@ -1,15 +1,17 @@
 "use strict";
 
-var ProjectView = JakeKit.w2tabstack.extend({
+var ProjectView = JakeKit.HBox.extend({
 	
 	initialize: function() {
 		JakeKit.w2tabstack.prototype.initialize.call(this);
+		this.tabstack = new JakeKit.w2tabstack();
+		this.addChild(this.tabstack);
 		this.views = {};
 		this.schemas = {};
 		this.history = [];
 		this.history_position = 0;
 		_.bindAll(this, "openTab", "schemaNameChanged");
-		this.listenTo(this, "viewSelected", this.viewSelected);
+		this.listenTo(this.tabstack, "viewSelected", this.viewSelected);
 	},
 	
 	setProject: function(project) {
@@ -66,7 +68,7 @@ var ProjectView = JakeKit.w2tabstack.extend({
 	openTab: function(schema) {
 		var new_view = new SchemaView(schema, this);
 		this.views[schema.id] = new_view;
-		this.addChild(new_view, schema.get("name"));
+		this.tabstack.addChild(new_view, schema.get("name"));
 		
 		var open_tabs = this.data.get("open_tabs");
 		if (! _.contains(open_tabs, schema.id)) {
@@ -77,7 +79,7 @@ var ProjectView = JakeKit.w2tabstack.extend({
 	selectTab: function(view) {
 		this.data.set("selected_tab", view.schema_data.id);
 		this.data.save();
-		this.makeActive(view);
+		this.tabstack.makeActive(view);
 	},
 	
 	viewSelected: function(view) {
@@ -90,7 +92,7 @@ var ProjectView = JakeKit.w2tabstack.extend({
 	},
 	
 	schemaNameChanged: function(schema) {
-		this.setCaption(this.views[schema.id], schema.get("name"));
+		this.tabstack.setCaption(this.views[schema.id], schema.get("name"));
 	},
 	
 	record: function(action) {
@@ -124,6 +126,10 @@ var ProjectView = JakeKit.w2tabstack.extend({
 	
 	deleteSelection: function() {
 		this.activeView().deleteSelection();
+	},
+	
+	activeView: function() {
+		return this.tabstack.activeView();
 	}
 		
 });
