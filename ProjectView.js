@@ -3,7 +3,7 @@
 var ProjectView = JakeKit.HBox.extend({
 	
 	initialize: function() {
-		JakeKit.w2tabstack.prototype.initialize.call(this);
+		JakeKit.HBox.prototype.initialize.call(this);
 		this.tabstack = new JakeKit.w2tabstack();
 		this.addChild(this.tabstack);
 		this.views = {};
@@ -155,7 +155,3 @@ var ComponentList = Backbone.View.extend({
 	}
 	
 });
-
-
-
-
