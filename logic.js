@@ -1,5 +1,13 @@
 "use strict";
 
+// Create a dragstart event handler.
+function makeEventListener(type) {
+	return function (event) {
+		event.dataTransfer.setData("Text", type);
+		event.dataTransfer.effectAllowed = 'move'; // only allow moves, what the fuck does that even mean?
+	}
+}
+
 // indexedDB.deleteDatabase("logic");
 /********************************************************************************************/
 var Pallet = Backbone.View.extend({
@@ -23,13 +31,6 @@ var Pallet = Backbone.View.extend({
 		html += "</table>";
 		this.$el.html(html);
 		
-		//
-		function makeEventListener(type) {
-			return function (event) {
-				event.dataTransfer.setData("Text", type);
-				event.dataTransfer.effectAllowed = 'move'; // only allow moves, what the fuck does that even mean?
-			}
-		}
 		for (var i = 0; i < gate_list.length; i++) {
 			var canvas = this.$("#pallet-item-" + String(i))[0];
 			var type = gate_list[i];

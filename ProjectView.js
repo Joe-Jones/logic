@@ -4,6 +4,10 @@ var ProjectView = JakeKit.HBox.extend({
 	
 	initialize: function() {
 		JakeKit.HBox.prototype.initialize.call(this);
+		
+		this.components = new ComponentList();
+		this.addChild(this.components);
+		
 		this.tabstack = new JakeKit.w2tabstack();
 		this.addChild(this.tabstack);
 		this.views = {};
@@ -29,6 +33,10 @@ var ProjectView = JakeKit.HBox.extend({
 		this.schemas.fetch({
 			conditions: { project_id: this.data.id },
 			success: function() {
+				// Render the components list
+				that.components.collection = that.schemas;
+				that.components.render();
+				
 				var open_tabs = that.data.get("open_tabs");
 				if (_.size(open_tabs) == 0) {
 					that.newTab();
@@ -136,9 +144,13 @@ var ProjectView = JakeKit.HBox.extend({
 
 var ComponentView = Backbone.View.extend({
 
+	attributes: { draggable: "true" },
+
 	render: function() {
-		var html = "Hi you bam pots";
+		var html = this.model.get("name");
 		this.$el.html(html);
+		
+		this.el.addEventListener("dragstart", makeEventListener("COMPONENT:" + this.model.id), true);
 		
 		return this;
 	}
@@ -147,11 +159,15 @@ var ComponentView = Backbone.View.extend({
 
 var ComponentList = Backbone.View.extend({
 
+	className: "components",
+
 	render: function() {
-		this.collection.each(function(component) {
-			var component_view = new ComponentView({ model: component });
-			this.$el.append(component_view.render().el);
-		}, this);
+		if (this.collection) {
+			this.collection.each(function(component) {
+				var component_view = new ComponentView({ model: component });
+				this.$el.append(component_view.render().el);
+			}, this);
+		}
 	}
 	
 });

@@ -42,7 +42,7 @@ SchemaModel.prototype.add = function(object) {
 	if (object.type == "SWITCH") {
 		object.stateChanged = function (new_state) {
 			that.logic_system.setOutput(object.logic_id, new_state);
-			that.logic_system.run();
+			that.logic_system.run(); //Todo, should this be here
 		};
 	}
 };
@@ -184,6 +184,38 @@ SchemaModel.prototype.load = function(saved) {
 		var saved_connection = saved["connections"][i];
 		this.addConnection(saved_connection[0], saved_connection[1], saved_connection[2], saved_connection[3]);
 	}
+};
+
+SchemaModel.prototype.rebuildLogicSystem = function() {
+	var model = this;
+	this.logic_system = new LogicSystem();
+	_.each(this.objects, function(object) {
+		if (object.type == "SUBCIRCIT") {
+		
+		} else {
+			object.logic_id = this.logic_system.addGate(object.type);
+			if (object.DisplaysState) {
+				this.logic_system.registerCallback(object.logic_id, function (new_state) {
+					object.setState(new_state);
+					model.drawer.invalidateRectangle(object.boundingBox());
+				});
+			}
+			if (object.type == "SWITCH") {
+				this.logic_system.setOutput(object.logic_id, object.getState());
+			}
+		}
+	}, this);
+	_.each(this.objects, function(object) {
+		if (object.type == "SUBCIRCIT") {
+		
+		} else {
+			//console.log(object.getConnections("OUTPUT", 0));
+			_.each(object.getConnections("OUTPUT", 0), function(connection) {
+				this.logic_system.makeConnection(connection.output_item.logic_id, connection.input_item.logic_id, connection.input_num);
+			}, this);
+		}
+	}, this);
+	console.log(this.logic_system);
 };
 
 

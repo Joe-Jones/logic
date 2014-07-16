@@ -82,7 +82,7 @@ DragableThing.prototype.addConnection = function(connection) {
 		if (!this.output_connections[number]) {
 			this.output_connections[number] = [connection];
 		} else {
-			this.output_connections.push(connection);
+			this.output_connections[number].push(connection);
 		}
 	}
 };
@@ -624,7 +624,7 @@ function SubCircit()
 /********************************************************************************************/
 {
 	this.initDragableThing()
-
+	this.type = "SUBCIRCIT";
 }
 
 SubCircit.prototype = new DragableThing();
