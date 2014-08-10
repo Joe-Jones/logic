@@ -125,7 +125,7 @@ LogicSystem.prototype.saveAsTemplate = function() {
 	var gate_map = {};
 	var inputs = {};
 	var outputs = {};
-	var counter = 0;
+	var counter = 1;
 	for (var i = 0; i < this.gates.length; i++) {
 		var gate = this.gates[i];
 		if (gate) {
@@ -172,17 +172,17 @@ LogicSystem.prototype.addTemplate = function(template) {
 		var id = this.addGate(gate[0]);
 		for (var j = 1; i <= 2; j++) {
 			if (this.gates[id][j]) {
-				this.gates[id][j] = gate[j] + start_gate;
+				this.gates[id][j] = gate[j] + start_gate - 1;
 			}
 		}
 	}
 	var inputs = {};
 	_.each(_.keys(template["inputs"]), function(input_id) {
-		inputs[input_id] = _.map(template["inputs"][input_id], function(gate) { return [gate[0] + start_gate, gate[1]]; });
+		inputs[input_id] = _.map(template["inputs"][input_id], function(gate) { return [gate[0] + start_gate - 1, gate[1]]; });
 	});
 	var outputs = {};
 	_.each(_.keys(template["outputs"]), function(output_id) {
-		outputs[output_id] = template["outputs"][output_id] + start_gate;
+		outputs[output_id] = template["outputs"][output_id] + start_gate - 1;
 	});
 	return {
 		inputs: inputs,

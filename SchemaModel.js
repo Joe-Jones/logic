@@ -1,13 +1,14 @@
 "use strict";
 
 /********************************************************************************************/
-function SchemaModel()
+function SchemaModel(template_manager)
 /********************************************************************************************/
 {
 	this.objects = {};
 	this.next_item_number = 1;
 	this.next_connection_number = 0;
 	this.logic_system = new LogicSystem();
+	this.template_manager = template_manager;
 }
 
 SchemaModel.prototype.nextItemId = function() {
@@ -30,7 +31,12 @@ SchemaModel.prototype.add = function(object) {
 	this.objects[object.number] = object;
 	
 	//Add it to the LogicSystem
-	object.logic_id = this.logic_system.addGate(object.type);
+	if (object.type == "SUBCIRCIT") {
+		var template = template_manager.getTemplate(object.schema_id);
+		object.logic_data = this.logic_system.addTemplate(template);
+	} else {
+		object.logic_id = this.logic_system.addGate(object.type);
+	}
 	
 	if (object.DisplaysState) {
 		this.logic_system.registerCallback(object.logic_id,
@@ -217,5 +223,9 @@ SchemaModel.prototype.rebuildLogicSystem = function() {
 	}, this);
 	console.log(this.logic_system);
 };
+
+SchemaModel.prototype.saveAsTemplate = function() {
+	return this.logic_system.saveAsTemplate();
+}
 
 

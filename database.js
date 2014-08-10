@@ -16,7 +16,8 @@ var database = {
 				var schemas = db.createObjectStore("schemas", { keyPath: "id", autoIncrement : true });
 				schemas.createIndex("project_id", "project_id", { unique: false});
 			
-				db.createObjectStore("template_data", { keyPath: "id", autoIncrement : true });
+				var templates = db.createObjectStore("templates", { keyPath: "id", autoIncrement : true });
+				templates.createIndex("project_id", "project_id", { unique: false });
 			
 				db.createObjectStore("schema_data", { keyPath: "id", autoIncrement : true });
 				
@@ -76,9 +77,15 @@ var SchemaData = Backbone.Model.extend({
 	storeName:	"schema_data"
 });
 
-var TemplateData = Backbone.Model.extend({
+var Template = Backbone.Model.extend({
 	database:	database,
-	storeName:	"template_data"
+	storeName:	"templates"
+});
+
+var TemplateList = Backbone.Collection.extend({
+	database: 	database,
+	storeName:	"templates",
+	model:		TemplateList
 });
 
 

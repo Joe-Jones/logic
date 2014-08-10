@@ -593,38 +593,48 @@ Output.prototype.inputs = function() {
 
 
 function makeGate(type) {
-	switch(type) {
-		case "AND":
-			return new AndGate();
-		case "OR":
-			return new OrGate();
-		case "NOT":
-			return new NotGate();
-		case "NAND":
-			return new NandGate();
-		case "NOR":
-			return new NorGate();
-		case "XOR":
-			return new XorGate();
-		case "XNOR":
-			return new XnorGate();
-		case "SWITCH":
-			return new Switch();
-		case "BULB":
-			return new Bulb();
-		case "INPUT":
-			return new Input();
-		case "OUTPUT":
-			return new Output();
+	var parts = type.split(":");
+	if (parts.length == 1) {
+		switch(type) {
+			case "AND":
+				return new AndGate();
+			case "OR":
+				return new OrGate();
+			case "NOT":
+				return new NotGate();
+			case "NAND":
+				return new NandGate();
+			case "NOR":
+				return new NorGate();
+			case "XOR":
+				return new XorGate();
+			case "XNOR":
+				return new XnorGate();
+			case "SWITCH":
+				return new Switch();
+			case "BULB":
+				return new Bulb();
+			case "INPUT":
+				return new Input();
+			case "OUTPUT":
+				return new Output();
+		}
+	} else {
+		type = parts[0];
+		var id = parts[1];
+		if (type == "COMPONENT") {
+			return new SubCircit(id);
+		}
 	}
 }
 
 /********************************************************************************************/
-function SubCircit()
+function SubCircit(id)
 /********************************************************************************************/
 {
 	this.initDragableThing()
 	this.type = "SUBCIRCIT";
+	this.schema_id = id;
 }
 
 SubCircit.prototype = new DragableThing();
@@ -632,6 +642,8 @@ SubCircit.prototype = new DragableThing();
 SubCircit.prototype.draw = function(ctx) {
 	ctx.save();
 	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
+	
+	// Work out big we need to be
 
 	ctx.fillRect(0.15, 0.15, 0.7, 0.7);
 	if(!this.on) {

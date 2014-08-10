@@ -22,19 +22,20 @@ var SchemaView = JakeKit.Canvas.extend({
 		return false;
 	},
 	
-	initialize: function(schema, action_recorder) {
+	initialize: function(schema, action_recorder, template_manager) {
 		JakeKit.Canvas.prototype.initialize.call(this);
 		var that = this;
 		_.bindAll(this, "loadSchema");
 		
 		this.action_recorder = action_recorder;
+		this.template_manager = template_manager;
 		
 		this.mouse_over = false;
 		this.mouse_down = false;
 		this.in_drag = false;
 		
 		// From SchemaView
-		this.model = new SchemaModel();
+		this.model = new SchemaModel(template_manager);
 		this.dragged_object = null;
 		this.drawer = new SchemaDrawer(this.model);
 		this.current_hot_point = null;
@@ -63,6 +64,17 @@ var SchemaView = JakeKit.Canvas.extend({
 	saveSchema: function() {
 		this.schema_data.set("data", this.model.save());
 		this.schema_data.save();
+		
+		var template = this.model.saveAsTemplate();
+		console.log(template);
+		this.template_data.set("data", template);
+		this.template_data.save();
+		
+		this.template_manager.templateInvalid(this.schema.id);
+	},
+	
+	saveAsTemplate: function() {
+		return model.saveAsTemplate();
 	},
 	
 	ready: function() {
