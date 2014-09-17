@@ -27,6 +27,8 @@ var SchemaView = JakeKit.Canvas.extend({
 		var that = this;
 		_.bindAll(this, "loadSchema");
 		
+		this.id = schema.id;
+		
 		this.action_recorder = action_recorder;
 		this.template_manager = template_manager;
 		

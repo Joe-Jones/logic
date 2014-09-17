@@ -142,150 +142,118 @@ var ProjectView = JakeKit.HBox.extend({
 	activeView: function() {
 		return this.tabstack.activeView();
 	},
-	
-	/*************************************************************************************
-		Template Manager methods.
-		
-		These methods go together and are used to manage templates and their dependances.
-		
-		A note on terminology, mainly we are refering to the ids, in fact every method here that
-		takes an argument, that argument is an id. The words view, schema, and template are
-		interchangable when talking about ids. This is because there is a one to one relationship
-		between views, schemas and templates and they all use the same id.
-		
-	*************************************************************************************/
-	
+
+});
+
+/*************************************************************************************
+	Template Manager.
+
+	These methods go together and are used to manage templates and their dependences.
+
+	A note on terminology, mainly we are referring to the ids, in fact every method here that
+	takes an argument, that argument is an id. The words view, schema, and template are
+	interchangeable when talking about ids. This is because there is a one to one relationship
+	between views, schemas and templates and they all use the same id.
+
+*************************************************************************************/
+
+function TemplateManager(data) {
+	if (_.isObject(data)) {
+		_.extend(this, data);
+	} else {
+		this.templates = {};
+		this.contains = {};
+	}
+	this.models = {};
+}
+
+TemplateManager.prototype = {
+
 	/*
-		Getter and Setter methods to separate the rest of the Template Manager from the
-		rest of the class.
+		Returns a list of all the components included directly in the schema with ID id.
 	*/
-	
-	getContains: function(id) {
-		this.getSchema(id).get("contains");
-	},
-	
-	setContains: function(id, contains) {
-		var schema = this.getSchema(id);
-		schema.set("contains", contains);
-		schema.save();
-	},
-	
-	getContainsRec: function(id) {
-		this.getSchema(id).get("contains_recursive");
-	},
-	
-	setContainsRec: function(id, contains_rec) {
-		var schema = this.getSchema(id);
-		schema.set("contains_recursive", contains);
-		schema.save();
-	},
-	
-	allConatiningRec: function(id) {
-		return _.map(this.schemas.filter(function(schema) { return _.contains(schema.get("contains_recursive"), id); }),
-					function (schema) { return schema.id; });
-	},
-	
-	allContaining: function(id) {
-		return 
+
+	allContainedBy: function(id) {
+		return _.keys(this.contains[id]); 
 	}
 	
 	/*
-		The main method for 
+		Return a list of all schemas which directly include the schema with ID id.
 	*/
-	calculateContainsRec: function(id) {
-		var that = this;
-		var contained = _.keys(this.getContains(id));
-		setContainsRec(id, _.union(contained, _.union.apply(_, _.map(contained, function(contained) { return that.getContainsRec(contained); }))));
-	},
 	
-	
-	
-	/* 
-		Called to initialise the template manager
-	*/
-	loadTemplates: function() {
-		var templates = new TemplateList();
-		this.templates = {};
-		var that = this;
-		return templates.fetch({ conditions: { project_id: this.data.id } }).promise().done(function() {
-			templates.forEach(function(template) {
-				this.templates[template.get("schema_id")] = template;
-			}, that);
-		});
-	},
-	
+	allContaining: function(id) {
+		return _.filter(_.keys(this.contains), function(k) { return _.contains(_.keys(this.contains[k]) id); }, this);
+	}
+
 	rebuildNeededTemplates: function(id) {
-		_.each(this.getContains(id), function(containd) {
+		_.each(this.allContainedBy(id), function(containd) {
 			this.rebuildTemplate(containd);
 		}, this);
 	},
+
+	/*
+		if it needs to be, rebuild template with ID id. First rebuilding any templates it depends on.
+	*/
 	
-	rebuildTemplate: function(id) {
-		if (!this.templates[id].has("data")) {
-		
+	rebuildTemplate: function(id) { //Todo this looks like it needs rewritten.
+		if (!this.templates[id]) {
 			this.rebuildNeededTemplates(id);
-			
-			var template = this.templates[id];
-			if (template) {
-				template.set("data", this.views[id].saveAsTemplate());
-			} else {
-				template = new Template( { project_id: this.data.id, data: this.views[id].saveAsTemplate(), schema_id: id });
-				this.templates[id] = template;
-			}
-			template.save();
+			this.templates[id] = this.models[id].saveAsTemplate();
 		}
 	},
+
+	/* Public methods below this line */
 	
 	/* 
-		Called by a view, using its own schema id to let the template manager know it's template is invalid.
-	*/  
-	templateInvalid: function(id) {
-		var all_containing = this.allConatiningRec(id);
-		_.each(all_containing, function(containing) {
-			this.templates[containing].unset("data");
-			this.templates[containing].save();
-		}, this);
-		
-		each(all_containing, function(containing) {
-			this.rebuildTemplate(id);
-		}, this);
-		
-	},
-	
-	/* 
-		Called by a view to get the template for a different schema. This is not an Asyncronos call, instead we
-		are going to be very clever and make sure this never gets called when the template manager can't imediatly
-		forfill the request
+		the template manager needs to be able to find a model for every template it is managing.
 	*/
-	getTemplate: function(id) {
-		return this.templates[id].get("data");
+	
+	addModel: function(model) {
+		this.models[model.id] = model;
 	},
 	
 	/*
-		Called to check we would not create a cyclic dependantcy by adding added to to.
+		Called by a view, using its own schema id to let the template manager know it's template is invalid.
+	*/
+	
+	templateInvalid: function(id) {
+		delete this.templates[id];
+		_.each(this.allConatining(id), function(containing_id) {
+			this.templateInvalid(containing_id);
+		}, this);
+	},
+
+	/*
+		Called by a view to get the template for a different schema.
+	*/
+	
+	getTemplate: function(id) {
+		this.rebuildTemplate(id);
+		return this.templates[id];
+	},
+	
+	/*
+		Called to check we would not create a cyclic dependency by adding added to to.
 	*/
 	
 	validToAdd: function(added, to) {
-		return !_.contains(this.getContainsRec(to), added);
+		/*
+			we need to check that added does not in some way contain to
+		*/
+		added_contains = _.keys(this.contains[added]);
+		return added != to && !_.contains(added_contains, to) && _.every(added_contains, function(id) { return this.validToAdd(id, to); }, this);
 	},
-	
+
 	/*
 		Called to let the template manager know that a copy template with id added has been added to schema with id to.
 	*/
+	
 	templateAdded: function(added, to) {
-		var contained = this.getContained(to);
+		var contains = this.contains[to];
 		if (contained[added]) {
-			contained.added ++;
-			this.setContained(to, contained);
+			contained[added] ++;
 		} else {
 			contained[added] = 1;
-			this.setContained(to, contained);
-			if (!_.contains(this.getContainedRec("to"), added)) {
-				all_needing_recalculated = getAllContainingRec(to);
-				_.each(getAllContainingRec(to), function(id) { //This aint going to work!!
-					this.calculateContainsRec(id);
-				}, this);
-			}
 		}
 	},
 	
@@ -293,11 +261,17 @@ var ProjectView = JakeKit.HBox.extend({
 		Called to let the template manager that one of the copies of removed that from contained has
 		been removed.
 	*/
-	templateRemoved: function(refoved, from) {
-		var contained = this.getContained(to);
-	}
 	
-});
+	templateRemoved: function(removed, from) {
+		var contains = this.contains[from];
+		if (contained[removed] > 1) {
+			contained[removed]--;
+		} else {
+			delete contained[removed];
+		}
+	}
+
+};
 
 var ComponentView = Backbone.View.extend({
 
