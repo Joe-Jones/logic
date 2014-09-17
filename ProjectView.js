@@ -175,15 +175,15 @@ TemplateManager.prototype = {
 
 	allContainedBy: function(id) {
 		return _.keys(this.contains[id]); 
-	}
+	},
 	
 	/*
 		Return a list of all schemas which directly include the schema with ID id.
 	*/
 	
 	allContaining: function(id) {
-		return _.filter(_.keys(this.contains), function(k) { return _.contains(_.keys(this.contains[k]) id); }, this);
-	}
+		return _.filter(_.keys(this.contains), function(k) { return _.contains(_.keys(this.contains[k]), String(id)); }, this);
+	},
 
 	rebuildNeededTemplates: function(id) {
 		_.each(this.allContainedBy(id), function(containd) {
@@ -209,6 +209,9 @@ TemplateManager.prototype = {
 	*/
 	
 	addModel: function(model) {
+		if (!this.contains[model.id]) {
+			this.contains[model.id] = {};
+		}
 		this.models[model.id] = model;
 	},
 	
@@ -218,7 +221,7 @@ TemplateManager.prototype = {
 	
 	templateInvalid: function(id) {
 		delete this.templates[id];
-		_.each(this.allConatining(id), function(containing_id) {
+		_.each(this.allContaining(id), function(containing_id) {
 			this.templateInvalid(containing_id);
 		}, this);
 	},
@@ -240,7 +243,7 @@ TemplateManager.prototype = {
 		/*
 			we need to check that added does not in some way contain to
 		*/
-		added_contains = _.keys(this.contains[added]);
+		var added_contains = _.keys(this.contains[added]);
 		return added != to && !_.contains(added_contains, to) && _.every(added_contains, function(id) { return this.validToAdd(id, to); }, this);
 	},
 
@@ -249,7 +252,7 @@ TemplateManager.prototype = {
 	*/
 	
 	templateAdded: function(added, to) {
-		var contains = this.contains[to];
+		var contained = this.contains[to];
 		if (contained[added]) {
 			contained[added] ++;
 		} else {
@@ -263,7 +266,7 @@ TemplateManager.prototype = {
 	*/
 	
 	templateRemoved: function(removed, from) {
-		var contains = this.contains[from];
+		var contained = this.contains[from];
 		if (contained[removed] > 1) {
 			contained[removed]--;
 		} else {
