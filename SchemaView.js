@@ -66,13 +66,6 @@ var SchemaView = JakeKit.Canvas.extend({
 	saveSchema: function() {
 		this.schema_data.set("data", this.model.save());
 		this.schema_data.save();
-		
-		var template = this.model.saveAsTemplate();
-		console.log(template);
-		this.template_data.set("data", template);
-		this.template_data.save();
-		
-		this.template_manager.templateInvalid(this.schema.id);
 	},
 	
 	saveAsTemplate: function() {
