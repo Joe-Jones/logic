@@ -96,6 +96,10 @@ LogicSystem.prototype.setOutput = function(id, value) {
 	this.output_values[id] = value;
 };
 
+LogicSystem.prototype.getOutput = function(id) {
+	return this.output_values[id];
+};
+
 LogicSystem.prototype.injectTransient = function(id) {
 	this.transients[id] = true;
 };
