@@ -172,9 +172,11 @@ LogicSystem.prototype.saveAsTemplate = function() {
 LogicSystem.prototype.addTemplate = function(template) {
 	var start_gate = this.gates.length;
 	var gate_count = template["gates"].length;
+	var gates = [];
 	for (var i = 0; i < gate_count; i++) {
 		var gate = template["gates"][i];
 		var id = this.addGate(gate[0]);
+		gates.push(id);
 		for (var j = 1; j <= 2; j++) {
 			if (this.gates[id][j]) {
 				this.gates[id][j] = gate[j] + start_gate - 1;
@@ -191,7 +193,8 @@ LogicSystem.prototype.addTemplate = function(template) {
 	});
 	return {
 		inputs: inputs,
-		outputs: outputs
+		outputs: outputs,
+		gates: gates
 	};
 };
 

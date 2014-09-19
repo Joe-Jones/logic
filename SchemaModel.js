@@ -32,8 +32,8 @@ SchemaModel.prototype.add = function(object) {
 	
 	//Add it to the LogicSystem
 	if (object.type == "SUBCIRCIT") {
-		var template = template_manager.getTemplate(object.schema_id);
-		object.logic_data = this.logic_system.addTemplate(template);
+		var template = this.template_manager.getTemplate(object.schema_id);
+		object.template_instance = this.logic_system.addTemplate(template);
 	} else {
 		object.logic_id = this.logic_system.addGate(object.type);
 	}

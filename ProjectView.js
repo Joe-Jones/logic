@@ -77,7 +77,8 @@ var ProjectView = JakeKit.HBox.extend({
 	},
 	
 	openTab: function(schema) {
-		var new_view = new SchemaView(schema, this, this);
+		this.template_manager = new TemplateManager();
+		var new_view = new SchemaView(schema, this, this.template_manager);
 		this.views[schema.id] = new_view;
 		this.tabstack.addChild(new_view, schema.get("name"));
 		
