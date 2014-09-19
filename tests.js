@@ -119,3 +119,40 @@ QUnit.test("simple test", function(assert) {
 		[1, 1, 1]];
 	checkTruthTable(truth_table, "And Gate", logic_system, [input_1, input_2], [output], assert);
 });
+
+function halfAdder() {
+	var logic_system = new LogicSystem;
+	var input_a = logic_system.addGate("INPUT");
+	var input_b = logic_system.addGate("INPUT");
+	var and_gate = logic_system.addGate("AND");
+	var xor_gate = logic_system.addGate("XOR");
+	var output_s = logic_system.addGate("OUTPUT");
+	var output_c = logic_system.addGate("OUTPUT");
+	logic_system.makeConnection(input_a, and_gate, 0);
+	logic_system.makeConnection(input_b, and_gate, 1);
+	logic_system.makeConnection(input_a, xor_gate, 0);
+	logic_system.makeConnection(input_b, xor_gate, 1);
+	logic_system.makeConnection(and_gate, output_c, 0);
+	logic_system.makeConnection(xor_gate, output_s, 0);
+	return { template: logic_system.saveAsTemplate(), a: input_a, b: input_b, s: output_s, c: output_c };
+}
+
+QUnit.test("half adder test", function(assert) {
+	var logic_system = new LogicSystem;
+	var adder = halfAdder();
+	var adder_instance = logic_system.addTemplate(adder["template"]);
+	var input_a = logic_system.addGate("SWITCH");
+	var input_b = logic_system.addGate("SWITCH");
+	var output_s = logic_system.addGate("BULB");
+	var output_c = logic_system.addGate("BULB");
+	logic_system.connectToTemplateInstance(input_a, adder_instance, adder["a"]);
+	logic_system.connectToTemplateInstance(input_b, adder_instance, adder["b"]);
+	logic_system.makeConnection(logic_system.gateNumber(adder_instance, adder["s"]), output_s, 0);
+	logic_system.makeConnection(logic_system.gateNumber(adder_instance, adder["c"]), output_c, 0);
+	var truth_table = [
+		[0, 0, 0, 0],
+		[1, 0, 0, 1],
+		[0, 1, 0, 1],
+		[1, 1, 1, 0]];
+	checkTruthTable(truth_table, "Half Adder", logic_system, [input_a, input_b], [output_c, output_s], assert);
+});

@@ -76,6 +76,7 @@ LogicSystem.prototype.removeGate = function(id) {
 };
 
 LogicSystem.prototype.makeConnection = function(output_id, input_id, input_number) {
+	// TODO: I think this should probably be injecting a transient, rather than that being a separate step.
 	this.gates[input_id][input_number + 1] = output_id;
 };
 
@@ -163,7 +164,7 @@ LogicSystem.prototype.saveAsTemplate = function() {
 	}
 	return {
 		"inputs": inputs,
-		"output": outputs,
+		"outputs": outputs,
 		"gates": template
 	};
 };
@@ -174,7 +175,7 @@ LogicSystem.prototype.addTemplate = function(template) {
 	for (var i = 0; i < gate_count; i++) {
 		var gate = template["gates"][i];
 		var id = this.addGate(gate[0]);
-		for (var j = 1; i <= 2; j++) {
+		for (var j = 1; j <= 2; j++) {
 			if (this.gates[id][j]) {
 				this.gates[id][j] = gate[j] + start_gate - 1;
 			}
@@ -193,3 +194,28 @@ LogicSystem.prototype.addTemplate = function(template) {
 		outputs: outputs
 	};
 };
+
+/*
+	connects the output of gate o to input number n of the template instance ti
+	
+	returns the list of connections that need to be removed to undo this action.
+*/
+
+LogicSystem.prototype.connectToTemplateInstance = function(o, ti, n) {
+	var inputs = ti["inputs"][n];
+	var connections_made = [];
+	_.each(inputs, function(input) {
+		this.makeConnection(o, input[0], input[1]);
+		connections_made.push([input[0], input[1]]);
+	}, this);
+	return connections_made;
+};
+
+/*
+	returns the gate number to use when connecting to output o of template instance ti
+*/
+
+LogicSystem.prototype.gateNumber = function(ti, o) {
+	return ti["outputs"][o];
+};
+
