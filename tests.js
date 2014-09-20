@@ -167,13 +167,74 @@ function tidy(db_name) {
 QUnit.asyncTest("config test", function(assert) {
 	expect(1);
 
-	getDatabase("test_database").always(function (database) {
-		database.setConfig("an", "example").done(function () {
-			getDatabase("test_database").always(function(database) {
+	getDatabase("test_database").done(function (database) {console.log(1);
+		database.setConfig("an", "example").done(function () {console.log(2);
+			getDatabase("test_database").done(function(database) {console.log(2);
 				assert.equal(database.getConfig("an"), "example", "We should get the same value back");
 				tidy("test_database");
-			});
+			}).fail(function() { assert.ok(false, "could not open the database the second time"); tidy("test_database"); });
 		}).fail(function() { assert.ok(false, "could not write to the database"); tidy("test_database"); });
-	});
+	}).fail(function() { assert.ok(false, "could not open the database the first time"); tidy("test_database"); });
 
+});
+
+QUnit.asyncTest("project list test 1", function(assert) {
+	expect(3);
+	
+	getDatabase("test_database2").done(function (database) {
+		var project_list = database.getProjectList();
+		var project1 = new database.Project();
+		var project2 = new database.Project();
+		var project3 = new database.Project();
+		project1.set("name", "project1");
+		project2.set("name", "project2");
+		project3.set("name", "project3");
+		project_list.add(project1);
+		project_list.add(project2);
+		project_list.add(project3);
+		
+		var names = [];
+		project_list.each(function (project) {
+			names.push(project.get("name"));
+		}, this);
+		_.each(["project1", "project2", "project3"], function (name) {
+			assert.ok(_.contains(names, name), "Project with name " + name + " was in the project list");
+		}, this);
+		tidy("test_database2");
+	}).fail(function() { assert.ok(false, "could not open the database the first time"); tidy("test_database2"); });
+});
+
+QUnit.asyncTest("project list test 2", function(assert) {
+	expect(3);
+	
+	getDatabase("test_database3").done(function (database) {
+		var project_list = database.getProjectList();
+		var project1 = new database.Project();
+		var project2 = new database.Project();
+		var project3 = new database.Project();
+		project1.set("name", "project1");
+		project2.set("name", "project2");
+		project3.set("name", "project3");
+		project_list.add(project1);
+		project_list.add(project2);
+		project_list.add(project3);
+		var promise = $.when(project1.save(), project2.save(), project3.save());
+		
+		promise.done(function() {
+		
+			getDatabase("test_database3").done(function (database) {
+				var project_list = database.getProjectList();
+				var names = [];
+				project_list.each(function (project) {
+					names.push(project.get("name"));
+				}, this);
+				_.each(["project1", "project2", "project3"], function (name) {
+					assert.ok(_.contains(names, name), "Project with name " + name + " was in the project list");
+				}, this);
+				tidy("test_database3");
+			}).fail(function() { assert.ok(false, "could not open the database the second time"); tidy("test_database3"); });
+			
+		}).fail(function() { assert.ok(false, "could not sync the project list"); tidy("test_database3"); });
+		
+	}).fail(function() { assert.ok(false, "could not open the database the first time"); tidy("test_database3"); });
 });

@@ -8,6 +8,17 @@ function getDatabase(name) {
 		database: database
 	});
 	
+	database.Project = Backbone.Model.extend({
+		storeName: "projects",
+		database:	database
+	});
+
+	database.ProjectList = Backbone.Collection.extend({
+		database: database,
+		storeName: "projects",
+		model: database.Project
+	});
+	
 	database.config = new database.Config({id: 1});
 	
 	var config_promise = database.config.fetch();
@@ -17,7 +28,11 @@ function getDatabase(name) {
 		deferred.resolve(database);
 	});
 	
-	return deferred.promise();
+	database.project_list = new database.ProjectList;
+	
+	var project_list_promise = database.project_list.fetch();
+	
+	return $.when(deferred, project_list_promise);
 }
 
 function Database(name) {
@@ -71,7 +86,7 @@ Database.prototype = {
 	*/
 	
 	getProjectList: function() {
-		
+		return this.project_list;
 	},
 
 	/*
