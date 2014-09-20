@@ -1,5 +1,112 @@
 "use strict";
 
+function getDatabase(name) {
+	var database = new Database(name);
+	
+	database.Config = Backbone.Model.extend({
+		storeName: "config",
+		database: database
+	});
+	
+	database.config = new database.Config({id: 1});
+	
+	var config_promise = database.config.fetch();
+	
+	var deferred = $.Deferred();
+	config_promise.always(function() {
+		deferred.resolve(database);
+	});
+	
+	return deferred.promise();
+}
+
+function Database(name) {
+	this.id = name;
+	
+}
+
+Database.prototype = {
+
+	description: "This is where all the data is kept, its a database.",
+	migrations: [
+		{
+			version: 1.0,
+			migrate: function(transaction, next) {
+				var db = transaction.db;
+				
+				var config = db.createObjectStore("config", { keyPath: "id" });
+				config.createIndex("key", "key", { unique: true });
+				
+				db.createObjectStore("projects", { keyPath: "id", autoIncrement : true });
+			
+				var blobs = db.createObjectStore("blobs", { keyPath: "id", autoIncrement : true });
+				blobs.createIndex("project_id", "project_id", { unique: false});
+				blobs.createIndex("name", "name", { unique: false });
+				
+				next();
+			}
+		}
+	],
+
+	/*
+		sets a global config value.
+		Returns a promise that lets you know when the value has been written to the database.
+	*/
+	
+	setConfig: function(key, value) {
+		this.config.set(key, value);
+		return this.config.save();
+	},
+	
+	/*
+		gets a global config value
+	*/
+	
+	getConfig: function(key) {
+		return this.config.get(key);
+	},
+	
+	/*
+		gets the project list, this is a Backbone collection.
+	*/
+	
+	getProjectList: function() {
+		
+	},
+
+	/*
+		returns a promise containing the ProjectData for the project with ID id.
+		If id is undefined it creates a new project.
+	*/
+
+	loadProjectData: function(id) {
+	
+	}
+
+};
+
+function ProjectData() {
+
+}
+
+ProjectData.prototype = {
+
+	/*
+	
+	*/
+
+	addObject: function(key, object) {
+	
+	},
+	
+	removeObject: function(key) {
+	
+	}
+	
+};
+
+
+
 var database = {
 	id: "logic",
 	description: "This is where all the data is kept, its a database.",

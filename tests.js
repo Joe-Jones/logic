@@ -156,3 +156,24 @@ QUnit.test("half adder test", function(assert) {
 		[1, 1, 1, 0]];
 	checkTruthTable(truth_table, "Half Adder", logic_system, [input_a, input_b], [output_c, output_s], assert);
 });
+
+QUnit.module("database");
+
+function tidy(db_name) {
+	indexedDB.deleteDatabase(db_name);
+	QUnit.start();
+}
+
+QUnit.asyncTest("config test", function(assert) {
+	expect(1);
+
+	getDatabase("test_database").always(function (database) {
+		database.setConfig("an", "example").done(function () {
+			getDatabase("test_database").always(function(database) {
+				assert.equal(database.getConfig("an"), "example", "We should get the same value back");
+				tidy("test_database");
+			});
+		}).fail(function() { assert.ok(false, "could not write to the database"); tidy("test_database"); });
+	});
+
+});
