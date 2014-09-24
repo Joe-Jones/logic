@@ -1,14 +1,14 @@
 "use strict";
 
 /********************************************************************************************/
-function SchemaModel(template_manager)
+function SchemaModel(id, project_id, data, template_manager)
 /********************************************************************************************/
 {
-	this.objects = {};
-	this.next_item_number = 1;
-	this.next_connection_number = 0;
-	this.logic_system = new LogicSystem();
+	this.id = id;
+	this.project_id = project_id;
+	this.data = data;
 	this.template_manager = template_manager;
+	this.loaded = false;
 }
 
 SchemaModel.prototype.nextItemId = function() {
@@ -174,22 +174,30 @@ SchemaModel.prototype.save = function() {
 	return saved;
 };
 
-SchemaModel.prototype.load = function(saved) {
-	for (var i = 0; i < saved["items"].length; i++) {
-		var saved_item = saved["items"][i];
-		var restored_item = makeGate(saved_item[1]);
-		var number = saved_item[0];
-		restored_item.number = number;
-		restored_item.setPosition(new Point(saved_item[2]));
-		this.add(restored_item);
-		if (restored_item.HasState) {
-			restored_item.setState(saved_item[3]);
+SchemaModel.prototype.load = function() {
+	this.objects = {};
+	this.next_item_number = 1;
+	this.next_connection_number = 0;
+	this.logic_system = new LogicSystem();
+	if(this.data) {
+		for (var i = 0; i < this.data["items"].length; i++) {
+			var saved_item = this.data["items"][i];
+			var restored_item = makeGate(saved_item[1]);
+			var number = saved_item[0];
+			restored_item.number = number;
+			restored_item.setPosition(new Point(saved_item[2]));
+			this.add(restored_item);
+			if (restored_item.HasState) {
+				restored_item.setState(saved_item[3]);
+			}
+		}
+		for (var i = 0; i < this.data["connections"].length; i++) {
+			var saved_connection = this.data["connections"][i];
+			this.addConnection(saved_connection[0], saved_connection[1], saved_connection[2], saved_connection[3]);
 		}
 	}
-	for (var i = 0; i < saved["connections"].length; i++) {
-		var saved_connection = saved["connections"][i];
-		this.addConnection(saved_connection[0], saved_connection[1], saved_connection[2], saved_connection[3]);
-	}
+	delete this.data;
+	this.loaded = true;
 };
 
 SchemaModel.prototype.rebuildLogicSystem = function() {

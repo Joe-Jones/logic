@@ -19,6 +19,11 @@ function getDatabase(name) {
 		model: database.Project
 	});
 	
+	database.Blob = Backbone.Collection.extend({
+		database: database,
+		storeName: "blob"
+	});
+	
 	database.config = new database.Config({id: 1});
 	
 	var config_promise = database.config.fetch();
@@ -55,13 +60,24 @@ Database.prototype = {
 				db.createObjectStore("projects", { keyPath: "id", autoIncrement : true });
 			
 				var blobs = db.createObjectStore("blobs", { keyPath: "id", autoIncrement : true });
-				blobs.createIndex("project_id", "project_id", { unique: false});
-				blobs.createIndex("name", "name", { unique: false });
+				blobs.createIndex("project_id", "project_id", { unique: true});
 				
 				next();
 			}
 		}
 	],
+	
+	/*
+		create a unique id.
+	*/
+	
+	createID: function() {
+		return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+	},
+	
+	/***************************************************************************************
+		Public interface below this point
+	*/
 
 	/*
 		sets a global config value.
@@ -95,30 +111,86 @@ Database.prototype = {
 	*/
 
 	loadProjectData: function(id) {
-	
+		var blob;
+		var blob_deferred;
+		if (id) {
+			blob = new this.Blob({ project_id: id});
+			blob_deferred = blob.fetch();
+		} else {
+			id = this.createID();
+			var project = new this.Project({
+				priject_id: id,
+				cdate: Date(),
+				mdate: Date(),
+				adate: Date(),
+				name: "New Project"
+			});
+			this.project_list.add(project);
+			project.save();
+			blob = new this.Blob({ project_id: id });
+			blob_deferred = $.deferred();
+			blob_deferred.resolve();
+		}
+		var return_deferred = $.defered();
+		var database = this;
+		blob.defered.done(function() {
+			return_deferred.resolve(new ProjectData(id, blob, database));
+		});
+		return return_deferred;
 	}
 
 };
 
-function ProjectData() {
-
+function ProjectData(project_id, model, batabase) {
+	this.project_id = project_id;
+	this.model = model;
+	this.database = database;
+	this.objects = {};
 }
 
 ProjectData.prototype = {
 
 	/*
-	
+		returns an array of all the keys that match the regex pattern.
 	*/
 
-	addObject: function(key, object) {
-	
+	getKeys: function(pattern) {
+		_.filter(this.model.keys(), function(key) { return key.match(pattern); });
 	},
 	
-	removeObject: function(key) {
+	/*
+		returns the data corresponding to the key
+	*/
 	
-	}
+	getData: function(key) {
+		this.model.get(key);
+	},
+	
+	/*
+		sets the data for a key
+	*/
+	
+	setData: function(key, value) {
+		this.model.set(key);
+	},
+	
+	save: function() {
+		this.model.save();
+	},
 	
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

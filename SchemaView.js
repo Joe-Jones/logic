@@ -22,54 +22,26 @@ var SchemaView = JakeKit.Canvas.extend({
 		return false;
 	},
 	
-	initialize: function(schema, action_recorder, template_manager) {
+	initialize: function(model, action_recorder) {
 		JakeKit.Canvas.prototype.initialize.call(this);
 		var that = this;
 		_.bindAll(this, "loadSchema");
 		
-		this.id = schema.id;
-		
 		this.action_recorder = action_recorder;
-		this.template_manager = template_manager;
 		
 		this.mouse_over = false;
 		this.mouse_down = false;
 		this.in_drag = false;
 		
 		// From SchemaView
-		this.model = new SchemaModel(template_manager);
+		this.model = model;
 		this.dragged_object = null;
 		this.drawer = new SchemaDrawer(this.model);
 		this.current_hot_point = null;
 		this.new_connection = null;
 		this.model.drawer = this.drawer;
 		this.selection = [];
-		
-		this.schema = schema;
-		if (this.schema.has("data_id")) {
-			this.schema_data = new SchemaData({ id: this.schema.get("data_id") });
-			this.schema_data.fetch({ success: this.loadSchema });
-		} else {
-			this.schema_data = new SchemaData({ data: this.model.save() });
-			this.schema_data.save({}, { success: function() {
-				that.schema.save({ data_id: that.schema_data.id });
-			}});
-		}
-	},
-	
-	loadSchema: function() {
-		console.log(this.schema_data.get("data"));
-		this.model.load(this.schema_data.get("data"));
-		// Need to arrange a redraw me thinks
-	},
-	
-	saveSchema: function() {
-		this.schema_data.set("data", this.model.save());
-		this.schema_data.save();
-	},
-	
-	saveAsTemplate: function() {
-		return model.saveAsTemplate();
+
 	},
 	
 	ready: function() {
@@ -290,8 +262,8 @@ var SchemaView = JakeKit.Canvas.extend({
 	
 	addObject: function(type, at) {
 		var action = new Action({
-			project_id: this.schema.get("project_id"),
-			schema_id: this.schema.id,
+			project_id: this.model.project_id,
+			schema_id: this.model.id,
 			type: "ADD_GATE",
 			gate_type:	type,
 			position: at
@@ -313,8 +285,8 @@ var SchemaView = JakeKit.Canvas.extend({
 	
 	addConnection: function(connection) {
 		var action = new Action({
-			project_id: 	this.schema.get("project_id"),
-			schema_id:		this.schema.id,
+			project_id: 	this.model.project_id,
+			schema_id: 		this.model.id,
 			type:			"ADD_CONNECTION",
 			input_item:		connection.input_item.number,
 			input_num:		connection.input_num,
@@ -335,28 +307,27 @@ var SchemaView = JakeKit.Canvas.extend({
 			var connections = [];
 			_.each(this.selection, function(item) {	connections = _.union(connections, item.allConnections()); });
 			var actions = [];
-			var schema = this.schema;
 			_.each(connections, function(connection) {
 				actions.push(new Action({
-					project_id: 	schema.get("project_id"),
-					schema_id:		schema.id,
+					project_id: 	this.model.project_id,
+					schema_id: 		this.model.id,
 					type:			"REMOVE_CONNECTION",
 					input_item:		connection.input_item.number,
 					input_num:		connection.input_num,
 					output_item:	connection.output_item.number,
 					output_num:		connection.output_num
 				}));
-			});
+			}, this);
 			_.each(this.selection, function(gate) {
 				actions.push(new Action({
-					project_id: 	schema.get("project_id"),
-					schema_id:		schema.id,
+					project_id: 	this.model.project_id,
+					schema_id: 		this.model.id,
 					type:			"REMOVE_NUMBERED_GATE",
 					number:			gate.number,
 					gate_type:		gate.type,
 					position:		gate.position()
 				}));
-			});
+			}, this);
 			var action = new GroupedActions(actions);
 			this.action_recorder.record(action);
 			action.doTo(this.model);
