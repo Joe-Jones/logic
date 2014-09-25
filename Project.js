@@ -131,7 +131,7 @@ TemplateManager.prototype = {
 
 };
 
-function PProject(project_data) {
+function Project(project_data) {
 	this.project_data = project_data;
 	this.template_manager = new TemplateManager(this.project_data.getData("template_manager"));
 	this.schemas = {};
@@ -140,7 +140,7 @@ function PProject(project_data) {
 	}, this);
 }
 
-PProject.prototype = {
+Project.prototype = {
 
 	// private
 	addSchema: function(id) {

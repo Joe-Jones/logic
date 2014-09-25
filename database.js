@@ -3,69 +3,26 @@
 function getDatabase(name) {
 	var database = new Database(name);
 	
-	database.Config = Backbone.Model.extend({
-		storeName: "config",
-		database: database
-	});
-	
 	database.Project = Backbone.Model.extend({
-		storeName: "projects",
-		database:	database
+		save: function() {
+			database.saveProjectList();
+		}
 	});
 
 	database.ProjectList = Backbone.Collection.extend({
-		database: database,
-		storeName: "projects",
 		model: database.Project
 	});
 	
-	database.Blob = Backbone.Collection.extend({
-		database: database,
-		storeName: "blob"
-	});
-	
-	database.config = new database.Config({id: 1});
-	
-	var config_promise = database.config.fetch();
-	
 	var deferred = $.Deferred();
-	config_promise.always(function() {
-		deferred.resolve(database);
-	});
-	
-	database.project_list = new database.ProjectList;
-	
-	var project_list_promise = database.project_list.fetch();
-	
-	return $.when(deferred, project_list_promise);
+	deferred.resolve(database);
+	return deferred;
 }
 
-function Database(name) {
-	this.id = name;
-	
+function Database(id) {
+	this.id = id;
 }
 
 Database.prototype = {
-
-	description: "This is where all the data is kept, its a database.",
-	migrations: [
-		{
-			version: 1.0,
-			migrate: function(transaction, next) {
-				var db = transaction.db;
-				
-				var config = db.createObjectStore("config", { keyPath: "id" });
-				config.createIndex("key", "key", { unique: true });
-				
-				db.createObjectStore("projects", { keyPath: "id", autoIncrement : true });
-			
-				var blobs = db.createObjectStore("blobs", { keyPath: "id", autoIncrement : true });
-				blobs.createIndex("project_id", "project_id", { unique: true});
-				
-				next();
-			}
-		}
-	],
 	
 	/*
 		create a unique id.
@@ -73,6 +30,22 @@ Database.prototype = {
 	
 	createID: function() {
 		return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+	},
+	
+	configKey: function(key) {
+		return this.id + "/global-config/" + key;
+	},
+	
+	keys: function() {
+		var keys = [];
+		var regex = new RegExp("^" + this.id + "\\/(.*)");
+		for (var i = 0; i < localStorage.length; i++) {
+			var match = localStorage.key(i).match(regex);
+			if (match) {
+				keys.push(match[1]);
+			}
+		}
+		return keys;
 	},
 	
 	/***************************************************************************************
@@ -85,8 +58,10 @@ Database.prototype = {
 	*/
 	
 	setConfig: function(key, value) {
-		this.config.set(key, value);
-		return this.config.save();
+		localStorage.setItem(this.configKey(key), JSON.stringify(value));
+		var deferred = $.Deferred();
+		deferred.resolve();
+		return deferred;
 	},
 	
 	/*
@@ -94,7 +69,7 @@ Database.prototype = {
 	*/
 	
 	getConfig: function(key) {
-		return this.config.get(key);
+		return JSON.parse(localStorage.getItem(this.configKey(key)));
 	},
 	
 	/*
@@ -102,7 +77,16 @@ Database.prototype = {
 	*/
 	
 	getProjectList: function() {
+		if (this.project_list) {
+			return this.project_list;
+		} else {
+			this.project_list = new this.ProjectList(JSON.parse(localStorage.getItem(this.id + "/project-list")));
+		}
 		return this.project_list;
+	},
+	
+	saveProjectList: function() {
+		localStorage.setItem(this.id + "/project-list", JSON.stringify(this.project_list.toJSON()));
 	},
 
 	/*
@@ -111,51 +95,38 @@ Database.prototype = {
 	*/
 
 	loadProjectData: function(id) {
-		var blob;
-		var blob_deferred;
-		if (id) {
-			blob = new this.Blob({ project_id: id});
-			blob_deferred = blob.fetch();
-		} else {
-			id = this.createID();
-			var project = new this.Project({
-				priject_id: id,
-				cdate: Date(),
-				mdate: Date(),
-				adate: Date(),
-				name: "New Project"
-			});
-			this.project_list.add(project);
-			project.save();
-			blob = new this.Blob({ project_id: id });
-			blob_deferred = $.deferred();
-			blob_deferred.resolve();
-		}
-		var return_deferred = $.defered();
-		var database = this;
-		blob.defered.done(function() {
-			return_deferred.resolve(new ProjectData(id, blob, database));
-		});
-		return return_deferred;
+		var deferred = $.Deferred();
+		deferred.resolve(new ProjectData(id, this));
+		return deferred;
 	}
 
 };
 
-function ProjectData(project_id, model, batabase) {
+function ProjectData(project_id, database) {
 	this.project_id = project_id;
-	this.model = model;
 	this.database = database;
-	this.objects = {};
 }
 
 ProjectData.prototype = {
+
+	key: function(key) {
+		return this.database.id + "/projects/" + this.project_id + "/" + key;
+	},
 
 	/*
 		returns an array of all the keys that match the regex pattern.
 	*/
 
 	getKeys: function(pattern) {
-		_.filter(this.model.keys(), function(key) { return key.match(pattern); });
+		var regex = new RegExp("projects\\/" + this.project_id + "\\/(.*)");
+		var keys = [];
+		_.each(this.database.keys(), function(key) {
+			var match = key.match(regex);
+			if (match) {
+				keys.push(match[1]);
+			}
+		}, this);
+		return keys;
 	},
 	
 	/*
@@ -163,7 +134,7 @@ ProjectData.prototype = {
 	*/
 	
 	getData: function(key) {
-		this.model.get(key);
+		return JSON.parse(localStorage.getItem(this.key(key)));
 	},
 	
 	/*
@@ -171,117 +142,18 @@ ProjectData.prototype = {
 	*/
 	
 	setData: function(key, value) {
-		this.model.set(key);
+		localStorage.setItem(this.key(key), JSON.stringify(value));
 	},
 	
 	save: function() {
-		this.model.save();
+		var deferred = $.Deferred();
+		deferred.resolve();
+		return deferred;
 	},
 	
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var database = {
-	id: "logic",
-	description: "This is where all the data is kept, its a database.",
-	migrations: [
-		{
-			version: 1.0,
-			migrate: function(transaction, next) {
-				var db = transaction.db;
-				
-				db.createObjectStore("config", { keyPath: "id" });
-				
-				db.createObjectStore("projects", { keyPath: "id", autoIncrement : true });
-			
-				var schemas = db.createObjectStore("schemas", { keyPath: "id", autoIncrement : true });
-				schemas.createIndex("project_id", "project_id", { unique: false});
-			
-				var templates = db.createObjectStore("templates", { keyPath: "id", autoIncrement : true });
-				templates.createIndex("project_id", "project_id", { unique: false });
-			
-				db.createObjectStore("schema_data", { keyPath: "id", autoIncrement : true });
-				
-				var actions = db.createObjectStore("actions", { keyPath: "id", autoIncrement: true });
-				actions.createIndex("project_id", "project_id", {unique: false});
-				actions.createIndex("schema_id", "schema_id", {unique: false});
-				//actions.createIndex("
-				
-				next();
-			}
-		}
-	]
-	
-};
-
-var Config = Backbone.Model.extend({
-	storeName: "config",
-	database: database
-});
-
-var Project = Backbone.Model.extend({
-	storeName: "projects",
-	database:	database
-});
-
-var ProjectList = Backbone.Collection.extend({
-	database: database,
-	storeName: "projects",
-	model: Project
-	
-	/*constructor: function() {
-		//Backbone.Model.apply(arguments);
-	},*/
-	
-	//events: {
-		//add: 'addItem'
-	//},
-	
-	//addItem: function() {
-	//	console.log("in the event handler");
-	//}
-});
-
-var Schema = Backbone.Model.extend({
-	storeName:	"schemas",
-	database:	database
-});
-
-var SchemaList = Backbone.Collection.extend({
-	database:	database,
-	storeName:	"schemas",
-	model:		Schema
-});
-
-var SchemaData = Backbone.Model.extend({
-	database:	database,
-	storeName:	"schema_data"
-});
-
-var Template = Backbone.Model.extend({
-	database:	database,
-	storeName:	"templates"
-});
-
-var TemplateList = Backbone.Collection.extend({
-	database: 	database,
-	storeName:	"templates",
-	model:		TemplateList
-});
-
+// Todo I don't know if we need to keep the rest of this file.
 
 var ProjectListItemView = Backbone.View.extend({
 		

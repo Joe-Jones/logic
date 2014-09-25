@@ -76,7 +76,7 @@ QUnit.module("logic system");
 
 function checkTruthTable(table, table_name, logic_system, input_ids, output_ids, assert) {
 	var row_number = 0;
-	_.each(table, function(row) {console.log(row);
+	_.each(table, function(row) {
 		var final_values = {};
 		var n = 0;
 		_.each(input_ids, function(input_id) {
@@ -92,7 +92,7 @@ function checkTruthTable(table, table_name, logic_system, input_ids, output_ids,
 			n++;
 		}, this);
 		logic_system.run();
-		_.each(_.keys(final_values), function(column_number) { console.log(final_values);
+		_.each(_.keys(final_values), function(column_number) {
 			assert.equal(final_values[column_number], row[column_number],
 			             "Table \"" + table_name + "\", Row " + row_number + ", Column " + column_number + " should be " + row[column_number] + ".");
 		}, this);
@@ -167,9 +167,9 @@ function tidy(db_name) {
 QUnit.asyncTest("config test", function(assert) {
 	expect(1);
 
-	getDatabase("test_database").done(function (database) {console.log(1);
-		database.setConfig("an", "example").done(function () {console.log(2);
-			getDatabase("test_database").done(function(database) {console.log(2);
+	getDatabase("test_database").done(function (database) {
+		database.setConfig("an", "example").done(function () {
+			getDatabase("test_database").done(function(database) {
 				assert.equal(database.getConfig("an"), "example", "We should get the same value back");
 				tidy("test_database");
 			}).fail(function() { assert.ok(false, "could not open the database the second time"); tidy("test_database"); });
@@ -237,4 +237,29 @@ QUnit.asyncTest("project list test 2", function(assert) {
 		}).fail(function() { assert.ok(false, "could not sync the project list"); tidy("test_database3"); });
 		
 	}).fail(function() { assert.ok(false, "could not open the database the first time"); tidy("test_database3"); });
+});
+
+QUnit.asyncTest("project data test", function(assert) {
+	expect(3);
+	getDatabase("test_database4").done(function (database) {
+		database.loadProjectData("example_project").done(function (project_data) {
+			project_data.setData("1", "1");
+			project_data.setData("2", "2");
+			project_data.setData("Hippopotamus", "Is very big.");
+			project_data.save().done(function () {
+				getDatabase("test_database4").done(function (database) {
+					database.loadProjectData("example_project").done(function (project_data) {
+						_.each(project_data.getKeys(/.*/), function(key) {
+							if (key == "Hippopotamus") {
+								assert.equal(project_data.getData(key), "Is very big.", "Yes a Hippopotamus is very big.");
+							} else {
+								assert.equal(project_data.getData(key), key, key + " is not a Hippopotamus.");
+							}
+						});
+						tidy("test_database4");
+					}).fail(function() { assert.ok(false, "could not get the project data"); tidy("test_database4"); });
+				}).fail(function() { assert.ok(false, "could not open the database, the second time"); tidy("test_database4"); });
+			}).fail(function() { assert.ok(false, "not sane the project data"); QUnit.start();});
+		}).fail(function() { assert.ok(false, "could create the project"); QUnit.start();});
+	}).fail(function() { assert.ok(false, "could not open the database"); QUnit.start();});
 });
