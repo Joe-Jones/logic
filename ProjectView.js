@@ -2,7 +2,7 @@
 
 var ProjectView = JakeKit.HBox.extend({
 	
-	initialize: function(project, database) {
+	initialize: function(project) {
 		JakeKit.HBox.prototype.initialize.call(this);
 		this.project = project;
 		
@@ -12,7 +12,20 @@ var ProjectView = JakeKit.HBox.extend({
 		this.tabstack = new JakeKit.w2tabstack();
 		this.addChild(this.tabstack);
 		this.views = {};
-		this.opentabs = project.project_data.getData("open_tabs");
+		this.open_tabs = this.project.project_data.getData("open_tabs");
+		
+		if (this.open_tabs) {
+			_each(this.open_tabs, function(tab_id) {
+				this.openTab(this.project.getSchema(tab_id));
+			}, this);
+			var selected_tab = this.project.project_data.getData("selected_tab");
+			// Todo, Need to remember which tab was selected.
+		} else {
+			//	This is how we tell we're in a new project.
+			this.open_tabs = [];
+			this.openTab(this.project.newSchema());
+			this.selectTab(_.values(this.views)[0]);
+		}
 		
 		this.history = [];
 		this.history_position = 0;
@@ -25,37 +38,24 @@ var ProjectView = JakeKit.HBox.extend({
 		return this.schemas.get(id);
 	},
 	
-	newTab: function() {
-		var new_schema = new Schema({
-			project_id:			this.data.id,
-			contains:			{},
-			contains_recursive:	[],
-			name:				"New Schema"
-		});
-		new_schema.save({}, { success: this.openTab });
-	},
-	
-	openTab: function(schema) {
-		this.template_manager = new TemplateManager();
-		var new_view = new SchemaView(schema, this);
-		this.views[schema.id] = new_view;
-		this.tabstack.addChild(new_view, schema.get("name"));
+	openTab: function(model) {
+		var new_view = new SchemaView(model, this);
+		this.views[model.id] = new_view;
+		this.tabstack.addChild(new_view, "a schema"); // Todo need to reimplement names for the tabs
 		
-		var open_tabs = this.data.get("open_tabs");
-		if (! _.contains(open_tabs, schema.id)) {
-			this.data.set("open_tabs", open_tabs.concat(new_view.id));
+		if (! _.contains(this.open_tabs, model.id)) {
+			this.open_tabs.push(model.id);
+			this.project.project_data.getData("open_tabs", this.open_tabs);
 		}
 	},
 	
 	selectTab: function(view) {
-		this.data.set("selected_tab", view.schema_data.id);
-		this.data.save();
+		this.project.project_data.setData("selected_tab", view.model.id);
 		this.tabstack.makeActive(view);
 	},
 	
 	viewSelected: function(view) {
-		this.data.set("selected_tab", view.schema_data.id);
-		this.data.save();
+		this.project.project_data.setData("selected_tab", view.model.id);
 	},
 	
 	activeSchema: function() {

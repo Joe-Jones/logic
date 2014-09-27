@@ -59,11 +59,11 @@ var MainView = JakeKit.Stack.extend({
 		this.database = database;
 		JakeKit.Stack.prototype.initialize.call(this);
 		
-		_.bindAll(this, "setProject");
+		//_.bindAll(this, "setProject"); Todo delete
 		
 		// Create the user interface
 		
-		var menu = new JakeKit.w2toolbar([
+		this.menu = new JakeKit.w2toolbar([
 				{ type: "menu", id: "project_menu", caption: "Project", items: [
 						{ text: "New", id: "new_project" },
 						{ text: "Rename", id: "rename_project" },
@@ -78,60 +78,62 @@ var MainView = JakeKit.Stack.extend({
 						{ text: "Delete", id: "delete"}
 				]}]);
 		
-		this.listenTo(menu, "new_project", this.newProject);
-		this.listenTo(menu, "open_project", this.showOpenProjectWindow);
-		this.listenTo(menu, "rename_project", this.showRenameProjectWindow);
-		this.listenTo(menu, "new_schema", this.newSchema);
-		this.listenTo(menu, "rename_schema", this.showRenameSchemaWindow);
+		this.listenTo(this.menu, "new_project", this.newProject);
+		this.listenTo(this.menu, "open_project", this.showOpenProjectWindow);
+		this.listenTo(this.menu, "rename_project", this.showRenameProjectWindow);
+		this.listenTo(this.menu, "new_schema", this.newSchema);
+		this.listenTo(this.menu, "rename_schema", this.showRenameSchemaWindow);
 		
 		var pallet = new Pallet();
-		
-		this.project_view = new ProjectView();
-		
-		this.project_view.listenTo(menu, "undo", this.project_view.undo);
-		this.project_view.listenTo(menu, "redo", this.project_view.redo);
-		this.project_view.listenTo(menu, "delete", this.project_view.deleteSelection);
 	
-		var hbox = new JakeKit.HBox();
+		this.hbox = new JakeKit.HBox();
 		
-		hbox.addChild(pallet);
-		hbox.addChild(this.project_view);
+		this.hbox.addChild(pallet);
 		
 		this.main_window = new JakeKit.VBox();
 		
-		this.main_window.addChild(menu);
-		this.main_window.addChild(hbox);
+		this.main_window.addChild(this.menu);
+		this.main_window.addChild(this.hbox);
 		
 		this.addChild(this.main_window);
 		this.makeActive(this.main_window);
 		
 		// Load data
 		this.project_list = database.getProjectList();
-		var active_project_id = database.getConfig("active_project");
+		var active_project = this.database.getConfig("active_project");
 		if (active_project) {
-			
+			this.openProject(active_project);
 		} else {
-		
+			this.newProject();
 		}
-	
+		
 	},
 	
 	newProject: function() {
-		var project = new Project({
+		var project_list = this.database.getProjectList();
+		var new_project = new this.database.Project({
 			cdate: Date(),
 			mdate: Date(),
 			adate: Date(),
 			name: "New Project",
-			open_tabs: []
+			project_id: this.database.createID()
 		});
-		project.save({}, { success: this.setProject	});
+		project_list.add(new_project);
+		new_project.save();
+		this.openProject(new_project.get("project_id"));
 	},
 	
 	openProject: function(project_id) {
-		var project = new Project({ id: project_id });
-		project.fetch({
-			success: this.setProject
-		});
+		if (this.project_view) {
+			// Todo We need to tidy up the old one
+		}
+		var project = new Project(this.database.loadProjectData(project_id, true));
+		this.project_view = new ProjectView(project);
+		this.project_view.listenTo(this.menu, "undo", this.project_view.undo);
+		this.project_view.listenTo(this.menu, "redo", this.project_view.redo);
+		this.project_view.listenTo(this.menu, "delete", this.project_view.deleteSelection);
+		this.hbox.addChild(this.project_view);
+		this.database.setConfig("active_project", project_id);
 	},
 	
 	showOpenProjectWindow: function() {

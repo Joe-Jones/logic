@@ -25,7 +25,6 @@ var SchemaView = JakeKit.Canvas.extend({
 	initialize: function(model, action_recorder) {
 		JakeKit.Canvas.prototype.initialize.call(this);
 		var that = this;
-		_.bindAll(this, "loadSchema");
 		
 		this.action_recorder = action_recorder;
 		
@@ -192,7 +191,6 @@ var SchemaView = JakeKit.Canvas.extend({
 		} else {
 			//Leave the thing in its new position
 			this.dragged_object = null;
-			this.saveSchema();
 		}
 		this.invalidate();
 	},
@@ -250,7 +248,6 @@ var SchemaView = JakeKit.Canvas.extend({
 		if (objects.length > 0) {
 			var object = objects[0];
 			if(object.click()) {
-				this.saveSchema();
 				//this.drawer.invalidateRectangle(object.boundingBox());
 			}
 		}
@@ -272,7 +269,6 @@ var SchemaView = JakeKit.Canvas.extend({
 		action.doTo(this.model);
 		//this.drawer.invalidateRectangle(object.boundingBox());
 		this.invalidate();
-		this.saveSchema();
 	},
 	
 	deleteObject: function() {
@@ -295,7 +291,6 @@ var SchemaView = JakeKit.Canvas.extend({
 		});
 		this.action_recorder.record(action);
 		action.doTo(this.model);
-		this.saveSchema();
 	},
 	
 	deleteConnection: function(connection) {
@@ -331,7 +326,6 @@ var SchemaView = JakeKit.Canvas.extend({
 			var action = new GroupedActions(actions);
 			this.action_recorder.record(action);
 			action.doTo(this.model);
-			this.saveSchema();	
 			this.selection = [];
 		}
 	}

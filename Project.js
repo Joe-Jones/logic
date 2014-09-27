@@ -144,7 +144,7 @@ Project.prototype = {
 
 	// private
 	addSchema: function(id) {
-		var data = this.project_data.get(id);
+		var data = this.project_data.getData(id);
 		var schema = new SchemaModel(id, this.project_data.project_id, data, this.template_manager);
 		this.template_manager.addModel(schema);
 		this.schemas[id] = schema;
@@ -152,7 +152,10 @@ Project.prototype = {
 	},
 
 	newSchema: function() {
-		return this.addSchema("schema/" + this.project_data.database.createID());
+		var new_schema = this.addSchema("schema/" + this.project_data.database.createID());
+		// we load this here because we're probably being called from the user interface and this model is about to be added to a view.
+		new_schema.load();
+		return new_schema;
 	},
 	
 	getSchema: function(id) {
