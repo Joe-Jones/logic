@@ -138,6 +138,8 @@ function Project(project_data) {
 	_.each(this.project_data.getKeys(/schema\/.*/), function(id) {
 		this.addSchema(id);
 	}, this);
+	this.history = [];
+	this.history_position = 0;
 }
 
 Project.prototype = {
@@ -172,9 +174,155 @@ Project.prototype = {
 		}, this);
 		this.project_data.setData("template_manager", this.template_manager.save());
 		this.project_data.save();
+	},
+	
+	record: function(action) {
+		if (this.history_position != this.history.length) { // We need to get rid of redo history
+			this.history = _.first(this.history, this.history_position);
+		}
+		this.history.push(action);
+		this.history_position++;
+	},
+	
+	undo: function() {
+		if (this.history_position > 0) {
+			var last_action = this.history[this.history_position - 1];
+			var undo_action = last_action.inverse();
+			undo_action.doTo(this.views[undo_action.schemaID()].model);
+			this.history_position--;
+			
+			this.views[undo_action.schemaID()].saveSchema();
+		}
+	},
+	
+	redo: function() {
+		if (this.history_position < this.history.length) {
+			var action = this.history[this.history_position];
+			action.doTo(this.views[action.schemaID()].model);
+			this.history_position++;
+			
+			this.views[action.schemaID()].saveSchema();
+		}
+	},
+
+};
+
+function Action(args) {
+	if (args.json) {
+		
+	} else {
+		_.extend(this, args);
+	}
+}
+
+Action.prototype = {
+
+	toJSON: function() {
+		return {};
+	},
+	
+	inverse: function() {
+		switch (this.type) {
+			case "ADD_GATE":
+				return new Action({
+					project_id:		this.project_id,
+					schema_id:		this.schema_id,
+					type:			"REMOVE_GATE"
+				});
+			case "ADD_CONNECTION":
+				return new Action({
+					project_id:		this.project_id,
+					schema_id:		this.schema_id,
+					type:			"REMOVE_CONNECTION",
+					input_item:		this.input_item,
+					input_num:		this.input_num,
+					output_item:	this.output_item,
+					output_num:		this.output_num
+				});
+			case "REMOVE_CONNECTION":
+				return new Action({
+					project_id:		this.project_id,
+					schema_id:		this.schema_id,
+					type:			"ADD_CONNECTION",
+					input_item:		this.input_item,
+					input_num:		this.input_num,
+					output_item:	this.output_item,
+					output_num:		this.output_num
+				});
+			case "REMOVE_NUMBERED_GATE":
+				return new Action({
+					project_id:		this.project_id,
+					schema_id:		this.schema_id,
+					type:			"ADD_NUMBERED_GATE",
+					number:			this.number,
+					gate_type:		this.gate_type,
+					position:		this.position
+				});
+		}
+	},
+	
+	doTo: function(model) {
+		switch (this.type) {
+			case "ADD_GATE":
+				var object = makeGate(this.gate_type);
+				model.add(object);
+				object.setPosition(this.position);
+				break;
+			case "REMOVE_GATE":
+				model.removeLastGate();
+				break;
+			case "ADD_CONNECTION":
+				model.addConnection(this.input_item, this.input_num, this.output_item, this.output_num);
+				break;
+			case "REMOVE_CONNECTION":
+				model.removeConnection(this.input_item, this.input_num, this.output_item, this.output_num);
+				break;
+			case "REMOVE_NUMBERED_GATE":
+				model.remove(this.number);
+				break;
+			case "ADD_NUMBERED_GATE":
+				var object = makeGate(this.gate_type);
+				object.number = this.number;
+				model.add(object);
+				object.setPosition(this.position);
+				break;
+		}
+	},
+	
+	schemaID: function() {
+		return this.schema_id;
+	}
+	
+};
+
+function GroupedActions(actions) {
+	this.actions = actions;
+}
+
+GroupedActions.prototype = {
+
+	toJSON: function() {
+		return {};
+	},
+	
+	inverse: function() {
+		var actions = [];
+		_.each(this.actions, function(action) { actions.unshift(action.inverse()); });
+		return new GroupedActions(actions);
+	},
+	
+	doTo: function(model) {
+		_.each(this.actions, function(action) { action.doTo(model) });
+	},
+	
+	schemaID: function() {
+		return this.actions[0].schema_id;
 	}
 
 };
+
+
+//Todo are we actually using the rest of this file or is it just junk.
 
 var ProjectListItemView = Backbone.View.extend({
 		

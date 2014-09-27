@@ -27,8 +27,6 @@ var ProjectView = JakeKit.HBox.extend({
 			this.selectTab(_.values(this.views)[0]);
 		}
 		
-		this.history = [];
-		this.history_position = 0;
 		_.bindAll(this, "openTab", "schemaNameChanged");
 		this.listenTo(this.tabstack, "viewSelected", this.viewSelected);
 		
@@ -39,7 +37,7 @@ var ProjectView = JakeKit.HBox.extend({
 	},
 	
 	openTab: function(model) {
-		var new_view = new SchemaView(model, this);
+		var new_view = new SchemaView(model, this.project);
 		this.views[model.id] = new_view;
 		this.tabstack.addChild(new_view, "a schema"); // Todo need to reimplement names for the tabs
 		
@@ -64,35 +62,6 @@ var ProjectView = JakeKit.HBox.extend({
 	
 	schemaNameChanged: function(schema) {
 		this.tabstack.setCaption(this.views[schema.id], schema.get("name"));
-	},
-	
-	record: function(action) {
-		if (this.history_position != this.history.length) { // We need to get rid of redo history
-			this.history = _.first(this.history, this.history_position);
-		}
-		this.history.push(action);
-		this.history_position++;
-	},
-	
-	undo: function() {
-		if (this.history_position > 0) {
-			var last_action = this.history[this.history_position - 1];
-			var undo_action = last_action.inverse();
-			undo_action.doTo(this.views[undo_action.schemaID()].model);
-			this.history_position--;
-			
-			this.views[undo_action.schemaID()].saveSchema();
-		}
-	},
-	
-	redo: function() {
-		if (this.history_position < this.history.length) {
-			var action = this.history[this.history_position];
-			action.doTo(this.views[action.schemaID()].model);
-			this.history_position++;
-			
-			this.views[action.schemaID()].saveSchema();
-		}
 	},
 	
 	deleteSelection: function() {
