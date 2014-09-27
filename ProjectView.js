@@ -2,8 +2,9 @@
 
 var ProjectView = JakeKit.HBox.extend({
 	
-	initialize: function() {
+	initialize: function(project, database) {
 		JakeKit.HBox.prototype.initialize.call(this);
+		this.project = project;
 		
 		this.components = new ComponentList();
 		this.addChild(this.components);
@@ -11,59 +12,17 @@ var ProjectView = JakeKit.HBox.extend({
 		this.tabstack = new JakeKit.w2tabstack();
 		this.addChild(this.tabstack);
 		this.views = {};
+		this.opentabs = project.project_data.getData("open_tabs");
+		
 		this.history = [];
 		this.history_position = 0;
 		_.bindAll(this, "openTab", "schemaNameChanged");
 		this.listenTo(this.tabstack, "viewSelected", this.viewSelected);
+		
 	},
 	
 	getSchema: function(id) {
 		return this.schemas.get(id);
-	},
-	
-	setProject: function(project) {
-		var that = this;
-		
-		// Get rid of any existing views
-		_.each(this.views, function(view, id) {
-			this.removeChild(view);
-		});
-		this.views = {};
-		
-		this.data = project;
-		
-		this.schemas = new SchemaList();
-		this.schemas.fetch({
-			conditions: { project_id: this.data.id },
-			success: function() {
-				// Render the components list
-				that.components.collection = that.schemas;
-				that.components.render();
-				
-				var open_tabs = that.data.get("open_tabs");
-				if (_.size(open_tabs) == 0) {
-					that.newTab();
-					//need to select the tab as well
-				} else {
-					_.each(open_tabs, function(schema_id) {
-						var schema = that.schemas.get(schema_id);
-						that.openTab(schema);
-					});
-					var selected_tab = that.data.get("selected_tab");
-					if (!selected_tab) {
-						selected_tab = open_tabs[0].schema_id;
-						this.data.set("selected_tab", selected_tab);
-					}
-					that.selectTab(that.views[selected_tab]);
-				}
-				that.schemas.on("change:name", that.schemaNameChanged);
-			},
-			error: function() {
-				console.log("error");
-				console.log(arguments);
-			}
-		});
-		
 	},
 	
 	newTab: function() {

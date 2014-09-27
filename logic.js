@@ -55,7 +55,8 @@ var Pallet = Backbone.View.extend({
 var MainView = JakeKit.Stack.extend({
 /********************************************************************************************/
 	
-	initialize: function() {
+	initialize: function(database) {
+		this.database = database;
 		JakeKit.Stack.prototype.initialize.call(this);
 		
 		_.bindAll(this, "setProject");
@@ -105,20 +106,13 @@ var MainView = JakeKit.Stack.extend({
 		this.makeActive(this.main_window);
 		
 		// Load data
+		this.project_list = database.getProjectList();
+		var active_project_id = database.getConfig("active_project");
+		if (active_project) {
+			
+		} else {
 		
-		this.config = new Config({id: 1});
-		
-		var that = this;
-		this.config.fetch({
-			success: function() {
-				that.openProject(that.config.get("active_project"));
-			},
-			error: function(config, error_text) {
-				if (error_text == "Not Found") {
-					// This is not an error, we are being run for the first time, need to create the config object.
-					that.newProject();
-				}
-		}});
+		}
 	
 	},
 	
@@ -138,12 +132,6 @@ var MainView = JakeKit.Stack.extend({
 		project.fetch({
 			success: this.setProject
 		});
-	},
-	
-	setProject: function(project) {
-		this.activeProject = project;
-		this.config.save({ active_project: project.id });
-		this.project_view.setProject(project);
 	},
 	
 	showOpenProjectWindow: function() {
@@ -267,7 +255,9 @@ var MainView = JakeKit.Stack.extend({
 	
 var body;
 $(document).ready(function() {
-	body = new JakeKit.Wrapper($('body'));
-	var main_view = new MainView();
-	body.setChild(main_view);
+	getDatabase("logic").done(function(database) {
+		body = new JakeKit.Wrapper($('body'));
+		var main_view = new MainView(database);
+		body.setChild(main_view);
+	});
 });

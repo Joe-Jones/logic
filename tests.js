@@ -160,7 +160,7 @@ QUnit.test("half adder test", function(assert) {
 QUnit.module("database");
 
 function tidy(db_name) {
-	indexedDB.deleteDatabase(db_name);
+	deleteDatabase(db_name);
 	QUnit.start();
 }
 
@@ -262,4 +262,85 @@ QUnit.asyncTest("project data test", function(assert) {
 			}).fail(function() { assert.ok(false, "not sane the project data"); QUnit.start();});
 		}).fail(function() { assert.ok(false, "could create the project"); QUnit.start();});
 	}).fail(function() { assert.ok(false, "could not open the database"); QUnit.start();});
+});
+
+function databaseOnDisk(id) {
+	var regex = new RegExp("^" + id + "\\/");
+	for(var i = 0; i < localStorage.length; i++) {
+		var key = localStorage.key(i);
+		if (key.match(regex)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function projectOnDisk(project) {
+	var keys = project.getKeys(/.*/);
+	if (keys.length == 0) {
+		return false;
+	}
+	return _.every(keys, function(key) {
+		return localStorage.getItem(project.database.id + "/projects/" + project.id + "/" + key);
+	});
+}
+
+QUnit.test("delete data", function(assert) {
+	var database = getDatabase("testdatabase5", true);
+	database.setConfig("config1", [1,2,3]);
+	database.setConfig("config2", [4,5,6]);
+	var project1 = database.loadProjectData("project1", true);
+	project1.setData("key1", {1:2,3:4});
+	project1.setData("key2", [1,2,3,4,5,6,7,8]);
+	project1.setData("key3", "A string");
+	var project2 = database.loadProjectData("project2", true);
+	project2.setData("key1", {1:2,3:4});
+	project2.setData("key2", [1,2,3,4,5,6,7,8]);
+	project2.setData("key3", "A string");
+	
+	var database2 = getDatabase("testdatabase6", true);
+	database2.setConfig("config1", [1,2,3]);
+	database2.setConfig("config2", [4,5,6]);
+	var project2_1 = database2.loadProjectData("project1", true);
+	project2_1.setData("key1", {1:2,3:4});
+	project2_1.setData("key2", [1,2,3,4,5,6,7,8]);
+	project2_1.setData("key3", "A string");
+	var project2_2 = database2.loadProjectData("project2", true);
+	project2_2.setData("key1", {1:2,3:4});
+	project2_2.setData("key2", [1,2,3,4,5,6,7,8]);
+	project2_2.setData("key3", "A string");
+	
+	assert.ok(databaseOnDisk("testdatabase5"), "check 1");
+	assert.ok(projectOnDisk(project1), "check 2");
+	assert.ok(projectOnDisk(project2), "check 3");
+	assert.ok(databaseOnDisk("testdatabase6"), "check 4");
+	assert.ok(projectOnDisk(project2_1), "check 5");
+	assert.ok(projectOnDisk(project2_2), "check 6");
+	
+	database.deleteProjectData("project1");
+	
+	assert.ok(databaseOnDisk("testdatabase5"), "check 7");
+	assert.ok(!projectOnDisk(project1), "check 8");
+	assert.ok(projectOnDisk(project2), "check 9");
+	assert.ok(databaseOnDisk("testdatabase6"), "check 10");
+	assert.ok(projectOnDisk(project2_1), "check 11");
+	assert.ok(projectOnDisk(project2_2), "check 12");
+	
+	deleteDatabase("testdatabase5");
+	
+	assert.ok(!databaseOnDisk("testdatabase5"), "check 13");
+	assert.ok(!projectOnDisk(project1), "check 14");
+	assert.ok(!projectOnDisk(project2), "check 15");
+	assert.ok(databaseOnDisk("testdatabase6"), "check 16");
+	assert.ok(projectOnDisk(project2_1), "check 17");
+	assert.ok(projectOnDisk(project2_2), "check 18");
+	
+	deleteDatabase("testdatabase6");
+	
+	assert.ok(!databaseOnDisk("testdatabase5"), "check 19");
+	assert.ok(!projectOnDisk(project1), "check 20");
+	assert.ok(!projectOnDisk(project2), "check 21");
+	assert.ok(!databaseOnDisk("testdatabase6"), "check 22");
+	assert.ok(!projectOnDisk(project2_1), "check 23");
+	assert.ok(!projectOnDisk(project2_2), "check 24");
 });

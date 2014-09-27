@@ -1,6 +1,6 @@
 "use strict";
 
-function getDatabase(name) {
+function getDatabase(name, cheat) {
 	var database = new Database(name);
 	
 	database.Project = Backbone.Model.extend({
@@ -13,9 +13,19 @@ function getDatabase(name) {
 		model: database.Project
 	});
 	
-	var deferred = $.Deferred();
-	deferred.resolve(database);
-	return deferred;
+	if (cheat) {
+		return database;
+	} else {
+		var deferred = $.Deferred();
+		deferred.resolve(database);
+		return deferred;
+	}
+}
+
+function deleteDatabase(name) {
+	_.each(getDatabase(name, true).keys(), function(key) {
+		localStorage.removeItem(name + "/" + key);
+	});
 }
 
 function Database(id) {
@@ -94,23 +104,33 @@ Database.prototype = {
 		If id is undefined it creates a new project.
 	*/
 
-	loadProjectData: function(id) {
-		var deferred = $.Deferred();
-		deferred.resolve(new ProjectData(id, this));
-		return deferred;
+	loadProjectData: function(id, cheat) {
+		if (cheat) {
+			return new ProjectData(id, this);
+		} else {
+			var deferred = $.Deferred();
+			deferred.resolve(new ProjectData(id, this));
+			return deferred;
+		}
+	},
+	
+	deleteProjectData: function(id) {
+		_.each(this.loadProjectData(id, true).getKeys(/.*/), function(key) {
+			localStorage.removeItem(this.id + "/projects/" + id + "/" + key);
+		}, this);
 	}
 
 };
 
 function ProjectData(project_id, database) {
-	this.project_id = project_id;
+	this.id = project_id;
 	this.database = database;
 }
 
 ProjectData.prototype = {
 
 	key: function(key) {
-		return this.database.id + "/projects/" + this.project_id + "/" + key;
+		return this.database.id + "/projects/" + this.id + "/" + key;
 	},
 
 	/*
@@ -118,7 +138,7 @@ ProjectData.prototype = {
 	*/
 
 	getKeys: function(pattern) {
-		var regex = new RegExp("projects\\/" + this.project_id + "\\/(.*)");
+		var regex = new RegExp("projects\\/" + this.id + "\\/(.*)");
 		var keys = [];
 		_.each(this.database.keys(), function(key) {
 			var match = key.match(regex);
