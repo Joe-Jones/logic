@@ -140,6 +140,7 @@ function Project(project_data) {
 	}, this);
 	this.history = [];
 	this.history_position = 0;
+	this.next_schema_id = 0;
 }
 
 Project.prototype = {
@@ -154,7 +155,7 @@ Project.prototype = {
 	},
 
 	newSchema: function() {
-		var new_schema = this.addSchema("schema/" + this.project_data.database.createID());
+		var new_schema = this.addSchema("schema/" + this.next_schema_id++);
 		// we load this here because we're probably being called from the user interface and this model is about to be added to a view.
 		new_schema.load();
 		return new_schema;
@@ -174,6 +175,17 @@ Project.prototype = {
 		}, this);
 		this.project_data.setData("template_manager", this.template_manager.save());
 		this.project_data.save();
+	},
+	
+	dispatchAction: function(action) {
+		if (action.schemaID()) {
+			var schema = this.getSchema(action.schemaID());
+			action.doTo(schema);
+			// Todo the user interface needs to be informed
+		} else {
+			action.doTo(this);
+			// Todo the user interface needs to be informed
+		}
 	},
 	
 	record: function(action) {
@@ -206,6 +218,8 @@ Project.prototype = {
 	},
 
 };
+
+_.extend(Project.prototype, Backbone.Events);
 
 function Action(args) {
 	if (args.json) {
@@ -263,10 +277,19 @@ Action.prototype = {
 	
 	doTo: function(model) {
 		switch (this.type) {
+		
+			/* Actions on a project */
+			case "ADD_SCHEMA":
+				var schema = model.newSchema();
+				model.trigger("schemaAdded", schema.id);
+				break;
+		
+			/* Actions on a Schema */
 			case "ADD_GATE":
 				var object = makeGate(this.gate_type);
 				model.add(object);
 				object.setPosition(this.position);
+				model.trigger("gateAdded", object.number);
 				break;
 			case "REMOVE_GATE":
 				model.removeLastGate();

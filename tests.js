@@ -344,3 +344,65 @@ QUnit.test("delete data", function(assert) {
 	assert.ok(!projectOnDisk(project2_1), "check 23");
 	assert.ok(!projectOnDisk(project2_2), "check 24");
 });
+
+QUnit.module("projects and schemas");
+
+function checkTruthTable2(table, table_name, schema, input_ids, output_ids, assert) {
+	var row_number = 0;
+	_.each(table, function(row) {
+		var n = 0;
+		_.each(input_ids, function(input_id) {
+			schema.getObjectByNumber(input_id).stateChanged(row[n]);
+			n++;
+		}, this);
+		_.each(output_ids, function(output_id) {
+			assert.equal(Boolean(schema.getObjectByNumber(output_id).on), Boolean(table[row_number][n]),
+			             "Table \"" + table_name + "\", Row " + row_number + ", Column " + n + " should be " + table[row_number][n] + ".");
+			n++;
+		}, this);
+		row_number++;
+	}, this);
+}
+
+QUnit.test("create a schema and test it", function(assert) {
+
+	// Open a database.
+	var database = getDatabase("testdatabase7", true);
+	
+	// Create a project
+	var project_data = database.loadProjectData("example_project", true);
+	var project = new Project(project_data);
+	
+	// Add a schema to the project
+	var schema_id;
+	project.on("schemaAdded", function(id) { schema_id = id; });
+	project.dispatchAction(new Action({project_id: "example_project", type: "ADD_SCHEMA"}));
+	var schema = project.getSchema(schema_id);
+	
+	// Build a circuit in the schema
+	var new_gate;
+	schema.on("gateAdded", function(id) { new_gate = id; });
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "SWITCH"}));
+	var switch1 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "SWITCH"}));
+	var switch2 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "AND"}));
+	var and_gate = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "BULB"}));
+	var bulb = new_gate;
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: switch1, output_num: 0, input_item: and_gate, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: switch2, output_num: 0, input_item: and_gate, input_num: 1}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: and_gate, output_num: 0, input_item: bulb, input_num: 0}));
+									   
+	var truth_table = [
+		[0,0,0],
+		[0,1,0],
+		[1,0,0],
+		[1,1,1]];
+	console.log(schema);
+	checkTruthTable2(truth_table, "test an and gate", schema, [switch1, switch2], [bulb], assert);
+	
+});

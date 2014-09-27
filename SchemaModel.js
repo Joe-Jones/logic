@@ -11,6 +11,8 @@ function SchemaModel(id, project_id, data, template_manager)
 	this.loaded = false;
 }
 
+_.extend(SchemaModel.prototype, Backbone.Events);
+
 SchemaModel.prototype.nextItemId = function() {
 	return this.next_item_number++;
 }
@@ -42,7 +44,9 @@ SchemaModel.prototype.add = function(object) {
 		this.logic_system.registerCallback(object.logic_id,
 			function (new_state) {
 				object.setState(new_state);
-				that.drawer.invalidateRectangle(object.boundingBox());
+				if (that.drawer) {
+					that.drawer.invalidateRectangle(object.boundingBox());
+				}
 			});
 	}
 	if (object.type == "SWITCH") {
@@ -68,6 +72,10 @@ SchemaModel.prototype.remove = function(object) {
 	}
 	this.logic_system.removeGate(object.logic_id);
 };
+
+SchemaModel.prototype.getObjectByNumber = function(number) {
+	return this.objects[number];
+}
 
 SchemaModel.prototype.allObjectsTouchingBox = function(box, include_connections, get_all) { // need to get rid of get_all
 	var results = [];
