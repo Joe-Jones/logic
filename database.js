@@ -142,7 +142,7 @@ ProjectData.prototype = {
 		var keys = [];
 		_.each(this.database.keys(), function(key) {
 			var match = key.match(regex);
-			if (match) {
+			if (match && match[1].match(pattern)) {
 				keys.push(match[1]);
 			}
 		}, this);
@@ -163,6 +163,10 @@ ProjectData.prototype = {
 	
 	setData: function(key, value) {
 		localStorage.setItem(this.key(key), JSON.stringify(value));
+	},
+	
+	deleteData: function(key) {
+		localStorage.removeItem(this.key(key));
 	},
 	
 	save: function() {

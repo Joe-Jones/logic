@@ -24,6 +24,13 @@ function TemplateManager(data) {
 
 TemplateManager.prototype = {
 
+	save: function() {
+		return {
+			templates: this.templates,
+			contains: this.contains
+		};
+	},
+
 	/*
 		Returns a list of all the components included directly in the schema with ID id.
 	*/
@@ -135,12 +142,23 @@ function Project(project_data) {
 	this.project_data = project_data;
 	this.template_manager = new TemplateManager(this.project_data.getData("template_manager"));
 	this.schemas = {};
+	this.next_schema_id = 0;
 	_.each(this.project_data.getKeys(/schema\/.*/), function(id) {
+		this.next_schema_id = _.max([this.next_schema_id, id.match(/schema\/(.*)/)[1] + 1]);
 		this.addSchema(id);
 	}, this);
-	this.history = [];
-	this.history_position = 0;
-	this.next_schema_id = 0;
+	
+	// History and checkpoints
+	this.checkpoint_position = this.project_data.getData("checkpoint_position") || 0;
+	this.history_position = this.checkpoint_position;
+	this.absolute_history_position = this.history_position
+	var action;
+	while(action = this.project_data.getData("history/" + this.absolute_history_position)) {
+		action = new Action(action);
+		this.dispatchAction(action, true);
+		this.absolute_history_position ++;
+	}
+	
 }
 
 Project.prototype = {
@@ -170,21 +188,47 @@ Project.prototype = {
 	},
 	
 	checkPoint: function() {
-		_.each(this.project_data.getKeys(/schema\/.*/), function(id) {
-			this.project_data.setData(id, this.schemas[id].save());
+		_.each(_.keys(this.schemas), function(id) {
+			this.project_data.setData(id, this.getSchema(id).save());
 		}, this);
 		this.project_data.setData("template_manager", this.template_manager.save());
-		this.project_data.save();
+		this.project_data.setData("checkpoint_position", this.history_position);
+		this.checkpoint_position = this.history_position;
 	},
 	
-	dispatchAction: function(action) {
-		if (action.schemaID()) {
-			var schema = this.getSchema(action.schemaID());
-			action.doTo(schema);
-			// Todo the user interface needs to be informed
+	dispatchAction: function(action, dont_record) {
+		if (action.type == "UNDO") {
+		
+		} else if (action.type == "REDO") {
+		
 		} else {
-			action.doTo(this);
-			// Todo the user interface needs to be informed
+			if (action.schemaID()) {
+				var schema = this.getSchema(action.schemaID());
+				action.doTo(schema);
+				// Todo the user interface needs to be informed
+			} else {
+				action.doTo(this);
+				// Todo the user interface needs to be informed
+			}
+			if (!dont_record) {
+				// Now record the action
+				if (this.history_position != this.absolute_history_position) {
+					// undo history being lost
+					var clear_position = this.history_position;
+					while(this.project_data.getData("history/" + clear_position)) {
+						this.project_data.deleteData("history/" + clear_position);
+						clear_position++;
+					}
+					this.absolute_history_position = this.history_position;
+					if (this.checkpoint_position > this.history_position) {
+						this.checkPoint();
+					}
+					
+				}
+				this.project_data.setData("history/" + this.history_position, action);
+				this.absolute_history_position++;
+			}
+			this.history_position++;
 		}
 	},
 	
@@ -222,18 +266,10 @@ Project.prototype = {
 _.extend(Project.prototype, Backbone.Events);
 
 function Action(args) {
-	if (args.json) {
-		
-	} else {
-		_.extend(this, args);
-	}
+	_.extend(this, args);
 }
 
 Action.prototype = {
-
-	toJSON: function() {
-		return {};
-	},
 	
 	inverse: function() {
 		switch (this.type) {

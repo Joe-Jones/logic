@@ -402,7 +402,115 @@ QUnit.test("create a schema and test it", function(assert) {
 		[0,1,0],
 		[1,0,0],
 		[1,1,1]];
-	console.log(schema);
+
 	checkTruthTable2(truth_table, "test an and gate", schema, [switch1, switch2], [bulb], assert);
+	
+	deleteDatabase("testdatabase7");
+	
+});
+
+QUnit.test("create a schema and test it's been saved", function(assert) {
+
+	// Open a database.
+	var database = getDatabase("testdatabase8", true);
+	
+	// Create a project
+	var project_data = database.loadProjectData("example_project", true);
+	var project = new Project(project_data);
+	
+	// Add a schema to the project
+	var schema_id;
+	project.on("schemaAdded", function(id) { schema_id = id; });
+	project.dispatchAction(new Action({project_id: "example_project", type: "ADD_SCHEMA"}));
+	var schema = project.getSchema(schema_id);
+	
+	// Build a circuit in the schema
+	var new_gate;
+	schema.on("gateAdded", function(id) { new_gate = id; });
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "SWITCH"}));
+	var switch1 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "SWITCH"}));
+	var switch2 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "AND"}));
+	var and_gate = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "BULB"}));
+	var bulb = new_gate;
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: switch1, output_num: 0, input_item: and_gate, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: switch2, output_num: 0, input_item: and_gate, input_num: 1}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: and_gate, output_num: 0, input_item: bulb, input_num: 0}));
+									   
+									  
+	// open the database and project a second time to 
+	var database2 = getDatabase("testdatabase8", true);
+	var project_data2 = database2.loadProjectData("example_project", true);
+	var project2 = new Project(project_data2);
+	var schema2 = project2.getSchema(schema_id);
+									   
+	var truth_table = [
+		[0,0,0],
+		[0,1,0],
+		[1,0,0],
+		[1,1,1]];
+
+	checkTruthTable2(truth_table, "test an and gate", schema2, [switch1, switch2], [bulb], assert);
+	
+	deleteDatabase("testdatabase8");
+	
+});
+
+QUnit.test("create a schema and check point it", function(assert) {
+
+	// Open a database.
+	var database = getDatabase("testdatabase9", true);
+	
+	// Create a project
+	var project_data = database.loadProjectData("example_project", true);
+	var project = new Project(project_data);
+	
+	// Add a schema to the project
+	var schema_id;
+	project.on("schemaAdded", function(id) { schema_id = id; });
+	project.dispatchAction(new Action({project_id: "example_project", type: "ADD_SCHEMA"}));
+	var schema = project.getSchema(schema_id);
+	
+	// Build a circuit in the schema
+	var new_gate;
+	schema.on("gateAdded", function(id) { new_gate = id; });
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "SWITCH", position: new Point(0, 0)}));
+	var switch1 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "SWITCH", position: new Point(0, 0)}));
+	var switch2 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "AND", position: new Point(0, 0)}));
+	var and_gate = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "BULB", position: new Point(0, 0)}));
+	var bulb = new_gate;
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: switch1, output_num: 0, input_item: and_gate, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: switch2, output_num: 0, input_item: and_gate, input_num: 1}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: and_gate, output_num: 0, input_item: bulb, input_num: 0}));
+									   
+	// Now the check point
+	project.checkPoint();
+									  
+	// open the database and project a second time to 
+	var database2 = getDatabase("testdatabase9", true);
+	var project_data2 = database2.loadProjectData("example_project", true);
+	var project2 = new Project(project_data2);
+	var schema2 = project2.getSchema(schema_id);
+									   
+	var truth_table = [
+		[0,0,0],
+		[0,1,0],
+		[1,0,0],
+		[1,1,1]];
+
+	checkTruthTable2(truth_table, "test an and gate", schema2, [switch1, switch2], [bulb], assert);
+	
+	deleteDatabase("testdatabase9");
 	
 });
