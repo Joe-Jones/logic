@@ -148,13 +148,17 @@ function Project(project_data) {
 		this.addSchema(id);
 	}, this);
 	
+	this.open_tabs = this.project_data.getData("open_tabs") || [];
+	this.selected_tab = this.project_data.getData("selected_tab");
+	this.schema_names = this.selected_tab = this.project_data.getData("schema_names") || {};
+	
 	// History and checkpoints
 	this.checkpoint_position = this.project_data.getData("checkpoint_position") || 0;
 	this.history_position = this.checkpoint_position;
 	this.absolute_history_position = this.history_position
 	var action;
 	while(action = this.project_data.getData("history/" + this.absolute_history_position)) {
-		action = new Action(action);
+		action = new Action(action, true);
 		this.dispatchAction(action, true);
 		this.absolute_history_position ++;
 	}
@@ -192,13 +196,16 @@ Project.prototype = {
 			this.project_data.setData(id, this.getSchema(id).save());
 		}, this);
 		this.project_data.setData("template_manager", this.template_manager.save());
+		this.project_data.setData("open_tabs", this.open_tabs);
+		this.project_data.setData("selected_tab", this.selected_tab);
+		this.project_data.setData("schema_names", this.schema_names);
 		this.project_data.setData("checkpoint_position", this.history_position);
 		this.checkpoint_position = this.history_position;
 	},
 	
 	dispatchAction: function(action, dont_record) {
 		if (action.type == "UNDO") {
-		
+			
 		} else if (action.type == "REDO") {
 		
 		} else {
@@ -210,63 +217,64 @@ Project.prototype = {
 				action.doTo(this);
 				// Todo the user interface needs to be informed
 			}
-			if (!dont_record) {
-				// Now record the action
-				if (this.history_position != this.absolute_history_position) {
-					// undo history being lost
-					var clear_position = this.history_position;
-					while(this.project_data.getData("history/" + clear_position)) {
-						this.project_data.deleteData("history/" + clear_position);
-						clear_position++;
+			if (!action.dont_record) {
+				if (!dont_record) {
+					// Now record the action
+					if (this.history_position != this.absolute_history_position) {
+						// undo history being lost
+						var clear_position = this.history_position;
+						while(this.project_data.getData("history/" + clear_position)) {
+							this.project_data.deleteData("history/" + clear_position);
+							clear_position++;
+						}
+						this.absolute_history_position = this.history_position;
+						if (this.checkpoint_position > this.history_position) {
+							this.checkPoint();
+						}
+						
 					}
-					this.absolute_history_position = this.history_position;
-					if (this.checkpoint_position > this.history_position) {
-						this.checkPoint();
-					}
-					
+					this.project_data.setData("history/" + this.history_position, action);
+					this.absolute_history_position++;
 				}
-				this.project_data.setData("history/" + this.history_position, action);
-				this.absolute_history_position++;
+				this.history_position++;
 			}
-			this.history_position++;
 		}
 	},
 	
-	record: function(action) {
-		if (this.history_position != this.history.length) { // We need to get rid of redo history
-			this.history = _.first(this.history, this.history_position);
-		}
-		this.history.push(action);
-		this.history_position++;
+	listOpenTabs: function() {
+		return this.open_tabs;
 	},
 	
-	undo: function() {
-		if (this.history_position > 0) {
-			var last_action = this.history[this.history_position - 1];
-			var undo_action = last_action.inverse();
-			undo_action.doTo(this.views[undo_action.schemaID()].model);
-			this.history_position--;
-			
-			this.views[undo_action.schemaID()].saveSchema();
-		}
+	noSchemas: function() {
+		return _.keys(this.schemas).length == 0;
 	},
 	
-	redo: function() {
-		if (this.history_position < this.history.length) {
-			var action = this.history[this.history_position];
-			action.doTo(this.views[action.schemaID()].model);
-			this.history_position++;
-			
-			this.views[action.schemaID()].saveSchema();
-		}
+	selectedTab: function() {
+		return this.selected_tab;
 	},
+	
+	getSchemaName: function(schema_id) {
+		return this.schema_names[schema_id];
+	}
 
 };
 
 _.extend(Project.prototype, Backbone.Events);
 
-function Action(args) {
+function Action(args, from_json) {
+	if (from_json) {
+		if (args.position) {
+			args.position = new Point(args.position);
+		}
+		if (args.new_position) {
+			args.new_position = new Point(args.new_position);
+		}
+		if (args.old_position) {
+			args.old_position = new Point(args.old_position);
+		}
+	}
 	_.extend(this, args);
+		
 }
 
 Action.prototype = {
@@ -317,7 +325,23 @@ Action.prototype = {
 			/* Actions on a project */
 			case "ADD_SCHEMA":
 				var schema = model.newSchema();
-				model.trigger("schemaAdded", schema.id);
+				model.open_tabs.push(schema.id);
+				model.schema_names[schema.id] = "New Schema";
+				model.trigger("schemaOpened", schema.id);
+				this.previous_schema = model.selected_tab;
+				model.selected_tab = schema.id;
+				break;
+			case "SELECT_SCHEMA":
+				if (model.selected_tab == this.schema) {
+					this.dont_record = true;
+				} else {
+					this.previous_schema = model.selected_tab;
+					model.selected_tab = this.schema;
+				}
+				break;
+			case "RENAME_SCHEMA":
+				model.schema_names[this.schema] = this.new_name;
+				model.trigger("schemaNameChanged", this.schema);
 				break;
 		
 			/* Actions on a Schema */
@@ -345,6 +369,25 @@ Action.prototype = {
 				model.add(object);
 				object.setPosition(this.position);
 				break;
+			case "MOVE_GATE":
+				if (this.replay) {
+					var object = model.getObjectByNumber(this.item);
+					object.top_left = this.new_position;
+					// Todo there should be some way of informing the UI
+				} else {
+					this.replay = true;
+				}
+				break;
+			case "SWITCH_CLICK":
+				if (this.replay) {
+					var object = model.getObjectByNumber(this.item);
+					object.click();
+					// Todo there should be some way of informing the UI
+				} else {
+					this.replay = true;
+				}
+				break;
+
 		}
 	},
 	
@@ -359,10 +402,6 @@ function GroupedActions(actions) {
 }
 
 GroupedActions.prototype = {
-
-	toJSON: function() {
-		return {};
-	},
 	
 	inverse: function() {
 		var actions = [];

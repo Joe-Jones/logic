@@ -43,6 +43,10 @@ var SchemaView = JakeKit.Canvas.extend({
 
 	},
 	
+	id: function() {
+		return this.model.id;
+	},
+	
 	ready: function() {
 		this.scale(30, 30);
 		this.rotate(Math.PI / 2)
@@ -190,6 +194,7 @@ var SchemaView = JakeKit.Canvas.extend({
 			this.drawer.setSelectionBox();
 		} else {
 			//Leave the thing in its new position
+			this.moveObject(this.dragged_object, this.original_position);
 			this.dragged_object = null;
 		}
 		this.invalidate();
@@ -248,6 +253,11 @@ var SchemaView = JakeKit.Canvas.extend({
 		if (objects.length > 0) {
 			var object = objects[0];
 			if(object.click()) {
+				this.action_recorder.dispatchAction(new Action({
+					type: "SWITCH_CLICK",
+					schema_id: this.model.id,
+					item: object.number
+				}));
 				//this.drawer.invalidateRectangle(object.boundingBox());
 			}
 		}
@@ -259,29 +269,30 @@ var SchemaView = JakeKit.Canvas.extend({
 	
 	addObject: function(type, at) {
 		var action = new Action({
-			project_id: this.model.project_id,
 			schema_id: this.model.id,
 			type: "ADD_GATE",
 			gate_type:	type,
 			position: at
 		});
-		this.action_recorder.record(action);
-		action.doTo(this.model);
-		//this.drawer.invalidateRectangle(object.boundingBox());
-		this.invalidate();
+		this.action_recorder.dispatchAction(action);
 	},
 	
 	deleteObject: function() {
 	
 	},
 	
-	moveObject: function() {
-	
+	moveObject: function(object, original_position) {
+		this.action_recorder.dispatchAction(new Action({
+			schema_id: 		this.model.id,
+			type:			"MOVE_GATE",
+			item:			object.number,
+			new_position:	object.top_left,
+			old_position:	original_position
+		}));
 	},
 	
 	addConnection: function(connection) {
 		var action = new Action({
-			project_id: 	this.model.project_id,
 			schema_id: 		this.model.id,
 			type:			"ADD_CONNECTION",
 			input_item:		connection.input_item.number,
@@ -289,8 +300,7 @@ var SchemaView = JakeKit.Canvas.extend({
 			output_item:	connection.output_item.number,
 			output_num:		connection.output_num
 		});
-		this.action_recorder.record(action);
-		action.doTo(this.model);
+		this.action_recorder.dispatchAction(action);
 	},
 	
 	deleteConnection: function(connection) {
@@ -304,7 +314,6 @@ var SchemaView = JakeKit.Canvas.extend({
 			var actions = [];
 			_.each(connections, function(connection) {
 				actions.push(new Action({
-					project_id: 	this.model.project_id,
 					schema_id: 		this.model.id,
 					type:			"REMOVE_CONNECTION",
 					input_item:		connection.input_item.number,
@@ -315,7 +324,6 @@ var SchemaView = JakeKit.Canvas.extend({
 			}, this);
 			_.each(this.selection, function(gate) {
 				actions.push(new Action({
-					project_id: 	this.model.project_id,
 					schema_id: 		this.model.id,
 					type:			"REMOVE_NUMBERED_GATE",
 					number:			gate.number,
@@ -324,8 +332,7 @@ var SchemaView = JakeKit.Canvas.extend({
 				}));
 			}, this);
 			var action = new GroupedActions(actions);
-			this.action_recorder.record(action);
-			action.doTo(this.model);
+			this.action_recorder.dispatchAction(action);
 			this.selection = [];
 		}
 	}

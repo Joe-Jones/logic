@@ -514,3 +514,65 @@ QUnit.test("create a schema and check point it", function(assert) {
 	deleteDatabase("testdatabase9");
 	
 });
+
+function buildCircuit1(project, schema, gate_type) {
+	// Build a circuit in the schema
+	var new_gate;
+	var project_id = null; // Todo Actions don't need a project_id
+	var schema_id = schema.id;
+	schema.on("gateAdded", function(id) { new_gate = id; });
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "SWITCH", position: new Point(0, 0)}));
+	var switch1 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "SWITCH", position: new Point(0, 0)}));
+	var switch2 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: gate_type, position: new Point(0, 0)}));
+	var and_gate = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", project_id: "example_project", schema_id: schema_id, gate_type: "BULB", position: new Point(0, 0)}));
+	var bulb = new_gate;
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: switch1, output_num: 0, input_item: and_gate, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: switch2, output_num: 0, input_item: and_gate, input_num: 1}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", project_id: "example_project", schema_id: schema_id,
+									   output_item: and_gate, output_num: 0, input_item: bulb, input_num: 0}));
+	return [[switch1, switch2], [bulb]];
+}
+
+function getAProject(database_name, project_id) {
+	// Open a database.
+	var database = getDatabase(database_name, true);
+	
+	// Create a project
+	var project_data = database.loadProjectData(project_id, true);
+	var project = new Project(project_data);
+	
+	return project;
+}
+
+function addSchema(project) {
+	// Add a schema to the project
+	var schema_id;
+	project.on("schemaAdded", function(id) { schema_id = id; });
+	project.dispatchAction(new Action({project_id: "example_project", type: "ADD_SCHEMA"}));
+	var schema = project.getSchema(schema_id);
+	return schema;
+}
+
+QUnit.test("test undo", function(assert) {
+	// This doesn't really test undo, just that it doesn't break anything using it.
+	var project = getAProject("testdatabase10", "example_project");
+	var schema = addSchema(project);
+	buildCircuit1(project, schema, "AND");
+	for (var i = 0; i < 7; i++) {
+		project.dispatchAction(new Action({type: "UNDO"}));
+	}
+	var io = buildCircuit1(project, schema, "OR");
+	var truth_table = [
+		[0,0,0],
+		[0,1,1],
+		[1,0,1],
+		[1,1,1]];
+	checkTruthTable2(truth_table, "test an or gate", schema, io[0], io[1], assert);
+	deleteDatabase("testdatabase10");
+});
+

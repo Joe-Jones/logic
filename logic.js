@@ -127,8 +127,8 @@ var MainView = JakeKit.Stack.extend({
 		if (this.project_view) {
 			// Todo We need to tidy up the old one
 		}
-		var project = new Project(this.database.loadProjectData(project_id, true));
-		this.project_view = new ProjectView(project);
+		this.project = new Project(this.database.loadProjectData(project_id, true));
+		this.project_view = new ProjectView(this.project);
 		this.project_view.listenTo(this.menu, "undo", this.project_view.undo);
 		this.project_view.listenTo(this.menu, "redo", this.project_view.redo);
 		this.project_view.listenTo(this.menu, "delete", this.project_view.deleteSelection);
@@ -211,7 +211,7 @@ var MainView = JakeKit.Stack.extend({
 	},
 	
 	newSchema: function() {
-		this.project_view.newTab();
+		this.project.dispatchAction(new Action({type: "ADD_SCHEMA"}));
 	},
 	
 	showRenameSchemaWindow: function() {
@@ -225,7 +225,7 @@ var MainView = JakeKit.Stack.extend({
 			},
 			
 			render: function() {
-				this.$el.html('<input type="text" value="' + _.escape(this.model.get("name")) + '">' +
+				this.$el.html('<input type="text" value="' + _.escape(that.project.getSchemaName(that.project.selectedTab())) + '">' +
 							  '<button id="save_button">Save</button><button id="cancel_button">Cancel</button>');
 				this.$("#cancel_button").on("click", function() {
 					that.removeChild(that.rename_window);
@@ -234,8 +234,14 @@ var MainView = JakeKit.Stack.extend({
 				});
 				var rename_window = this;
 				this.$("#save_button").on("click", function() {
-					rename_window.model.set("name", rename_window.$("input")[0].value);
-					rename_window.model.save();
+					//rename_window.model.set("name", rename_window.$("input")[0].value);
+					//rename_window.model.save();
+					that.project.dispatchAction(new Action({
+						type:		"RENAME_SCHEMA",
+						schema:		that.project.selectedTab(),
+						new_name:	rename_window.$("input")[0].value,
+						old_name:	that.project.getSchemaName(that.project.selectedTab())
+					}));
 					that.removeChild(that.rename_window);
 					delete that.rename_window;
 					that.makeActive(that.main_window);
