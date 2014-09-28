@@ -375,7 +375,7 @@ QUnit.test("create a schema and test it", function(assert) {
 	
 	// Add a schema to the project
 	var schema_id;
-	project.on("schemaAdded", function(id) { schema_id = id; });
+	project.on("schemaOpened", function(id) { schema_id = id; });
 	project.dispatchAction(new Action({project_id: "example_project", type: "ADD_SCHEMA"}));
 	var schema = project.getSchema(schema_id);
 	
@@ -420,7 +420,7 @@ QUnit.test("create a schema and test it's been saved", function(assert) {
 	
 	// Add a schema to the project
 	var schema_id;
-	project.on("schemaAdded", function(id) { schema_id = id; });
+	project.on("schemaOpened", function(id) { schema_id = id; });
 	project.dispatchAction(new Action({project_id: "example_project", type: "ADD_SCHEMA"}));
 	var schema = project.getSchema(schema_id);
 	
@@ -472,7 +472,7 @@ QUnit.test("create a schema and check point it", function(assert) {
 	
 	// Add a schema to the project
 	var schema_id;
-	project.on("schemaAdded", function(id) { schema_id = id; });
+	project.on("schemaOpened", function(id) { schema_id = id; });
 	project.dispatchAction(new Action({project_id: "example_project", type: "ADD_SCHEMA"}));
 	var schema = project.getSchema(schema_id);
 	
@@ -552,7 +552,7 @@ function getAProject(database_name, project_id) {
 function addSchema(project) {
 	// Add a schema to the project
 	var schema_id;
-	project.on("schemaAdded", function(id) { schema_id = id; });
+	project.on("schemaOpened", function(id) { schema_id = id; });
 	project.dispatchAction(new Action({project_id: "example_project", type: "ADD_SCHEMA"}));
 	var schema = project.getSchema(schema_id);
 	return schema;
