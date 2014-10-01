@@ -1,7 +1,7 @@
 "use strict";
 
 /********************************************************************************************/
-function SchemaModel(id, project_id, data, template_manager)
+function SchemaModel(id, project_id, data, template_manager, project)
 /********************************************************************************************/
 {
 	this.id = id;
@@ -9,6 +9,7 @@ function SchemaModel(id, project_id, data, template_manager)
 	this.data = data;
 	this.template_manager = template_manager;
 	this.loaded = false;
+	this.project = project;
 }
 
 _.extend(SchemaModel.prototype, Backbone.Events);
@@ -36,6 +37,7 @@ SchemaModel.prototype.add = function(object) {
 	if (object.type == "SUBCIRCIT") {
 		var template = this.template_manager.getTemplate(object.schema_id);
 		object.template_instance = this.logic_system.addTemplate(template);
+		object.project = this.project;
 	} else {
 		object.logic_id = this.logic_system.addGate(object.type);
 	}
@@ -145,8 +147,23 @@ SchemaModel.prototype.addConnection = function(input_item_num, input_num, output
 	this.next_connection_number ++;
 	
 	// Add to the LogicSystem
-	this.logic_system.makeConnection(connection.output_item.logic_id, connection.input_item.logic_id, connection.input_num);
-	this.logic_system.injectTransient(connection.input_item.logic_id);
+	
+	var logic_output;
+	if (output_item.type == "SUBCIRCIT") {
+		logic_output = this.logic_system.gateNumber(output_item.template_instance,
+													this.project.getSchemaInfo(output_item.schema_id)["outputs"][output_num]["number"]);
+	} else {
+		logic_output = output_item.logic_id;
+	}
+	
+	if (input_item.type == "SUBCIRCIT") {
+		this.logic_system.connectToTemplateInstance(logic_output, input_item.template_instance,
+													this.project.getSchemaInfo(input_item.schema_id)["inputs"][input_num]["number"]);
+		// Todo need a way to inject a transient.
+	} else {
+		this.logic_system.makeConnection(logic_output, connection.input_item.logic_id, connection.input_num);
+		this.logic_system.injectTransient(connection.input_item.logic_id);
+	}
 	this.logic_system.run();
 };
 

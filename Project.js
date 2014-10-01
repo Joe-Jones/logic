@@ -150,7 +150,8 @@ function Project(project_data) {
 	
 	this.open_tabs = this.project_data.getData("open_tabs") || [];
 	this.selected_tab = this.project_data.getData("selected_tab");
-	this.schema_names = this.selected_tab = this.project_data.getData("schema_names") || {};
+	this.schema_names = this.project_data.getData("schema_names") || {};
+	this.schema_infos = this.project_data.getData("schema_infos") || {};
 	
 	// History and checkpoints
 	this.checkpoint_position = this.project_data.getData("checkpoint_position") || 0;
@@ -170,7 +171,7 @@ Project.prototype = {
 	// private
 	addSchema: function(id) {
 		var data = this.project_data.getData(id);
-		var schema = new SchemaModel(id, this.project_data.project_id, data, this.template_manager);
+		var schema = new SchemaModel(id, this.project_data.project_id, data, this.template_manager, this);
 		this.template_manager.addModel(schema);
 		this.schemas[id] = schema;
 		return schema;
@@ -255,6 +256,14 @@ Project.prototype = {
 	
 	getSchemaName: function(schema_id) {
 		return this.schema_names[schema_id];
+	},
+	
+	getSchemaInfo: function(schema_id) {
+		return this.schema_infos[schema_id];
+	},
+	
+	listSchemas: function() {
+		return _.keys(this.schemas);
 	}
 
 };
@@ -330,6 +339,7 @@ Action.prototype = {
 				model.trigger("schemaOpened", schema.id);
 				this.previous_schema = model.selected_tab;
 				model.selected_tab = schema.id;
+				model.schema_infos[schema.id] = { input_counter: 0, inputs: [], output_counter: 0, outputs: [] };
 				break;
 			case "SELECT_SCHEMA":
 				if (model.selected_tab == this.schema) {
@@ -349,6 +359,18 @@ Action.prototype = {
 				var object = makeGate(this.gate_type);
 				model.add(object);
 				object.setPosition(this.position);
+				if (this.gate_type == "INPUT") {
+					model.project.schema_infos[this.schema_id]["inputs"].push({
+						name:	"i_" + model.project.schema_infos[this.schema_id]["input_counter"],
+						number:	object.number})
+					model.project.schema_infos[this.schema_id]["input_counter"]++;
+				}
+				if (this.gate_type == "OUTPUT") {
+					model.project.schema_infos[this.schema_id]["outputs"].push({
+						name:	"0_" + model.project.schema_infos[this.schema_id]["output_counter"],
+						number:	object.number})
+					model.project.schema_infos[this.schema_id]["output_counter"]++;
+				}
 				model.trigger("gateAdded", object.number);
 				break;
 			case "REMOVE_GATE":

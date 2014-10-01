@@ -576,3 +576,82 @@ QUnit.test("test undo", function(assert) {
 	deleteDatabase("testdatabase10");
 });
 
+function buildHalfAdder(project, schema) {
+	var new_gate;
+	var schema_id = schema.id;
+	schema.on("gateAdded", function(id) { new_gate = id; });
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "INPUT", position: new Point(0, 0)}));
+	var input1 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "INPUT", position: new Point(0, 0)}));
+	var input2 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "AND", position: new Point(0, 0)}));
+	var input_and = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "OR", position: new Point(0, 0)}));
+	var or = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "NOT", position: new Point(0, 0)}));
+	var not = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "AND", position: new Point(0, 0)}));
+	var output_and = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "OUTPUT", position: new Point(0, 0)}));
+	var carry = new_gate
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "OUTPUT", position: new Point(0, 0)}));
+	var sum = new_gate;
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: input1, output_num: 0, input_item: input_and, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: input1, output_num: 0, input_item: or, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: input2, output_num: 0, input_item: input_and, input_num: 1}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: input2, output_num: 0, input_item: or, input_num: 1}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: input_and, output_num: 0, input_item: carry, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: input_and, output_num: 0, input_item: not, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: not, output_num: 0, input_item: output_and, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: or, output_num: 0, input_item: output_and, input_num: 1}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: output_and, output_num: 0, input_item: sum, input_num: 0}));
+}
+
+QUnit.test("embed a template in a schema", function(assert) {
+	var project = getAProject("testdatabase11", "test_project");
+	var component = addSchema(project);
+	buildHalfAdder(project, component);
+	
+	var schema = addSchema(project);
+	var new_gate;
+	var schema_id = schema.id;
+	schema.on("gateAdded", function(id) { new_gate = id; });
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "SWITCH", position: new Point(0, 0)}));
+	var input1 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "SWITCH", position: new Point(0, 0)}));
+	var input2 = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "COMPONENT:" + component.id, position: new Point(0, 0)}));
+	var adder_instance = new_gate;
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "BULB", position: new Point(0, 0)}));
+	var carry = new_gate
+	project.dispatchAction(new Action({type: "ADD_GATE", schema_id: schema_id, gate_type: "BULB", position: new Point(0, 0)}));
+	var sum = new_gate;
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: input1, output_num: 0, input_item: adder_instance, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: input2, output_num: 0, input_item: adder_instance, input_num: 1}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: adder_instance, output_num: 0, input_item: carry, input_num: 0}));
+	project.dispatchAction(new Action({type: "ADD_CONNECTION", schema_id: schema_id,
+									   output_item: adder_instance, output_num: 1, input_item: sum, input_num: 0}));
+									   
+	var truth_table = [
+		[0,0,0,0],
+		[0,1,0,1],
+		[1,0,0,1],
+		[1,1,1,0],
+	];
+	
+	checkTruthTable2(truth_table, "test a subsircuit", schema, [input1, input2], [carry, sum], assert);
+	deleteDatabase("testdatabase11");
+});
+

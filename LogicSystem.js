@@ -178,7 +178,7 @@ LogicSystem.prototype.addTemplate = function(template) {
 		var id = this.addGate(gate[0]);
 		gates.push(id);
 		for (var j = 1; j <= 2; j++) {
-			if (this.gates[id][j]) {
+			if (template.gates[i][j]) {
 				this.gates[id][j] = gate[j] + start_gate - 1;
 			}
 		}

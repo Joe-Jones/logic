@@ -7,7 +7,7 @@ var ProjectView = JakeKit.HBox.extend({
 		this.project = project;
 		_.bindAll(this, "openTab", "schemaNameChanged", "selectTab");
 		
-		this.components = new ComponentList();
+		this.components = new ComponentList(project);
 		this.addChild(this.components);
 		
 		this.tabstack = new JakeKit.w2tabstack();
@@ -76,13 +76,15 @@ var ProjectView = JakeKit.HBox.extend({
 var ComponentView = Backbone.View.extend({
 
 	attributes: { draggable: "true" },
+	
+	initialize: function(args) {
+		this.schema_id = args.schema_id;
+		this.name = args.name;
+	},
 
 	render: function() {
-		var html = this.model.get("name");
-		this.$el.html(html);
-		
-		this.el.addEventListener("dragstart", makeEventListener("COMPONENT:" + this.model.id), true);
-		
+		this.$el.html(this.name);
+		this.el.addEventListener("dragstart", makeEventListener("COMPONENT:" + this.schema_id), true);
 		return this;
 	}
 
@@ -91,14 +93,16 @@ var ComponentView = Backbone.View.extend({
 var ComponentList = Backbone.View.extend({
 
 	className: "components",
+	
+	initialize: function(project) {
+		this.project = project;
+	},
 
 	render: function() {
-		if (this.collection) {
-			this.collection.each(function(component) {
-				var component_view = new ComponentView({ model: component });
-				this.$el.append(component_view.render().el);
-			}, this);
-		}
+		_.each(this.project.listSchemas(), function(schema_id) {
+			var component_view = new ComponentView({ schema_id: schema_id, name: this.project.getSchemaName(schema_id) });
+			this.$el.append(component_view.render().el);
+		}, this);
 	}
 	
 });
