@@ -643,28 +643,49 @@ SubCircit.prototype.draw = function(ctx) {
 	ctx.save();
 	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
 	
+	var schema_info = this.project.getSchemaInfo(this.schema_id);
+	var number_of_inputs = schema_info.inputs.length;
+	var number_of_outputs = schema_info.outputs.length;
+	
 	// Work out big we need to be
-
-	ctx.fillRect(0.15, 0.15, 0.7, 0.7);
-	if(!this.on) {
-		ctx.clearRect(0.3, 0.3, 0.4, 0.4);
+	
+	//Inputs
+	for (var i = 0; i < number_of_inputs; i++) {
+		ctx.beginPath();
+		ctx.moveTo(0.3 + 0.3 * i, 0.95);
+		ctx.lineTo(0.3 + 0.3 * i, 0.75);
+		ctx.stroke();
 	}
 	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.15);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
+	// Outputs
+	for (var i = 0; i < number_of_outputs; i++) {
+		ctx.beginPath();
+		ctx.moveTo(0.3 + 0.3 * i, 0.25);
+		ctx.lineTo(0.3 + 0.3 * i, 0.05);
+		ctx.stroke();
+	}
 	
 	ctx.restore();
 };
 
 SubCircit.prototype.outputs = function() {
-	return [this.top_left.plus(new Point(0.5, 0.05))];
+	var schema_info = this.project.getSchemaInfo(this.schema_id);
+	var number_of_outputs = schema_info.outputs.length;
+	var outputs = [];
+	for (var i = 0; i < number_of_outputs; i++) {
+		outputs.push(this.top_left.plus(new Point(0.3 + i * 0.3, 0.05)));
+	}
+	return outputs;
 };
 
 SubCircit.prototype.inputs = function() {
-	return [this.top_left.plus(new Point(0.5, 0.05))];
+	var schema_info = this.project.getSchemaInfo(this.schema_id);
+	var number_of_inputs = schema_info.inputs.length;
+	var inputs = [];
+	for (var i = 0; i < number_of_inputs; i++) {
+		inputs.push(this.top_left.plus(new Point(0.3 + i * 0.3, 0.95)));
+	}
+	return inputs;
 };
 
 /********************************************************************************************/
