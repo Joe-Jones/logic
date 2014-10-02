@@ -159,7 +159,7 @@ function Project(project_data) {
 	this.absolute_history_position = this.history_position
 	var action;
 	while(action = this.project_data.getData("history/" + this.absolute_history_position)) {
-		action = new Action(action, true);
+		action = vivifyAction(action);
 		this.dispatchAction(action, true);
 		this.absolute_history_position ++;
 	}
@@ -290,6 +290,17 @@ Action.prototype = {
 	
 	inverse: function() {
 		switch (this.type) {
+		
+			/* Actions on a project */
+			case "ADD_SCHEMA":
+				break;
+			case "SELECT_SCHEMA":
+				break;
+			case "RENAME_SCHEMA":
+				break;
+			
+				
+			/* Actions on a schema */
 			case "ADD_GATE":
 				return new Action({
 					project_id:		this.project_id,
@@ -325,6 +336,10 @@ Action.prototype = {
 					gate_type:		this.gate_type,
 					position:		this.position
 				});
+			case "MOVE_GATE":
+				break;
+			case "SWITCH_CLICK":
+				break;
 		}
 	},
 	
@@ -440,6 +455,16 @@ GroupedActions.prototype = {
 	}
 
 };
+
+function vivifyAction(action) {
+	if (_.isArray(action.actions)) {
+		return new GroupedActions(_.map(action.actions, function(action) {
+			return vivifyAction(action);
+		}));
+	} else {
+		return new Action(action, true);
+	}
+}
 
 
 //Todo are we actually using the rest of this file or is it just junk.
