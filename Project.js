@@ -204,11 +204,28 @@ Project.prototype = {
 		this.checkpoint_position = this.history_position;
 	},
 	
+	keep_going: ["MOVE_GATE", "SWITCH_CLICK"],
+	
 	dispatchAction: function(action, dont_record) {
 		if (action.type == "UNDO") {
-			
+			var stop = false;
+			while (this.history_position > 1 && !stop) {
+				this.history_position--;
+				var action_to_undo = vivifyAction(this.project_data.getData("history/" + this.history_position));
+				if (!_.contains(this.keep_going, action_to_undo.type)) {
+					stop = true;
+				}
+				this.dispatchAction(action_to_undo.inverse());
+			}
+			if (!dont_record) {
+				this.project_data.setData("history/" + this.absolute_history_position, action);
+				this.absolute_history_position++;
+			}
 		} else if (action.type == "REDO") {
-		
+			var stop = false;
+			//while not sure what
+			//	var redo_action = this.project_data.getData("history/" + this.history_position);
+			//	this.history_position++;
 		} else {
 			if (action.schemaID()) {
 				var schema = this.getSchema(action.schemaID());
@@ -303,43 +320,49 @@ Action.prototype = {
 			/* Actions on a schema */
 			case "ADD_GATE":
 				return new Action({
-					project_id:		this.project_id,
 					schema_id:		this.schema_id,
-					type:			"REMOVE_GATE"
+					type:			"REMOVE_GATE",
+					dont_record:	true
 				});
 			case "ADD_CONNECTION":
 				return new Action({
-					project_id:		this.project_id,
 					schema_id:		this.schema_id,
 					type:			"REMOVE_CONNECTION",
 					input_item:		this.input_item,
 					input_num:		this.input_num,
 					output_item:	this.output_item,
-					output_num:		this.output_num
+					output_num:		this.output_num,
+					dont_record:	true
 				});
 			case "REMOVE_CONNECTION":
 				return new Action({
-					project_id:		this.project_id,
 					schema_id:		this.schema_id,
 					type:			"ADD_CONNECTION",
 					input_item:		this.input_item,
 					input_num:		this.input_num,
 					output_item:	this.output_item,
-					output_num:		this.output_num
+					output_num:		this.output_num,
+					dont_record:	true
 				});
 			case "REMOVE_NUMBERED_GATE":
 				return new Action({
-					project_id:		this.project_id,
 					schema_id:		this.schema_id,
 					type:			"ADD_NUMBERED_GATE",
 					number:			this.number,
 					gate_type:		this.gate_type,
-					position:		this.position
+					position:		this.position,
+					dont_record:	true
 				});
 			case "MOVE_GATE":
-				break;
+				return new Action({
+					schema_id:		this.schema_id,
+					type:			"MOVE_GATE",
+					new_position:	this.old_position,
+					dont_record:	true
+				});
 			case "SWITCH_CLICK":
-				break;
+				this.dont_record = true;
+				return this;
 		}
 	},
 	
@@ -353,8 +376,11 @@ Action.prototype = {
 				model.schema_names[schema.id] = "New Schema";
 				model.trigger("schemaOpened", schema.id);
 				this.previous_schema = model.selected_tab;
+				this.previously_selected_tab = model.selected_tab;
 				model.selected_tab = schema.id;
 				model.schema_infos[schema.id] = { input_counter: 0, inputs: [], output_counter: 0, outputs: [] };
+				break;
+			case "REMOVE_SCHEMA":
 				break;
 			case "SELECT_SCHEMA":
 				if (model.selected_tab == this.schema) {
@@ -377,13 +403,13 @@ Action.prototype = {
 				if (this.gate_type == "INPUT") {
 					model.project.schema_infos[this.schema_id]["inputs"].push({
 						name:	"i_" + model.project.schema_infos[this.schema_id]["input_counter"],
-						number:	object.number})
+						number:	object.logic_id})
 					model.project.schema_infos[this.schema_id]["input_counter"]++;
 				}
 				if (this.gate_type == "OUTPUT") {
 					model.project.schema_infos[this.schema_id]["outputs"].push({
 						name:	"0_" + model.project.schema_infos[this.schema_id]["output_counter"],
-						number:	object.number})
+						number:	object.logic_id})
 					model.project.schema_infos[this.schema_id]["output_counter"]++;
 				}
 				model.trigger("gateAdded", object.number);
