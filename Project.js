@@ -140,25 +140,26 @@ TemplateManager.prototype = {
 
 function Project(project_data) {
 	this.project_data = project_data;
-	this.template_manager = new TemplateManager(this.project_data.getData("template_manager"));
+	this.template_manager = new TemplateManager(this.project_data.getItem("template_manager"));
+	this.schema_storage = new SubStorage(project_data, "schemas");
 	this.schemas = {};
 	this.next_schema_id = 0;
-	_.each(this.project_data.getKeys(/schema\/.*/), function(id) {
+	_.each(this.schema_storage.keys(), function(id) {
 		this.next_schema_id = _.max([this.next_schema_id, id.match(/schema\/(.*)/)[1] + 1]);
 		this.addSchema(id);
 	}, this);
 	
-	this.open_tabs = this.project_data.getData("open_tabs") || [];
-	this.selected_tab = this.project_data.getData("selected_tab");
-	this.schema_names = this.project_data.getData("schema_names") || {};
-	this.schema_infos = this.project_data.getData("schema_infos") || {};
+	this.open_tabs = this.project_data.getItem("open_tabs") || [];
+	this.selected_tab = this.project_data.getItem("selected_tab");
+	this.schema_names = this.project_data.getItem("schema_names") || {};
+	this.schema_infos = this.project_data.getItem("schema_infos") || {};
 	
 	// History and checkpoints
-	this.checkpoint_position = this.project_data.getData("checkpoint_position") || 0;
+	this.checkpoint_position = this.project_data.getItem("checkpoint_position") || 0;
 	this.history_position = this.checkpoint_position;
 	this.absolute_history_position = this.history_position
 	var action;
-	while(action = this.project_data.getData("history/" + this.absolute_history_position)) {
+	while(action = this.project_data.getItem("history/" + this.absolute_history_position)) {
 		action = vivifyAction(action);
 		this.dispatchAction(action, true);
 		this.absolute_history_position ++;
@@ -170,7 +171,7 @@ Project.prototype = {
 
 	// private
 	addSchema: function(id) {
-		var data = this.project_data.getData(id);
+		var data = this.schema_storage.getItem(id);
 		var schema = new SchemaModel(id, this.project_data.project_id, data, this.template_manager, this);
 		this.template_manager.addModel(schema);
 		this.schemas[id] = schema;
@@ -194,13 +195,13 @@ Project.prototype = {
 	
 	checkPoint: function() {
 		_.each(_.keys(this.schemas), function(id) {
-			this.project_data.setData(id, this.getSchema(id).save());
+			this.schema_storage.setItem(id, this.getSchema(id).save());
 		}, this);
-		this.project_data.setData("template_manager", this.template_manager.save());
-		this.project_data.setData("open_tabs", this.open_tabs);
-		this.project_data.setData("selected_tab", this.selected_tab);
-		this.project_data.setData("schema_names", this.schema_names);
-		this.project_data.setData("checkpoint_position", this.history_position);
+		this.project_data.setItem("template_manager", this.template_manager.save());
+		this.project_data.setItem("open_tabs", this.open_tabs);
+		this.project_data.setItem("selected_tab", this.selected_tab);
+		this.project_data.setItem("schema_names", this.schema_names);
+		this.project_data.setItem("checkpoint_position", this.history_position);
 		this.checkpoint_position = this.history_position;
 	},
 	
@@ -212,28 +213,28 @@ Project.prototype = {
 				var stop = false;
 				while (this.history_position > 1 && !stop) {
 					this.history_position--;
-					var action_to_undo = vivifyAction(this.project_data.getData("history/" + this.history_position));
+					var action_to_undo = vivifyAction(this.project_data.getItem("history/" + this.history_position));
 					if (!_.contains(this.keep_going, action_to_undo.type)) {
 						stop = true;
 					}
 					this.dispatchAction(action_to_undo.inverse());
 				}
 				if (!dont_record) {
-					this.project_data.setData("history/" + this.absolute_history_position, action);
+					this.project_data.setItem("history/" + this.absolute_history_position, action);
 					this.absolute_history_position++;
 				}
 			}
 		} else if (action.type == "REDO") {
 			if (this.history_position < this.absolute_history_position) {
-				var action_to_redo = vivifyAction(this.project_data.getData("history/" + this.history_position));
+				var action_to_redo = vivifyAction(this.project_data.getItem("history/" + this.history_position));
 				action_to_redo.dont_record = true;
 				this.dispatchAction(action_to_redo);
 				this.history_position++;
 				this.absolute_history_position--;
-				this.project_data.deleteData("history/" + this.absolute_history_position);
+				this.project_data.removeItem("history/" + this.absolute_history_position);
 			
 				while (this.history_position < this.absolute_history_position) {
-					action_to_redo = vivifyAction(this.project_data.getData("history/" + this.history_position));
+					action_to_redo = vivifyAction(this.project_data.getItem("history/" + this.history_position));
 					if (action_to_redo.type == "UNDO" || !_.contains(this.keep_going, action_to_redo.type)) {
 						break;
 					}
@@ -257,8 +258,8 @@ Project.prototype = {
 					if (this.history_position != this.absolute_history_position) {
 						// undo history being lost
 						var clear_position = this.history_position;
-						while(this.project_data.getData("history/" + clear_position)) {
-							this.project_data.deleteData("history/" + clear_position);
+						while(this.project_data.getItem("history/" + clear_position)) {
+							this.project_data.removeItem("history/" + clear_position);
 							clear_position++;
 						}
 						this.absolute_history_position = this.history_position;
@@ -267,7 +268,7 @@ Project.prototype = {
 						}
 						
 					}
-					this.project_data.setData("history/" + this.history_position, action);
+					this.project_data.setItem("history/" + this.history_position, action);
 					this.absolute_history_position++;
 				}
 				this.history_position++;

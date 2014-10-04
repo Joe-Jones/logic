@@ -1,5 +1,106 @@
 "use strict";
 
+function Storage(storage) {
+	this.storage = storage;
+}
+
+Storage.prototype = {
+	
+	keys: function() {
+		var keys = [];
+		for (var i = 0; i < this.storage.length; i++) {
+			keys.push(this.storage.key(i));
+		}
+		return keys;
+	},
+	
+	getItem: function(key) {
+		return this.storage.getItem(key);
+	},
+	
+	setItem: function(key, value) {
+		this.storage.setItem(key, value);
+	},
+	
+	removeItem: function(key) {
+		this.storage.removeItem(key);
+	},
+	
+	clear: function() {
+		this.storage.clear();
+	}
+
+};
+
+function SubStorage(storage, prefix) {
+	this.storage = storage;
+	this.key_matcher = new RegExp(prefix + "\/(.*)");
+	this.prefix = prefix;
+}
+
+SubStorage.prototype = {
+
+	keys: function () {
+		var keys = [];
+		_.each(this.storage.keys(), function(key) {
+			var match = key.match(this.key_matcher);;
+			if (match) {
+				keys.push(match[1]);
+			}
+		}, this);
+		return keys;
+	},
+	
+	getItem: function(key) {
+		return this.storage.getItem(this.prefix + "/" + key);
+	},
+	
+	setItem: function(key, value) {
+		this.storage.setItem(this.prefix + "/" + key, value);
+	},
+  
+	removeItem: function(key) {
+		this.storage.removeItem(this.prefix + "/" + key);
+	},
+  
+	clear: function() {
+		_.each(this.keys(), function(key) {
+			this.removeItem(key);
+		}, this);
+	}
+	
+};
+
+function JSONStorage(storage) {
+	this.storage = storage;
+}
+
+JSONStorage.prototype = {
+
+	keys: function() {
+		return this.storage.keys();
+	},
+	
+	getItem: function(key) {
+		return JSON.parse(this.storage.getItem(key));
+	},
+	
+	setItem: function(key, value) {
+		this.storage.setItem(key, JSON.stringify(value));
+	},
+	
+	removeItem: function(key) {
+		this.storage.removeItem(key);
+	},
+	
+	clear: function() {
+		this.storage.clear();
+	}
+
+};
+
+var storage = new Storage(localStorage);
+
 function getDatabase(name, cheat) {
 	var database = new Database(name);
 	
@@ -30,6 +131,9 @@ function deleteDatabase(name) {
 
 function Database(id) {
 	this.id = id;
+	this.storage = new SubStorage(storage, id);
+	this.global_config = new SubStorage(this.storage, "global-config");
+	this.projects = new SubStorage(this.storage, "projects");
 }
 
 Database.prototype = {
@@ -42,20 +146,8 @@ Database.prototype = {
 		return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
 	},
 	
-	configKey: function(key) {
-		return this.id + "/global-config/" + key;
-	},
-	
 	keys: function() {
-		var keys = [];
-		var regex = new RegExp("^" + this.id + "\\/(.*)");
-		for (var i = 0; i < localStorage.length; i++) {
-			var match = localStorage.key(i).match(regex);
-			if (match) {
-				keys.push(match[1]);
-			}
-		}
-		return keys;
+		return this.storage.keys();
 	},
 	
 	/***************************************************************************************
@@ -68,7 +160,7 @@ Database.prototype = {
 	*/
 	
 	setConfig: function(key, value) {
-		localStorage.setItem(this.configKey(key), JSON.stringify(value));
+		this.global_config.setItem(key, JSON.stringify(value));
 		var deferred = $.Deferred();
 		deferred.resolve();
 		return deferred;
@@ -79,7 +171,7 @@ Database.prototype = {
 	*/
 	
 	getConfig: function(key) {
-		return JSON.parse(localStorage.getItem(this.configKey(key)));
+		return JSON.parse(this.global_config.getItem(key));
 	},
 	
 	/*
@@ -90,13 +182,13 @@ Database.prototype = {
 		if (this.project_list) {
 			return this.project_list;
 		} else {
-			this.project_list = new this.ProjectList(JSON.parse(localStorage.getItem(this.id + "/project-list")));
+			this.project_list = new this.ProjectList(JSON.parse(this.storage.getItem("project-list")));
 		}
 		return this.project_list;
 	},
 	
 	saveProjectList: function() {
-		localStorage.setItem(this.id + "/project-list", JSON.stringify(this.project_list.toJSON()));
+		this.storage.setItem("project-list", JSON.stringify(this.project_list.toJSON()));
 	},
 
 	/*
@@ -105,119 +197,20 @@ Database.prototype = {
 	*/
 
 	loadProjectData: function(id, cheat) {
+		var project_data = new JSONStorage(new SubStorage(this.projects, id))
+		project_data.id = id;
+		project_data.database = this;
 		if (cheat) {
-			return new ProjectData(id, this);
+			return project_data;
 		} else {
 			var deferred = $.Deferred();
-			deferred.resolve(new ProjectData(id, this));
+			deferred.resolve(project_data);
 			return deferred;
 		}
 	},
 	
 	deleteProjectData: function(id) {
-		_.each(this.loadProjectData(id, true).getKeys(/.*/), function(key) {
-			localStorage.removeItem(this.id + "/projects/" + id + "/" + key);
-		}, this);
+		this.loadProjectData(id, true).clear();
 	}
 
 };
-
-function ProjectData(project_id, database) {
-	this.id = project_id;
-	this.database = database;
-}
-
-ProjectData.prototype = {
-
-	key: function(key) {
-		return this.database.id + "/projects/" + this.id + "/" + key;
-	},
-
-	/*
-		returns an array of all the keys that match the regex pattern.
-	*/
-
-	getKeys: function(pattern) {
-		var regex = new RegExp("projects\\/" + this.id + "\\/(.*)");
-		var keys = [];
-		_.each(this.database.keys(), function(key) {
-			var match = key.match(regex);
-			if (match && match[1].match(pattern)) {
-				keys.push(match[1]);
-			}
-		}, this);
-		return keys;
-	},
-	
-	/*
-		returns the data corresponding to the key
-	*/
-	
-	getData: function(key) {
-		return JSON.parse(localStorage.getItem(this.key(key)));
-	},
-	
-	/*
-		sets the data for a key
-	*/
-	
-	setData: function(key, value) {
-		localStorage.setItem(this.key(key), JSON.stringify(value));
-	},
-	
-	deleteData: function(key) {
-		localStorage.removeItem(this.key(key));
-	},
-	
-	save: function() {
-		var deferred = $.Deferred();
-		deferred.resolve();
-		return deferred;
-	},
-	
-};
-
-// Todo I don't know if we need to keep the rest of this file.
-
-var ProjectListItemView = Backbone.View.extend({
-		
-	tagName: "li",
-		
-	render: function() {
-		var foo;
-		this.$el.html();
-	}
-		
-});
-			
-var ProjectListView = Backbone.View.extend({
-
-	tagName: 'body',
-	
-	el: $('body'),
-	
-	events: {
-		'click button#new_project': 'newProject'
-	},
-	
-	initialize: function(list) {
-		// _.bindAll(this, 'render'); // Turorial says I'm going to need this.
-		this.list = list;
-		this.render();
-	},
-	
-	render: function() {
-		this.$el.html("<button id='new_project'>New Project</button>");
-	},
-	
-	newProject: function() {
-		var item = new ProjectListItem();
-		console.log(this.list);
-		this.list.add(item);
-	},
-	
-	appendItem: function() {
-		this.$el.append("<b>Hi</b>");
-	}
-
-});

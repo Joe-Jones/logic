@@ -243,23 +243,21 @@ QUnit.asyncTest("project data test", function(assert) {
 	expect(3);
 	getDatabase("test_database4").done(function (database) {
 		database.loadProjectData("example_project").done(function (project_data) {
-			project_data.setData("1", "1");
-			project_data.setData("2", "2");
-			project_data.setData("Hippopotamus", "Is very big.");
-			project_data.save().done(function () {
-				getDatabase("test_database4").done(function (database) {
-					database.loadProjectData("example_project").done(function (project_data) {
-						_.each(project_data.getKeys(/.*/), function(key) {
-							if (key == "Hippopotamus") {
-								assert.equal(project_data.getData(key), "Is very big.", "Yes a Hippopotamus is very big.");
-							} else {
-								assert.equal(project_data.getData(key), key, key + " is not a Hippopotamus.");
-							}
-						});
-						tidy("test_database4");
-					}).fail(function() { assert.ok(false, "could not get the project data"); tidy("test_database4"); });
-				}).fail(function() { assert.ok(false, "could not open the database, the second time"); tidy("test_database4"); });
-			}).fail(function() { assert.ok(false, "not sane the project data"); QUnit.start();});
+			project_data.setItem("1", "1");
+			project_data.setItem("2", "2");
+			project_data.setItem("Hippopotamus", "Is very big.");
+			getDatabase("test_database4").done(function (database) {
+				database.loadProjectData("example_project").done(function (project_data) {
+					_.each(project_data.keys(), function(key) {
+						if (key == "Hippopotamus") {
+							assert.equal(project_data.getItem(key), "Is very big.", "Yes a Hippopotamus is very big.");
+						} else {
+							assert.equal(project_data.getItem(key), key, key + " is not a Hippopotamus.");
+						}
+					});
+					tidy("test_database4");
+				}).fail(function() { assert.ok(false, "could not get the project data"); tidy("test_database4"); });
+			}).fail(function() { assert.ok(false, "could not open the database, the second time"); tidy("test_database4"); });
 		}).fail(function() { assert.ok(false, "could create the project"); QUnit.start();});
 	}).fail(function() { assert.ok(false, "could not open the database"); QUnit.start();});
 });
@@ -276,7 +274,7 @@ function databaseOnDisk(id) {
 }
 
 function projectOnDisk(project) {
-	var keys = project.getKeys(/.*/);
+	var keys = project.keys();
 	if (keys.length == 0) {
 		return false;
 	}
@@ -290,25 +288,25 @@ QUnit.test("delete data", function(assert) {
 	database.setConfig("config1", [1,2,3]);
 	database.setConfig("config2", [4,5,6]);
 	var project1 = database.loadProjectData("project1", true);
-	project1.setData("key1", {1:2,3:4});
-	project1.setData("key2", [1,2,3,4,5,6,7,8]);
-	project1.setData("key3", "A string");
+	project1.setItem("key1", {1:2,3:4});
+	project1.setItem("key2", [1,2,3,4,5,6,7,8]);
+	project1.setItem("key3", "A string");
 	var project2 = database.loadProjectData("project2", true);
-	project2.setData("key1", {1:2,3:4});
-	project2.setData("key2", [1,2,3,4,5,6,7,8]);
-	project2.setData("key3", "A string");
+	project2.setItem("key1", {1:2,3:4});
+	project2.setItem("key2", [1,2,3,4,5,6,7,8]);
+	project2.setItem("key3", "A string");
 	
 	var database2 = getDatabase("testdatabase6", true);
 	database2.setConfig("config1", [1,2,3]);
 	database2.setConfig("config2", [4,5,6]);
 	var project2_1 = database2.loadProjectData("project1", true);
-	project2_1.setData("key1", {1:2,3:4});
-	project2_1.setData("key2", [1,2,3,4,5,6,7,8]);
-	project2_1.setData("key3", "A string");
+	project2_1.setItem("key1", {1:2,3:4});
+	project2_1.setItem("key2", [1,2,3,4,5,6,7,8]);
+	project2_1.setItem("key3", "A string");
 	var project2_2 = database2.loadProjectData("project2", true);
-	project2_2.setData("key1", {1:2,3:4});
-	project2_2.setData("key2", [1,2,3,4,5,6,7,8]);
-	project2_2.setData("key3", "A string");
+	project2_2.setItem("key1", {1:2,3:4});
+	project2_2.setItem("key2", [1,2,3,4,5,6,7,8]);
+	project2_2.setItem("key3", "A string");
 	
 	assert.ok(databaseOnDisk("testdatabase5"), "check 1");
 	assert.ok(projectOnDisk(project1), "check 2");
