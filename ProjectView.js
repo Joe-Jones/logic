@@ -70,6 +70,14 @@ var ProjectView = JakeKit.HBox.extend({
 	activeView: function() {
 		return this.tabstack.activeView();
 	},
+	
+	undo: function() {
+		this.project.dispatchAction(new Action({ type: "UNDO" }));
+	},
+	
+	redo: function() {
+		this.project.dispatchAction(new Action({ type: "REDO" }));
+	},
 
 });
 

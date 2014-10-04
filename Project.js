@@ -208,24 +208,40 @@ Project.prototype = {
 	
 	dispatchAction: function(action, dont_record) {
 		if (action.type == "UNDO") {
-			var stop = false;
-			while (this.history_position > 1 && !stop) {
-				this.history_position--;
-				var action_to_undo = vivifyAction(this.project_data.getData("history/" + this.history_position));
-				if (!_.contains(this.keep_going, action_to_undo.type)) {
-					stop = true;
+			if (this.history_position > 1) {
+				var stop = false;
+				while (this.history_position > 1 && !stop) {
+					this.history_position--;
+					var action_to_undo = vivifyAction(this.project_data.getData("history/" + this.history_position));
+					if (!_.contains(this.keep_going, action_to_undo.type)) {
+						stop = true;
+					}
+					this.dispatchAction(action_to_undo.inverse());
 				}
-				this.dispatchAction(action_to_undo.inverse());
-			}
-			if (!dont_record) {
-				this.project_data.setData("history/" + this.absolute_history_position, action);
-				this.absolute_history_position++;
+				if (!dont_record) {
+					this.project_data.setData("history/" + this.absolute_history_position, action);
+					this.absolute_history_position++;
+				}
 			}
 		} else if (action.type == "REDO") {
-			var stop = false;
-			//while not sure what
-			//	var redo_action = this.project_data.getData("history/" + this.history_position);
-			//	this.history_position++;
+			if (this.history_position < this.absolute_history_position) {
+				var action_to_redo = vivifyAction(this.project_data.getData("history/" + this.history_position));
+				action_to_redo.dont_record = true;
+				this.dispatchAction(action_to_redo);
+				this.history_position++;
+				this.absolute_history_position--;
+				this.project_data.deleteData("history/" + this.absolute_history_position);
+			
+				while (this.history_position < this.absolute_history_position) {
+					action_to_redo = vivifyAction(this.project_data.getData("history/" + this.history_position));
+					if (action_to_redo.type == "UNDO" || !_.contains(this.keep_going, action_to_redo.type)) {
+						break;
+					}
+					this.history_position++;
+					action_to_redo.dont_record = true;
+					this.dispatchAction(action_to_redo)
+				}
+			}
 		} else {
 			if (action.schemaID()) {
 				var schema = this.getSchema(action.schemaID());
