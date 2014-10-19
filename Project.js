@@ -138,6 +138,38 @@ TemplateManager.prototype = {
 
 };
 
+function Stack(storage) {
+	this.storage = storage;
+}
+
+Stack.prototype = {
+
+	push: function(item) {
+	
+	},
+	
+	pop: function() {
+	
+	},
+	
+	peek: function() {
+	
+	},
+	
+	back: function() {
+	
+	},
+	
+	forward: function() {
+	
+	},
+	
+	altPeek: function() {
+	
+	}
+
+};
+
 function Project(project_data) {
 	this.project_data = project_data;
 	this.template_manager = new TemplateManager(this.project_data.getItem("template_manager"));
