@@ -16,6 +16,7 @@ var ProjectView = JakeKit.HBox.extend({
 		
 		this.listenTo(this.project, "schemaNameChanged", this.schemaNameChanged);
 		this.listenTo(this.project, "schemaOpened", this.openTab);
+		this.listenTo(this.project, "newSchema", this.newSchema);
 		if (this.project.noSchemas()) {
 			// If there is no schema, then we'll create one.
 			this.project.dispatchAction(new Action({type: "ADD_SCHEMA"}));
@@ -47,6 +48,10 @@ var ProjectView = JakeKit.HBox.extend({
 		}
 	},
 	
+	newSchema: function() {
+		this.components.render();
+	},
+	
 	selectTab: function(schema_id) {
 		this.tabstack.makeActive(this.views[schema_id]);
 	},
@@ -61,6 +66,7 @@ var ProjectView = JakeKit.HBox.extend({
 	
 	schemaNameChanged: function(schema_id) {
 		this.tabstack.setCaption(this.views[schema_id], this.project.getSchemaName(schema_id));
+		this.components.render();
 	},
 	
 	deleteSelection: function() {
@@ -107,6 +113,7 @@ var ComponentList = Backbone.View.extend({
 	},
 
 	render: function() {
+		this.$el.empty();
 		_.each(this.project.listSchemas(), function(schema_id) {
 			var component_view = new ComponentView({ schema_id: schema_id, name: this.project.getSchemaName(schema_id) });
 			this.$el.append(component_view.render().el);

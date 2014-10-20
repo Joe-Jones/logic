@@ -361,9 +361,16 @@ Action.prototype = {
 			case "ADD_SCHEMA":
 				break;
 			case "SELECT_SCHEMA":
-				break;
+				return new Action({
+					type:			"SELECT_SCHEMA",
+					schema:			this.previous_schema
+				});
 			case "RENAME_SCHEMA":
-				break;
+				return new Action({
+					type:			"RENAME_SCHEMA",
+					new_name:		this.old_name,
+					old_name:		this.new_name
+				});
 			
 				
 			/* Actions on a schema */
@@ -424,6 +431,7 @@ Action.prototype = {
 				model.open_tabs.push(schema.id);
 				model.schema_names[schema.id] = "New Schema";
 				model.trigger("schemaOpened", schema.id);
+				model.trigger("newSchema", schema.id);
 				this.previous_schema = model.selected_tab;
 				this.previously_selected_tab = model.selected_tab;
 				model.selected_tab = schema.id;
