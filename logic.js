@@ -90,6 +90,9 @@ var MainView = JakeKit.Stack.extend({
 		
 		this.hbox.addChild(pallet);
 		
+		this.project_view_container = new JakeKit.HBox();
+		this.hbox.addChild(this.project_view_container);
+		
 		this.main_window = new JakeKit.VBox();
 		
 		this.main_window.addChild(this.menu);
@@ -132,7 +135,14 @@ var MainView = JakeKit.Stack.extend({
 		this.project_view.listenTo(this.menu, "undo", this.project_view.undo);
 		this.project_view.listenTo(this.menu, "redo", this.project_view.redo);
 		this.project_view.listenTo(this.menu, "delete", this.project_view.deleteSelection);
-		this.hbox.addChild(this.project_view);
+		
+		this.project_view_container.empty()
+		this.project_view_container.addChild(this.project_view);
+		// Todo this was never meant to be needed outside of the toolkit :-(
+		if (this.project_view_container._vivified) {
+			this.project_view_container._resized();
+		}
+		
 		this.database.setConfig("active_project", project_id);
 	},
 	
@@ -154,15 +164,12 @@ var MainView = JakeKit.Stack.extend({
 		this.addChild(this.grid);
 		this.makeActive(this.grid);
 		
-		this.project_list = new ProjectList();
-		var that = this;
-		this.project_list.fetch({success: function() {
-			var records = that.project_list.toJSON();
-			_.each(records, function(record) {
-				record.recid = record.id;
-			});
-			that.grid.add(records);
-		}});
+		this.project_list = this.database.getProjectList();
+		var records = this.project_list.toJSON();
+		_.each(records, function(record) {
+			record.recid = record.project_id;
+		});
+		this.grid.add(records);
 		this.listenTo(this.grid, "click", this.ProjectPicked);
 
 	},
@@ -179,13 +186,21 @@ var MainView = JakeKit.Stack.extend({
 		this.makeActive(this.main_window);
 		
 		// Now load the Project
-		
-		
+		this.openProject(project_id);
 	},
 	
 	showRenameProjectWindow: function() {
 	
 		var that = this;
+		
+		var project_list = this.database.getProjectList();
+		var project_id = this.database.getConfig("active_project");
+		var project_record;
+		project_list.each(function(pr) {
+			if (pr.get("project_id") == project_id) {
+				project_record = pr;
+			}
+		});
 	
 		var RenameWindow = Backbone.View.extend({
 		
@@ -193,13 +208,20 @@ var MainView = JakeKit.Stack.extend({
 			},
 			
 			render: function() {
-				this.$el.html('<input type="text"></input><button id="save_button">Save</button><button id="cancel_button">Cancel</button>');
+				this.$el.html('<input type="text" value="' + _.escape(project_record.get("name")) + '"></input><button id="save_button">Save</button><button id="cancel_button">Cancel</button>');
 				this.$("#cancel_button").on("click", function() {
 					that.removeChild(that.rename_window);
 					delete that.rename_window;
 					that.makeActive(that.main_window);
 				});
-					
+				var rename_window = this;
+				this.$("#save_button").on("click", function() {
+					project_record.set("name", rename_window.$("input")[0].value);
+					project_record.save();
+					that.removeChild(that.rename_window);
+					delete that.rename_window;
+					that.makeActive(that.main_window);
+				});
 			}
 		
 		});

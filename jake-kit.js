@@ -103,6 +103,13 @@ var JakeKit = {};
 			}
 		},
 		
+		empty: function() {
+			this._children = [];
+			if (this._vivified) {
+				this.$el.empty();
+			}
+		},
+		
 		_resized: function() {
 			var width = this.$el.width();
 			var last_index = this._children.length - 1;
