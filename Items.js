@@ -639,6 +639,27 @@ function SubCircit(id)
 
 SubCircit.prototype = new DragableThing();
 
+SubCircit.prototype.width = function() {
+	var schema_info = this.project.getSchemaInfo(this.schema_id);
+	var number_of_inputs = schema_info.inputs.length;
+	var number_of_outputs = schema_info.outputs.length;
+	return (_.max([number_of_inputs, number_of_outputs]) + 1 )* 0.3;
+};
+
+SubCircit.prototype.height = function() {
+	return 2;
+};
+
+SubCircit.prototype.size = function() {
+	var schema_info = this.project.getSchemaInfo(this.schema_id);
+	var number_of_inputs = schema_info.inputs.length;
+	var number_of_outputs = schema_info.outputs.length;
+	return {
+		width: this.width(),
+		height: this.height()
+	};
+};
+
 SubCircit.prototype.draw = function(ctx) {
 	ctx.save();
 	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
@@ -647,13 +668,27 @@ SubCircit.prototype.draw = function(ctx) {
 	var number_of_inputs = schema_info.inputs.length;
 	var number_of_outputs = schema_info.outputs.length;
 	
-	// Work out big we need to be
+	// Some constants
+	var connection_length = 0.28;
 	
-	//Inputs
+	// Work out big we need to be
+	var width = this.width();
+	var height = this.height();
+	
+	// Draw box
+	ctx.beginPath();
+	ctx.moveTo(0, connection_length);
+	ctx.lineTo(width , connection_length);
+	ctx.lineTo(width, height - connection_length);
+	ctx.lineTo(0, height - connection_length);
+	ctx.lineTo(0, connection_length);
+	ctx.stroke();
+	
+	// Draw Inputs
 	for (var i = 0; i < number_of_inputs; i++) {
 		ctx.beginPath();
-		ctx.moveTo(0.3 + 0.3 * i, 0.95);
-		ctx.lineTo(0.3 + 0.3 * i, 0.75);
+		ctx.moveTo(0.3 + 0.3 * i, height - 0.05);
+		ctx.lineTo(0.3 + 0.3 * i, height - 0.25);
 		ctx.stroke();
 	}
 	
@@ -681,9 +716,10 @@ SubCircit.prototype.outputs = function() {
 SubCircit.prototype.inputs = function() {
 	var schema_info = this.project.getSchemaInfo(this.schema_id);
 	var number_of_inputs = schema_info.inputs.length;
+	var height = this.height();
 	var inputs = [];
 	for (var i = 0; i < number_of_inputs; i++) {
-		inputs.push(this.top_left.plus(new Point(0.3 + i * 0.3, 0.95)));
+		inputs.push(this.top_left.plus(new Point(0.3 + i * 0.3, height - 0.05)));
 	}
 	return inputs;
 };
