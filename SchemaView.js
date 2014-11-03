@@ -338,3 +338,115 @@ var SchemaView = JakeKit.Canvas.extend({
 	}
 	
 });
+
+var EndPoint = Backbone.View.extend({
+
+	initialize: function(none, schema_id, type, number, name, project, position) {
+		this.schema_id = schema_id;
+		this.type = type;
+		this.number = number;
+		this.name = name;
+		this.project = project;
+		this.position = position;
+		this.render();
+	},
+	
+	render: function() {
+		var name_id = _.uniqueId();
+		var up_id = _.uniqueId();
+		var down_id = _.uniqueId();
+		var html = '<tr>'
+		html += '<td><input type="text" id="' + _.escape(name_id) + '" value="' + _.escape(this.name) + '"><td>';
+		if (this.position.match(/FIRST/)) {
+			html += '<td></td>';
+		} else {
+			html += '<td><input type="button" id="' + _.escape(up_id) + '" value="Up"></td>';
+		}
+		if (this.position.match(/LAST/)) {
+			html += "<td></td>";
+		} else {
+			html += '<td><input type="button" id="' + _.escape(down_id) + '" value="Down"></td>';
+		}
+		html += '</tr>';
+		this.$el.html(html);
+		var that = this;
+		this.$("#" + name_id).change(function() {
+			that.project.dispatchAction(new Action({
+				type:			"RENAME_ENDPOINT",
+				endpoint_type:	that.type,
+				schema_id:		that.schema_id,
+				number:			that.number,
+				new_name:		that.$("#" + name_id).value
+			}));
+		});
+		this.$("#" + up_id).click(function() {
+			that.project.dispatchAction(new Action({
+				type:			"MOVE_ENDPOINT_UP",
+				endpoint_type:	that.type,
+				schema_id:		that.schema_id,
+				number:			that.number
+			}));
+		});
+		this.$("#" + down_id).click(function() {
+			that.project.dispatchAction(new Action({
+				type:			"MOVE_ENDPOINT_DOWN",
+				endpoint_type:	that.type,
+				schema_id:		that.schema_id,
+				number:			that.number
+			}));
+		});
+	}
+	
+});
+
+var EndPointList = Backbone.View.extend({
+
+	initialize: function(none, end_points, schema_id, type, project) {
+		this.end_points = end_points;
+		this.schema_id = schema_id;
+		this.type = type;
+		this.project = project;
+		this.render();
+	},
+	
+	render: function() {
+		this.$el.html('<table></table>');
+		_.each(this.end_points, function(end_point, index) {
+			var position = "";
+			if (index == 0) {
+				position += "FIRST";
+			}
+			if (index == this.end_points.length - 1) {
+				position += "LAST";
+			}
+			var ep = new EndPoint({}, this.schema_id, this.type, end_point.number, end_point.name, this.project, position);
+			this.$el.append(ep.$el);
+		}, this);
+	}
+	
+});
+
+var ComponentEditor = Backbone.View.extend({
+
+	initialize: function(none, schema_id, project, close) {
+		this.schema_id = schema_id;
+		this.project = project;
+		this.close = close;
+		this.render();
+	},
+	
+	render: function() {
+		var input_panel = _.uniqueId();
+		var output_panel = _.uniqueId();
+		var button = _.uniqueId();
+		this.$el.html('<table><tr><td id="' + input_panel + '"></td><td id="' + output_panel + '"></td></tr></table><button id="' + button + '" value="Close">');
+		var inputs = new EndPointList({}, this.project.schema_infos[this.schema_id].inputs, this.schema_id, "INPUT", this.project);
+		var outputs = new EndPointList({}, this.project.schema_infos[this.schema_id].outputs, this.schema_id, "OUTPUT", this.project);
+		this.$("#" + input_panel).append(inputs.$el);
+		this.$("#" + output_panel).append(outputs.$el);
+		var close = this.close;
+		this.$("#" + button).click(function() { close() });
+	}
+
+});
+

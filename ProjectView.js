@@ -61,7 +61,7 @@ var ProjectView = JakeKit.HBox.extend({
 	},
 	
 	activeSchema: function() {
-		return this.activeView().schema;
+		return this.activeView().id;
 	},
 	
 	schemaNameChanged: function(schema_id) {

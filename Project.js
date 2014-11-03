@@ -371,6 +371,14 @@ Action.prototype = {
 					new_name:		this.old_name,
 					old_name:		this.new_name
 				});
+				
+			/* Editing a component */
+			case "RENAME_ENDPOINT":
+				break;
+			case "MOVE_ENDPOINT_UP":
+				break;
+			case "MOVE_ENDPOINT_DOWN":
+				break;
 			
 				
 			/* Actions on a schema */
@@ -450,6 +458,14 @@ Action.prototype = {
 			case "RENAME_SCHEMA":
 				model.schema_names[this.schema] = this.new_name;
 				model.trigger("schemaNameChanged", this.schema);
+				break;
+				
+			/* Editing a component */
+			case "RENAME_ENDPOINT":
+				break;
+			case "MOVE_ENDPOINT_UP":
+				break;
+			case "MOVE_ENDPOINT_DOWN":
 				break;
 		
 			/* Actions on a Schema */

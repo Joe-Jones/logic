@@ -42,6 +42,24 @@ SchemaModel.prototype.add = function(object) {
 		object.logic_id = this.logic_system.addGate(object.type);
 	}
 	
+	if (_.contains(["INPUT", "OUTPUT"], object.type)) {
+		object.name = function() {
+			var list;
+			if (object.type == "INPUT") {
+				list = that.project.schema_infos[that.id].inputs;
+			} else {
+				list = that.project.schema_infos[that.id].outputs;
+			}
+			var info;
+			_.each(list, function(i) {
+				if (i.number == this.logic_id) {
+					info = i;
+				}
+			}, this);
+			return info.name;
+		}
+	}
+	
 	if (object.DisplaysState) {
 		this.logic_system.registerCallback(object.logic_id,
 			function (new_state) {

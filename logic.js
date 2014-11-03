@@ -71,7 +71,8 @@ var MainView = JakeKit.Stack.extend({
 				]},
 				{ type: "menu", id: "schema_menu", caption: "Schema", items: [
 						{ text: "New", id: "new_schema"},
-						{ text: "Rename", id: "rename_schema" }]},
+						{ text: "Rename", id: "rename_schema" },
+						{ text: "Edit", id: "edit_schema" }]},
 				{ type: "menu", id: "edit_menu", caption: "Edit", items: [
 						{ text:	"Undo", id: "undo"},
 						{ text: "Redo", id: "redo"},
@@ -83,6 +84,7 @@ var MainView = JakeKit.Stack.extend({
 		this.listenTo(this.menu, "rename_project", this.showRenameProjectWindow);
 		this.listenTo(this.menu, "new_schema", this.newSchema);
 		this.listenTo(this.menu, "rename_schema", this.showRenameSchemaWindow);
+		this.listenTo(this.menu, "edit_schema", this.showEditSchemaWindow);
 		
 		var pallet = new Pallet();
 	
@@ -279,6 +281,18 @@ var MainView = JakeKit.Stack.extend({
 		this.addChild(this.rename_window);
 		this.makeActive(this.rename_window);
 		
+	},
+	
+	showEditSchemaWindow: function() {
+		var schema_id = this.project_view.activeSchema();
+		var that = this;
+		this.edit_window = new ComponentEditor({}, schema_id, this.project, function() {
+			that.removeChild(that.edit_window);
+			delete that.edit_window;
+			that.makeActive(that.main_window);
+		});
+		this.addChild(this.edit_window);
+		this.makeActive(this.edit_window);
 	}
 		
 });
