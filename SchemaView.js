@@ -376,7 +376,7 @@ var EndPoint = Backbone.View.extend({
 				endpoint_type:	that.type,
 				schema_id:		that.schema_id,
 				number:			that.number,
-				new_name:		that.$("#" + name_id).value
+				new_name:		that.$("#" + name_id).val()
 			}));
 		});
 		this.$("#" + up_id).click(function() {
@@ -432,6 +432,7 @@ var ComponentEditor = Backbone.View.extend({
 		this.schema_id = schema_id;
 		this.project = project;
 		this.close = close;
+		_.bindAll(this, "render");
 		this.render();
 	},
 	
@@ -439,14 +440,14 @@ var ComponentEditor = Backbone.View.extend({
 		var input_panel = _.uniqueId();
 		var output_panel = _.uniqueId();
 		var button = _.uniqueId();
-		this.$el.html('<table><tr><td id="' + input_panel + '"></td><td id="' + output_panel + '"></td></tr></table><button id="' + button + '" value="Close">');
+		this.$el.html('<table><tr><td id="' + input_panel + '"></td><td id="' + output_panel + '"></td></tr></table><button id="' + button + '">Close</button>');
 		var inputs = new EndPointList({}, this.project.schema_infos[this.schema_id].inputs, this.schema_id, "INPUT", this.project);
 		var outputs = new EndPointList({}, this.project.schema_infos[this.schema_id].outputs, this.schema_id, "OUTPUT", this.project);
 		this.$("#" + input_panel).append(inputs.$el);
 		this.$("#" + output_panel).append(outputs.$el);
 		var close = this.close;
 		this.$("#" + button).click(function() { close() });
-	}
-
+	},
+	
 });
 

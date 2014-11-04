@@ -374,7 +374,15 @@ Action.prototype = {
 				
 			/* Editing a component */
 			case "RENAME_ENDPOINT":
-				break;
+				return new Action({
+					type:			"RENAME_ENDPOINT",
+					endpoint_type:	this.type,
+					schema_id:		this.schema_id,
+					number:			this.number,
+					new_name:		this.old_name,
+					old_name:		this.new_name
+				});
+					break;
 			case "MOVE_ENDPOINT_UP":
 				break;
 			case "MOVE_ENDPOINT_DOWN":
@@ -462,10 +470,64 @@ Action.prototype = {
 				
 			/* Editing a component */
 			case "RENAME_ENDPOINT":
+				var schema_info = model.project.schema_infos[this.schema_id];
+				var list;
+				if (this.endpoint_type == "INPUT") {
+					list = schema_info.inputs;
+				} else {
+					list = schema_info.outputs;
+				}
+				var item = _.find(list, function (item) { return item.number == this.number }, this);
+				this.old_name = item.name;
+				item.name = this.new_name;
+				model.trigger("ComponentChanged", this.schema_id);
 				break;
 			case "MOVE_ENDPOINT_UP":
+				var schema_info = model.project.schema_infos[this.schema_id];
+				var list;
+				if (this.endpoint_type == "INPUT") {
+					list = schema_info.inputs;
+				} else {
+					list = schema_info.outputs;
+				}
+				var position;
+				for (var i = 0; i < list.length; i++) {
+					if (list[i].number == this.number) {
+						position = i;
+						break;
+					}
+				}
+				var new_list = list.slice(0, position).concat(list.slice(position + 1));
+				new_list.splice(position - 1, 0, list[position]);
+				if (this.endpoint_type == "INPUT") {
+					schema_info.inputs = new_list;
+				} else {
+					schema_info.outputs = new_list;
+				}
+				model.trigger("ComponentChanged", this.schema_id);
 				break;
 			case "MOVE_ENDPOINT_DOWN":
+				var schema_info = model.project.schema_infos[this.schema_id];
+				var list;
+				if (this.endpoint_type == "INPUT") {
+					list = schema_info.inputs;
+				} else {
+					list = schema_info.outputs;
+				}
+				for (var i = 0; i < list.length; i++) {
+					if (list[i].number == this.number) {
+						position = i;
+						break;
+					}
+				}
+				var new_list = list.slice(0, position).concat(list.slice(position + 1));
+				new_list.splice(position + 1, 0, list[position]);
+				if (this.endpoint_type == "INPUT") {
+					schema_info.inputs = new_list;
+				} else {
+					schema_info.outputs = new_list;
+				}
+				model.trigger("ComponentChanged", this.schema_id);
 				break;
 		
 			/* Actions on a Schema */

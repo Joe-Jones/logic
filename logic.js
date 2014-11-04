@@ -244,7 +244,7 @@ var MainView = JakeKit.Stack.extend({
 	
 		var RenameWindow = Backbone.View.extend({
 		
-			initialize: function(model) {
+			initialize: function(none, model) {
 				this.model = model;
 			},
 			
@@ -277,7 +277,7 @@ var MainView = JakeKit.Stack.extend({
 		
 		});
 		
-		this.rename_window = new RenameWindow(this.project_view.activeSchema());
+		this.rename_window = new RenameWindow({}, this.project_view.activeSchema());
 		this.addChild(this.rename_window);
 		this.makeActive(this.rename_window);
 		
@@ -288,11 +288,13 @@ var MainView = JakeKit.Stack.extend({
 		var that = this;
 		this.edit_window = new ComponentEditor({}, schema_id, this.project, function() {
 			that.removeChild(that.edit_window);
+			that.edit_window.stopListening();
 			delete that.edit_window;
 			that.makeActive(that.main_window);
 		});
 		this.addChild(this.edit_window);
 		this.makeActive(this.edit_window);
+		this.edit_window.listenTo(this.project.schemas[schema_id], "ComponentChanged", this.edit_window.render);
 	}
 		
 });

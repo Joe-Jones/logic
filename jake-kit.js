@@ -154,7 +154,9 @@ var JakeKit = {};
 				var $el = view.$el;
 				$el.height(this.$el.height());
 				$el.width(this.$el.width());
-				view._resized();
+				if (_.isFunction(view._resized)) {
+					view._resized();
+				}
 			}
 		},
 		
