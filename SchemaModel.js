@@ -199,10 +199,8 @@ SchemaModel.prototype.makeConnection = function(connection) {
 	if (input_item.type == "SUBCIRCIT") {
 		this.logic_system.connectToTemplateInstance(logic_output, input_item.template_instance,
 													this.project.getSchemaInfo(input_item.schema_id)["inputs"][input_num]["number"]);
-		// Todo need a way to inject a transient.
 	} else {
 		this.logic_system.makeConnection(logic_output, connection.input_item.logic_id, connection.input_num);
-		this.logic_system.injectTransient(connection.input_item.logic_id);
 	}
 };
 
@@ -294,6 +292,8 @@ SchemaModel.prototype.rebuildLogicSystem = function() {
 		}, this);
 	}, this);
 	this.subcomponent_invalid = false;
+	this.logic_system.runCallbacks();
+	this.logic_system.run();
 };
 
 SchemaModel.prototype.saveAsTemplate = function() {

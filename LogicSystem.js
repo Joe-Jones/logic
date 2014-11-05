@@ -76,8 +76,8 @@ LogicSystem.prototype.removeGate = function(id) {
 };
 
 LogicSystem.prototype.makeConnection = function(output_id, input_id, input_number) {
-	// TODO: I think this should probably be injecting a transient, rather than that being a separate step.
 	this.gates[input_id][input_number + 1] = output_id;
+	this.injectTransient(input_id);
 };
 
 LogicSystem.prototype.removeConnection = function(input_id, input_number) {
