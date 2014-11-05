@@ -84,8 +84,7 @@ SchemaModel.prototype.removeLastGate = function() {
 	this.remove(this.next_item_number);
 }
 
-SchemaModel.prototype.remove = function(object) { // Todo this needs to call templateRemoved on the template manager id this is a subcomponent.
-												// Todo does this not also need to tidy up connections?
+SchemaModel.prototype.remove = function(object) {
 	if (!_.isObject(object)) {
 		object = this.objects[object];
 	}
@@ -93,7 +92,14 @@ SchemaModel.prototype.remove = function(object) { // Todo this needs to call tem
 	if (object.DisplaysState) {
 		this.logic_system.dropCallback(object.logic_id);
 	}
-	this.logic_system.removeGate(object.logic_id);
+	if (object.type == "SUBCIRCIT") {
+		_.each(object.template_instance.gates, function(gate) {
+			this.logic_system.removeGate(gate);
+		}, this);
+		this.template_manager.templateRemoved(object.schema_id, this.id);
+	} else {
+		this.logic_system.removeGate(object.logic_id);
+	}
 	this.invalidate();
 };
 
@@ -212,7 +218,13 @@ SchemaModel.prototype.removeConnection = function(input_item_num, input_num, out
 	
 	input_item.removeInput(input_num);
 	output_item.removeOutput(output_num, connection);
-	this.logic_system.removeConnection(input_item.logic_id, input_num);
+	if (input_item.type == "SUBCIRCIT") {
+		_.each(input_item.template_instance.inputs[input_num + 1], function(pair) {
+			this.logic_system.removeConnection(pair[0], pair[1]);
+		}, this);
+	} else {
+		this.logic_system.removeConnection(input_item.logic_id, input_num);
+	}
 	this.invalidate();
 };
 
