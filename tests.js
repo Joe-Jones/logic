@@ -653,3 +653,50 @@ QUnit.test("embed a template in a schema", function(assert) {
 	deleteDatabase("testdatabase11");
 });
 
+function loadProject(actions, database_name, project_name) {
+	var project = getAProject(database_name, project_name);
+	_.each(actions, function(action) {
+		project.dispatchAction(vivifyAction(action));
+	});
+	return project;
+}
+
+function getNth(schema, n, type) {
+	var counter = 0;
+	var wanted = _.find(schema.objects, function(object) {
+		if (object.type == type) {
+			if (counter == n) {
+				return true;
+			} else {
+				counter++;
+			}
+		}
+		return false;
+	});
+	return wanted.number;
+}
+
+function getSwitch(schema, n) {
+	return getNth(schema, n, "SWITCH");
+}
+
+function getBulb(schema, n) {
+	return getNth(schema, n, "BULB");
+}
+
+//var schema = project.getSchema(schema_id);
+
+function checkTruthTable3(truth_table, test_name, actions, schema_id, inputs, outputs, assert) {
+	var project = loadProject(actions, "testDatabase", "testProject");
+	var schema = project.getSchema(schema_id);
+	var input_ids = _.map(inputs, function(n) { return getSwitch(schema, n); });
+	var output_ids = _.map(outputs, function(n) { return getBulb(schema, n); });
+	checkTruthTable2(truth_table, test_name, schema, input_ids, output_ids, assert);
+	deleteDatabase("testDatabase");
+}
+
+QUnit.test("Simple test of the new testing framework.", function(assert) {
+	var actions = [{"type":"ADD_SCHEMA","previous_schema":null,"previously_selected_tab":null},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"INPUT","position":{"x":6.1,"y":-10.8}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"INPUT","position":{"x":9.133333333333333,"y":-10.533333333333333}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"OUTPUT","position":{"x":7.533333333333333,"y":-18.866666666666667}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"OR","position":{"x":8.033333333333333,"y":-15}},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":4,"input_num":0,"output_item":1,"output_num":0},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":4,"input_num":1,"output_item":2,"output_num":0},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":3,"input_num":0,"output_item":4,"output_num":0},{"type":"SELECT_SCHEMA","schema":"schema/1","previous_schema":"schema/0"},{"type":"ADD_SCHEMA","previous_schema":"schema/1","previously_selected_tab":"schema/1"},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"COMPONENT:schema/0","position":{"x":6.966666666666667,"y":-15.133333333333333}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"SWITCH","position":{"x":6.033333333333333,"y":-9.666666666666666}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"SWITCH","position":{"x":8.9,"y":-8.666666666666666}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"BULB","position":{"x":6.966666666666667,"y":-20.333333333333332}},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":1,"input_num":0,"output_item":2,"output_num":0},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":1,"input_num":1,"output_item":3,"output_num":0},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":4,"input_num":0,"output_item":1,"output_num":0}];
+	var truth_table = [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]];
+	checkTruthTable3(truth_table, "It's just an or gate.", actions, "schema/1", [0, 1], [0], assert);
+});
