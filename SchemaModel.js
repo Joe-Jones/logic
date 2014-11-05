@@ -38,6 +38,7 @@ SchemaModel.prototype.add = function(object) {
 		var template = this.template_manager.getTemplate(object.schema_id);
 		object.template_instance = this.logic_system.addTemplate(template);
 		object.project = this.project;
+		this.template_manager.templateAdded(object.schema_id, this.id);
 	} else {
 		object.logic_id = this.logic_system.addGate(object.type);
 	}
@@ -75,6 +76,7 @@ SchemaModel.prototype.add = function(object) {
 			that.logic_system.run(); //Todo, should this be here
 		};
 	}
+	this.invalidate();
 };
 
 SchemaModel.prototype.removeLastGate = function() {
@@ -82,7 +84,8 @@ SchemaModel.prototype.removeLastGate = function() {
 	this.remove(this.next_item_number);
 }
 
-SchemaModel.prototype.remove = function(object) {
+SchemaModel.prototype.remove = function(object) { // Todo this needs to call templateRemoved on the template manager id this is a subcomponent.
+												// Todo does this not also need to tidy up connections?
 	if (!_.isObject(object)) {
 		object = this.objects[object];
 	}
@@ -91,6 +94,7 @@ SchemaModel.prototype.remove = function(object) {
 		this.logic_system.dropCallback(object.logic_id);
 	}
 	this.logic_system.removeGate(object.logic_id);
+	this.invalidate();
 };
 
 SchemaModel.prototype.getObjectByNumber = function(number) {
@@ -153,6 +157,10 @@ function hotPointsEqual(a, b) {
 	return a.item === b.item && a.type === b.type && a.number === b.number;
 }
 
+/*
+	This adds a connection to the model then calls makeConnection to actually wire it up.
+*/
+
 SchemaModel.prototype.addConnection = function(input_item_num, input_num, output_item_num, output_num) {
 	var input_item = this.objects[input_item_num];
 	var output_item = this.objects[output_item_num];
@@ -165,7 +173,21 @@ SchemaModel.prototype.addConnection = function(input_item_num, input_num, output
 	this.next_connection_number ++;
 	
 	// Add to the LogicSystem
+	this.makeConnection(connection);
 	
+	this.logic_system.run();
+	this.invalidate();
+};
+
+/*
+	This adds an already existing connection into the LogicSystem.
+*/
+
+SchemaModel.prototype.makeConnection = function(connection) {
+	var output_item = connection.output_item;
+	var input_item = connection.input_item;
+	var input_num = connection.input_num;
+	var output_num = connection.output_num;
 	var logic_output;
 	if (output_item.type == "SUBCIRCIT") {
 		logic_output = this.logic_system.gateNumber(output_item.template_instance,
@@ -182,7 +204,6 @@ SchemaModel.prototype.addConnection = function(input_item_num, input_num, output
 		this.logic_system.makeConnection(logic_output, connection.input_item.logic_id, connection.input_num);
 		this.logic_system.injectTransient(connection.input_item.logic_id);
 	}
-	this.logic_system.run();
 };
 
 SchemaModel.prototype.removeConnection = function(input_item_num, input_num, output_item_num, output_num) {
@@ -194,6 +215,7 @@ SchemaModel.prototype.removeConnection = function(input_item_num, input_num, out
 	input_item.removeInput(input_num);
 	output_item.removeOutput(output_num, connection);
 	this.logic_system.removeConnection(input_item.logic_id, input_num);
+	this.invalidate();
 };
 
 SchemaModel.prototype.save = function() {
@@ -241,6 +263,7 @@ SchemaModel.prototype.load = function() {
 	}
 	delete this.data;
 	this.loaded = true;
+	this.subcomponent_invalid = false;
 };
 
 SchemaModel.prototype.rebuildLogicSystem = function() {
@@ -248,13 +271,16 @@ SchemaModel.prototype.rebuildLogicSystem = function() {
 	this.logic_system = new LogicSystem();
 	_.each(this.objects, function(object) {
 		if (object.type == "SUBCIRCIT") {
-		
+			var template = this.template_manager.getTemplate(object.schema_id);
+			object.template_instance = this.logic_system.addTemplate(template);
 		} else {
 			object.logic_id = this.logic_system.addGate(object.type);
 			if (object.DisplaysState) {
 				this.logic_system.registerCallback(object.logic_id, function (new_state) {
 					object.setState(new_state);
-					model.drawer.invalidateRectangle(object.boundingBox());
+					if (model.drawer) {
+						model.drawer.invalidateRectangle(object.boundingBox());
+					}
 				});
 			}
 			if (object.type == "SWITCH") {
@@ -263,20 +289,28 @@ SchemaModel.prototype.rebuildLogicSystem = function() {
 		}
 	}, this);
 	_.each(this.objects, function(object) {
-		if (object.type == "SUBCIRCIT") {
-		
-		} else {
-			//console.log(object.getConnections("OUTPUT", 0));
-			_.each(object.getConnections("OUTPUT", 0), function(connection) {
-				this.logic_system.makeConnection(connection.output_item.logic_id, connection.input_item.logic_id, connection.input_num);
-			}, this);
-		}
+		_.each(object.getConnections("OUTPUT", 0), function(connection) {
+			this.makeConnection(connection);
+		}, this);
 	}, this);
-	console.log(this.logic_system);
+	this.subcomponent_invalid = false;
 };
 
 SchemaModel.prototype.saveAsTemplate = function() {
+	this.checkAndRebuild();
 	return this.logic_system.saveAsTemplate();
-}
+};
 
+SchemaModel.prototype.invalidate = function() {
+	this.template_manager.templateInvalid(this.id);
+};
 
+SchemaModel.prototype.subcomponentInvalid = function() {
+	this.subcomponent_invalid = true;
+};
+
+SchemaModel.prototype.checkAndRebuild = function() {
+	if (this.subcomponent_invalid) {
+		this.rebuildLogicSystem();
+	}
+};

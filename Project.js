@@ -85,6 +85,7 @@ TemplateManager.prototype = {
 		delete this.templates[id];
 		_.each(this.allContaining(id), function(containing_id) {
 			this.templateInvalid(containing_id);
+			this.models[containing_id].subcomponentInvalid();
 		}, this);
 	},
 
@@ -446,11 +447,11 @@ Action.prototype = {
 				var schema = model.newSchema();
 				model.open_tabs.push(schema.id);
 				model.schema_names[schema.id] = "New Schema";
+				model.selected_tab = schema.id; // needs to be here to stop the events causing a SELECT_SCHEMA to be recorded as well.
 				model.trigger("schemaOpened", schema.id);
 				model.trigger("newSchema", schema.id);
 				this.previous_schema = model.selected_tab;
 				this.previously_selected_tab = model.selected_tab;
-				model.selected_tab = schema.id;
 				model.schema_infos[schema.id] = { input_counter: 0, inputs: [], output_counter: 0, outputs: [] };
 				break;
 			case "REMOVE_SCHEMA":
@@ -461,6 +462,7 @@ Action.prototype = {
 				} else {
 					this.previous_schema = model.selected_tab;
 					model.selected_tab = this.schema;
+					model.getSchema(this.schema).checkAndRebuild();
 				}
 				break;
 			case "RENAME_SCHEMA":

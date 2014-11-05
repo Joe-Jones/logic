@@ -27,7 +27,9 @@ MockModel.prototype = {
 		} else {
 			return this.name;
 		}
-	}
+	},
+	
+	subcomponentInvalid: function() {}
 
 };
 
@@ -684,8 +686,6 @@ function getBulb(schema, n) {
 	return getNth(schema, n, "BULB");
 }
 
-//var schema = project.getSchema(schema_id);
-
 function checkTruthTable3(truth_table, test_name, actions, schema_id, inputs, outputs, assert) {
 	var project = loadProject(actions, "testDatabase", "testProject");
 	var schema = project.getSchema(schema_id);
@@ -696,7 +696,13 @@ function checkTruthTable3(truth_table, test_name, actions, schema_id, inputs, ou
 }
 
 QUnit.test("Simple test of the new testing framework.", function(assert) {
-	var actions = [{"type":"ADD_SCHEMA","previous_schema":null,"previously_selected_tab":null},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"INPUT","position":{"x":6.1,"y":-10.8}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"INPUT","position":{"x":9.133333333333333,"y":-10.533333333333333}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"OUTPUT","position":{"x":7.533333333333333,"y":-18.866666666666667}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"OR","position":{"x":8.033333333333333,"y":-15}},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":4,"input_num":0,"output_item":1,"output_num":0},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":4,"input_num":1,"output_item":2,"output_num":0},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":3,"input_num":0,"output_item":4,"output_num":0},{"type":"SELECT_SCHEMA","schema":"schema/1","previous_schema":"schema/0"},{"type":"ADD_SCHEMA","previous_schema":"schema/1","previously_selected_tab":"schema/1"},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"COMPONENT:schema/0","position":{"x":6.966666666666667,"y":-15.133333333333333}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"SWITCH","position":{"x":6.033333333333333,"y":-9.666666666666666}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"SWITCH","position":{"x":8.9,"y":-8.666666666666666}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"BULB","position":{"x":6.966666666666667,"y":-20.333333333333332}},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":1,"input_num":0,"output_item":2,"output_num":0},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":1,"input_num":1,"output_item":3,"output_num":0},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":4,"input_num":0,"output_item":1,"output_num":0}];
+	var actions = [{"type":"ADD_SCHEMA","previous_schema":null,"previously_selected_tab":null},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"INPUT","position":{"x":6.1,"y":-10.8}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"INPUT","position":{"x":9.133333333333333,"y":-10.533333333333333}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"OUTPUT","position":{"x":7.533333333333333,"y":-18.866666666666667}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"OR","position":{"x":8.033333333333333,"y":-15}},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":4,"input_num":0,"output_item":1,"output_num":0},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":4,"input_num":1,"output_item":2,"output_num":0},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":3,"input_num":0,"output_item":4,"output_num":0},{"type":"ADD_SCHEMA","previous_schema":"schema/1","previously_selected_tab":"schema/1"},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"COMPONENT:schema/0","position":{"x":6.966666666666667,"y":-15.133333333333333}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"SWITCH","position":{"x":6.033333333333333,"y":-9.666666666666666}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"SWITCH","position":{"x":8.9,"y":-8.666666666666666}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"BULB","position":{"x":6.966666666666667,"y":-20.333333333333332}},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":1,"input_num":0,"output_item":2,"output_num":0},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":1,"input_num":1,"output_item":3,"output_num":0},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":4,"input_num":0,"output_item":1,"output_num":0}];
+	var truth_table = [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]];
+	checkTruthTable3(truth_table, "It's just an or gate.", actions, "schema/1", [0, 1], [0], assert);
+});
+
+QUnit.test("Go back and change the content of a component.", function(assert) {
+	var actions = [{"type":"ADD_SCHEMA","previous_schema":"schema/0","previously_selected_tab":"schema/0"},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"INPUT","position":{"x":5.666666666666667,"y":-5.3}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"INPUT","position":{"x":9.466666666666667,"y":-5.199999999999999}},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"OUTPUT","position":{"x":7.733333333333333,"y":-11.966666666666667}},{"type":"ADD_SCHEMA","previous_schema":"schema/1","previously_selected_tab":"schema/1"},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"COMPONENT:schema/0","position":{"x":7.533333333333333,"y":-12.866666666666667}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"SWITCH","position":{"x":6.466666666666667,"y":-6.966666666666667}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"SWITCH","position":{"x":10,"y":-7.266666666666666}},{"schema_id":"schema/1","type":"ADD_GATE","gate_type":"BULB","position":{"x":7.8,"y":-19.5}},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":1,"input_num":0,"output_item":2,"output_num":0},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":1,"input_num":1,"output_item":3,"output_num":0},{"schema_id":"schema/1","type":"ADD_CONNECTION","input_item":4,"input_num":0,"output_item":1,"output_num":0},{"type":"SELECT_SCHEMA","schema":"schema/0","previous_schema":"schema/1"},{"schema_id":"schema/0","type":"ADD_GATE","gate_type":"OR","position":{"x":7.7,"y":-8.5}},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":4,"input_num":0,"output_item":1,"output_num":0},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":4,"input_num":1,"output_item":2,"output_num":0},{"schema_id":"schema/0","type":"ADD_CONNECTION","input_item":3,"input_num":0,"output_item":4,"output_num":0},{"type":"SELECT_SCHEMA","schema":"schema/1","previous_schema":"schema/0"}];
 	var truth_table = [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 1]];
 	checkTruthTable3(truth_table, "It's just an or gate.", actions, "schema/1", [0, 1], [0], assert);
 });
