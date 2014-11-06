@@ -24,7 +24,7 @@ var Pallet = Backbone.View.extend({
 		var gate_list = ["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR", "SWITCH", "BULB", "INPUT", "OUTPUT"];
 		
 		// Create the elements
-		var html = '<table>';
+		var html = '<span>';
 		for (var i = 0; i < gate_list.length; i++) {
 			var width = 30;
 			var height = 30;
@@ -32,9 +32,9 @@ var Pallet = Backbone.View.extend({
 				width *= gate_info[gate_list[i]].size.height;
 				height *= gate_info[gate_list[i]].size.width;
 			}
-			html += '<tr><td><canvas width="' + width + '" height="' + height +'" draggable="true" id="pallet-item-' + String(i) + '"></canvas></td></tr>'
+			html += '<canvas width="' + width + '" height="' + height +'" draggable="true" id="pallet-item-' + String(i) + '"></canvas>'
 		}
-		html += "</table>";
+		html += "</span>";
 		this.$el.html(html);
 		
 		for (var i = 0; i < gate_list.length; i++) {
@@ -81,9 +81,7 @@ var MainView = JakeKit.Stack.extend({
 						{ text: "Open", id: "open_project" }
 				]},
 				{ type: "menu", id: "schema_menu", caption: "Schema", items: [
-						{ text: "New", id: "new_schema"},
-						{ text: "Rename", id: "rename_schema" },
-						{ text: "Edit", id: "edit_schema" }]},
+						{ text: "New", id: "new_schema"}]},
 				{ type: "menu", id: "edit_menu", caption: "Edit", items: [
 						{ text:	"Undo", id: "undo"},
 						{ text: "Redo", id: "redo"},
@@ -94,14 +92,8 @@ var MainView = JakeKit.Stack.extend({
 		this.listenTo(this.menu, "open_project", this.showOpenProjectWindow);
 		this.listenTo(this.menu, "rename_project", this.showRenameProjectWindow);
 		this.listenTo(this.menu, "new_schema", this.newSchema);
-		this.listenTo(this.menu, "rename_schema", this.showRenameSchemaWindow);
-		this.listenTo(this.menu, "edit_schema", this.showEditSchemaWindow);
-		
-		var pallet = new Pallet();
 	
 		this.hbox = new JakeKit.HBox();
-		
-		this.hbox.addChild(pallet);
 		
 		this.project_view_container = new JakeKit.HBox();
 		this.hbox.addChild(this.project_view_container);
@@ -247,65 +239,6 @@ var MainView = JakeKit.Stack.extend({
 	
 	newSchema: function() {
 		this.project.dispatchAction(new Action({type: "ADD_SCHEMA"}));
-	},
-	
-	showRenameSchemaWindow: function() {
-		
-		var that = this;
-	
-		var RenameWindow = Backbone.View.extend({
-		
-			initialize: function(none, model) {
-				this.model = model;
-			},
-			
-			render: function() {
-				this.$el.html('<input type="text" value="' + _.escape(that.project.getSchemaName(that.project.selectedTab())) + '">' +
-							  '<button id="save_button">Save</button><button id="cancel_button">Cancel</button>');
-				this.$("#cancel_button").on("click", function() {
-					that.removeChild(that.rename_window);
-					delete that.rename_window;
-					that.makeActive(that.main_window);
-				});
-				var rename_window = this;
-				this.$("#save_button").on("click", function() {
-					//rename_window.model.set("name", rename_window.$("input")[0].value);
-					//rename_window.model.save();
-					that.project.dispatchAction(new Action({
-						type:		"RENAME_SCHEMA",
-						schema:		that.project.selectedTab(),
-						new_name:	rename_window.$("input")[0].value,
-						old_name:	that.project.getSchemaName(that.project.selectedTab())
-					}));
-					that.removeChild(that.rename_window);
-					delete that.rename_window;
-					that.makeActive(that.main_window);
-				});
-					
-			},
-			
-			_resized: function() {}
-		
-		});
-		
-		this.rename_window = new RenameWindow({}, this.project_view.activeSchema());
-		this.addChild(this.rename_window);
-		this.makeActive(this.rename_window);
-		
-	},
-	
-	showEditSchemaWindow: function() {
-		var schema_id = this.project_view.activeSchema();
-		var that = this;
-		this.edit_window = new ComponentEditor({}, schema_id, this.project, function() {
-			that.removeChild(that.edit_window);
-			that.edit_window.stopListening();
-			delete that.edit_window;
-			that.makeActive(that.main_window);
-		});
-		this.addChild(this.edit_window);
-		this.makeActive(this.edit_window);
-		this.edit_window.listenTo(this.project.schemas[schema_id], "ComponentChanged", this.edit_window.render);
 	}
 		
 });

@@ -331,6 +331,11 @@ Project.prototype = {
 	
 	listSchemas: function() {
 		return _.keys(this.schemas);
+	},
+	
+	isComponent: function(schema_id) {
+		var schema_info = this.getSchemaInfo(schema_id);
+		return (schema_info.inputs.length > 0 || schema_info.outputs.length > 0);
 	}
 
 };
