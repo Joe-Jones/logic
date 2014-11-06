@@ -110,8 +110,10 @@ var ComponentList = Backbone.View.extend({
 	render: function() {
 		this.$el.empty();
 		_.each(this.project.listSchemas(), function(schema_id) {
-			var component_view = new ComponentView({ schema_id: schema_id, name: this.project.getSchemaName(schema_id) });
-			this.$el.append(component_view.render().el);
+			if (this.project.isComponent(schema_id)) {
+				var component_view = new ComponentView({ schema_id: schema_id, name: this.project.getSchemaName(schema_id) });
+				this.$el.append(component_view.render().el);
+			}
 		}, this);
 	}
 	
