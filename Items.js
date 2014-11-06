@@ -1,5 +1,212 @@
 "use strict";
 
+var and_scale = 1;
+var and_translate = [0, 0.8];
+var and_tranformation = Matrix.create([[1,0,and_translate[0]],[0,1,and_translate[1]],[0,0,1]]).multiply(Matrix.Diagonal([and_scale, and_scale, 1]));
+
+var gate_size = { width: 1, height: 2.2};
+
+var input_height = 2.15;
+var and_input_length = 0.55;
+var or_input_length = 0.59;
+var output_length = 0.9;
+var not_output_length = 0.73;
+var xbar_adjust = 0.95;
+
+function LogicGateSingleOutput() { return [this.top_left.plus(new Point(0.5, 0.05))]; }
+function LogicGateSingleInput() { return [this.top_left.plus(new Point(0.5, input_height))] }
+function LogicGateDoubleInput() { return [this.top_left.plus(new Point(0.3, input_height)), this.top_left.plus(new Point(0.7, input_height))]; }
+
+function CanvasWrapper(ctx, transformation, scale) {
+	this.ctx = ctx;
+	this.transformation = transformation;
+	this.scale = scale;
+}
+
+CanvasWrapper.prototype = {
+
+	transformPoint: function(x, y) {
+		var v = this.transformation.multiply(Vector.create([x, y, 1]));
+		return [v.e(1), v.e(2)];
+	},
+
+	stroke: function() {
+		this.ctx.stroke();
+	},
+	
+	beginPath: function() {
+		this.ctx.beginPath();
+	},
+	
+	moveTo: function(x, y) {
+		var point = this.transformPoint(x, y);
+		this.ctx.moveTo(point[0], point[1]);
+	},
+	
+	lineTo: function(x, y) {
+		var point = this.transformPoint(x, y);
+		this.ctx.lineTo(point[0], point[1]);
+	},
+	
+	arc: function(x, y, radius, startAngle, endAngle, anticlockwise) {
+		var point = this.transformPoint(x, y);
+		this.ctx.arc(point[0], point[1], radius * this.scale, startAngle, endAngle, anticlockwise);
+	},
+	
+	bezierCurveTo: function(cp1x, cp1y, cp2x, cp2y, x, y) {
+		var cp1 = this.transformPoint(cp1x, cp1y);
+		var cp2 = this.transformPoint(cp2x, cp2y);
+		var end_point = this.transformPoint(x, y);
+		this.ctx.bezierCurveTo(cp1[0], cp1[1], cp2[0], cp2[1], end_point[0], end_point[1]);
+	}
+
+};
+
+function drawAndBody(ctx) {
+	ctx = new CanvasWrapper(ctx, and_tranformation, and_scale); 
+	ctx.beginPath();
+	ctx.moveTo(0.85, 0.8);
+	ctx.lineTo(0.15, 0.8);
+	ctx.lineTo(0.15, 0.5);
+	ctx.arc(0.5, 0.5, 0.35, Math.PI, 0);
+	ctx.lineTo(0.85, 0.8);
+	ctx.stroke();
+}
+
+function drawOrBody(ctx) {
+	ctx = new CanvasWrapper(ctx, and_tranformation, and_scale); 
+	ctx.beginPath();
+	ctx.moveTo(0.15, 0.8);
+	ctx.bezierCurveTo(0.3, 0.7, 0.7, 0.7, 0.85, 0.8);
+	ctx.lineTo(0.87, 0.5);
+	ctx.bezierCurveTo(0.87, 0.2, 0.6, 0.2, 0.5, 0.1);
+	ctx.bezierCurveTo(0.4, 0.2, 0.13, 0.2, 0.15, 0.5);
+	ctx.lineTo(0.15, 0.8);
+	ctx.stroke();
+}
+
+function drawNotBody(ctx) {
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.57 + not_output_length);
+	ctx.lineTo(0.1, 0.57 + not_output_length) ;
+	ctx.lineTo(0.5, 0.17 + not_output_length);
+	ctx.lineTo(0.9, 0.57 + not_output_length);
+	ctx.lineTo(0.5, 0.57 + not_output_length);
+	ctx.stroke();
+}
+
+function drawOutput(ctx) {
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.05 + output_length);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+}
+
+function drawNotOutput(ctx) {
+	// the circle
+	ctx.beginPath();
+	ctx.arc(0.5, 0.1 + not_output_length, 0.1, - Math.PI ,  Math.PI );
+	ctx.stroke();
+	
+	// Output
+	ctx.beginPath();
+	ctx.moveTo(0.5, 0.048 + not_output_length);
+	ctx.lineTo(0.5, 0.05);
+	ctx.stroke();
+}
+
+function drawNotInput(ctx) {
+	ctx.beginPath();
+	ctx.moveTo(0.5, input_height);
+	ctx.lineTo(0.5, 1.28);
+	ctx.stroke();
+}
+
+function drawAndInputs(ctx) {
+	ctx.beginPath();
+	ctx.moveTo(0.3, input_height);
+	ctx.lineTo(0.3, input_height - and_input_length);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, input_height);
+	ctx.lineTo(0.7, input_height - and_input_length);
+	ctx.stroke();
+}
+
+function drawOrInputs(ctx) {
+	ctx.beginPath();
+	ctx.moveTo(0.3, input_height);
+	ctx.lineTo(0.3, input_height - or_input_length);
+	ctx.stroke();
+	
+	ctx.beginPath();
+	ctx.moveTo(0.7, input_height);
+	ctx.lineTo(0.7, input_height - or_input_length);
+	ctx.stroke();
+}
+
+function drawXBar(ctx) {
+	ctx.beginPath();
+	ctx.moveTo(0.15, 0.8 + xbar_adjust);
+	ctx.bezierCurveTo(0.3, 0.7 + xbar_adjust, 0.7, 0.7 + xbar_adjust, 0.85, 0.8 + xbar_adjust);
+	ctx.stroke();
+}
+
+function drawNotGate(ctx) {
+	drawNotInput(ctx);
+	drawNotBody(ctx);
+	drawNotOutput(ctx);
+}
+
+function drawAndGate(ctx) {
+	drawAndInputs(ctx);
+	drawAndBody(ctx);
+	drawOutput(ctx);
+}
+
+function drawOrGate(ctx) {
+	drawOrInputs(ctx);
+	drawOrBody(ctx);
+	drawOutput(ctx);
+}
+
+function drawNandGate(ctx) {
+	drawAndInputs(ctx);
+	drawAndBody(ctx);
+	drawNotOutput(ctx);
+}
+
+function drawNorGate(ctx) {
+	drawOrInputs(ctx);
+	drawOrBody(ctx);
+	drawNotOutput(ctx);
+}
+
+function drawXorGate(ctx) {
+	drawOrInputs(ctx);
+	drawOrBody(ctx);
+	drawOutput(ctx);
+	drawXBar(ctx);
+}
+
+function drawXnorGate(ctx) {
+	drawOrInputs(ctx);
+	drawOrBody(ctx);
+	drawNotOutput(ctx);
+	drawXBar(ctx);
+}
+
+var gate_info = {
+	AND:	{ drawSub: drawAndGate,		size: gate_size, input: "double"},
+	OR:		{ drawSub: drawOrGate,		size: gate_size, input: "double"},
+	NOT:	{ drawSub: drawNotGate,		size: gate_size, input: "single"},
+	NAND:	{ drawSub: drawNandGate,	size: gate_size, input: "double"},
+	NOR:	{ drawSub: drawNorGate,		size: gate_size, input: "double"},
+	XOR:	{ drawSub: drawXorGate,		size: gate_size, input: "double"},
+	XNOR:	{ drawSub: drawXnorGate,	size: gate_size, input: "double"}
+};
+
 /********************************************************************************************/
 function DragableThing()
 /********************************************************************************************/
@@ -61,18 +268,6 @@ DragableThing.prototype.inputs = function() {
 DragableThing.prototype.outputs = function() {
 	return [];
 }
-
-DragableThing.prototype.LogicGateSingleOutput = function() {
-	return [this.top_left.plus(new Point(0.5, 0.05))];
-};
-
-DragableThing.prototype.LogicGateSingleInput = function() {
-	return [this.top_left.plus(new Point(0.5, 0.95))]
-};
-
-DragableThing.prototype.LogicGateDoubleInput = function() {
-	return [this.top_left.plus(new Point(0.3, 0.95)), this.top_left.plus(new Point(0.7, 0.95))];
-};
 
 DragableThing.prototype.addConnection = function(connection) {
 	if (connection.input_item === this) {
@@ -142,290 +337,33 @@ DragableThing.prototype.unselect = function() {
 };
 
 /********************************************************************************************/
-function NotGate()
+function LogicGate(type) {
 /********************************************************************************************/
-{
-	this.initDragableThing()
-	this.type = "NOT";
+	this.type = type;
+	this.initDragableThing();
+	if (gate_info[this.type].input == "single") {
+		this.inputs = LogicGateSingleInput;
+	} else {
+		this.inputs = LogicGateDoubleInput;
+	}
+	this.outputs = LogicGateSingleOutput;
 }
 
-NotGate.prototype = new DragableThing();
+LogicGate.prototype = new DragableThing();
+_.extend(LogicGate.prototype, {
 
-NotGate.prototype.draw = function(ctx) {
-	ctx.save();
-	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
-	ctx.beginPath();
+	size: function() {
+		return gate_info[this.type].size;
+	},
 	
-	//	Input
-	ctx.moveTo(0.5, 0.95);
-	ctx.lineTo(0.5, 0.8);
-	
-	// Triangle
-	ctx.lineTo(0.1, 0.8);
-	ctx.lineTo(0.5, 0.4);
-	ctx.lineTo(0.9, 0.8);
-	ctx.lineTo(0.5, 0.8);
-	
-	ctx.stroke();
-	
-	// the circle
-	ctx.beginPath();
-	ctx.arc(0.5, 0.3, 0.1, - Math.PI ,  Math.PI );
-	ctx.stroke();
-	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.2);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
-	
-	ctx.restore();
-};
+	draw: function(ctx) {
+		ctx.save();
+		ctx.lineWidth = (this.selected ? 0.1 : 0.05);
+		gate_info[this.type].drawSub(ctx);
+		ctx.restore();
+	}
 
-NotGate.prototype.inputs = DragableThing.prototype.LogicGateSingleInput;
-NotGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
-
-/********************************************************************************************/
-function AndGate()
-/********************************************************************************************/
-{
-	this.initDragableThing()
-	this.type = "AND";
-}
-
-AndGate.prototype = new DragableThing();
-
-AndGate.prototype.draw = function(ctx) {
-	ctx.save();
-	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
-	
-	//	Inputs
-	ctx.beginPath();
-	ctx.moveTo(0.3, 0.95);
-	ctx.lineTo(0.3, 0.8);
-	ctx.stroke();
-	
-	ctx.beginPath();
-	ctx.moveTo(0.7, 0.95);
-	ctx.lineTo(0.7, 0.8);
-	ctx.stroke();
-	
-	// Body
-	ctx.beginPath();
-	ctx.moveTo(0.85, 0.8);
-	ctx.lineTo(0.15, 0.8);
-	ctx.lineTo(0.15, 0.5);
-	ctx.arc(0.5, 0.5, 0.35, Math.PI, 0);
-	ctx.lineTo(0.85, 0.8);
-	ctx.stroke();
-	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.15);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
-	
-	ctx.restore();
-};
-
-AndGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
-AndGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
-
-/********************************************************************************************/
-function OrGate()
-/********************************************************************************************/
-{
-	this.initDragableThing()
-	this.type = "OR";
-}
-
-OrGate.prototype = new DragableThing();
-
-OrGate.prototype.draw = function(ctx) {
-	ctx.save();
-	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
-	
-	//	Inputs
-	ctx.beginPath();
-	ctx.moveTo(0.3, 0.95);
-	ctx.lineTo(0.3, 0.75);
-	ctx.stroke();
-	
-	ctx.beginPath();
-	ctx.moveTo(0.7, 0.95);
-	ctx.lineTo(0.7, 0.75);
-	ctx.stroke();
-	
-	// Body
-	ctx.beginPath();
-	ctx.moveTo(0.15, 0.8);
-	ctx.bezierCurveTo(0.3, 0.7, 0.7, 0.7, 0.85, 0.8);
-	ctx.lineTo(0.87, 0.5);
-	ctx.bezierCurveTo(0.87, 0.2, 0.6, 0.2,		0.5, 0.1);
-	ctx.bezierCurveTo(0.4, 0.2, 0.13, 0.2, 			0.15, 0.5);
-	ctx.lineTo(0.15, 0.8);
-	ctx.stroke();
-	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.15);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
-	
-	ctx.restore();
-};
-
-OrGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
-OrGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
-
-/********************************************************************************************/
-function NandGate()
-/********************************************************************************************/
-{
-	this.initDragableThing()
-	this.type = "NAND";
-}
-
-NandGate.prototype = new DragableThing();
-
-NandGate.prototype.draw = function(ctx) {
-	ctx.save();
-	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
-	
-	//	Inputs
-	ctx.beginPath();
-	ctx.moveTo(0.3, 0.95);
-	ctx.lineTo(0.3, 0.75);
-	ctx.stroke();
-	
-	ctx.beginPath();
-	ctx.moveTo(0.7, 0.95);
-	ctx.lineTo(0.7, 0.75);
-	ctx.stroke();
-	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.15);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
-	
-	ctx.restore();
-};
-
-NandGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
-NandGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
-
-/********************************************************************************************/
-function NorGate()
-/********************************************************************************************/
-{
-	this.initDragableThing()
-	this.type = "NOR";
-}
-
-NorGate.prototype = new DragableThing();
-
-NorGate.prototype.draw = function(ctx) {
-	ctx.save();
-	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
-	
-	//	Inputs
-	ctx.beginPath();
-	ctx.moveTo(0.3, 0.95);
-	ctx.lineTo(0.3, 0.75);
-	ctx.stroke();
-	
-	ctx.beginPath();
-	ctx.moveTo(0.7, 0.95);
-	ctx.lineTo(0.7, 0.75);
-	ctx.stroke();
-	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.15);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
-	
-	ctx.restore();
-};
-
-NorGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
-NorGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
-
-/********************************************************************************************/
-function XorGate()
-/********************************************************************************************/
-{
-	this.initDragableThing()
-	this.type = "XOR";
-}
-
-XorGate.prototype = new DragableThing();
-
-XorGate.prototype.draw = function(ctx) {
-	ctx.save();
-	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
-	
-	//	Inputs
-	ctx.beginPath();
-	ctx.moveTo(0.3, 0.95);
-	ctx.lineTo(0.3, 0.75);
-	ctx.stroke();
-	
-	ctx.beginPath();
-	ctx.moveTo(0.7, 0.95);
-	ctx.lineTo(0.7, 0.75);
-	ctx.stroke();
-	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.15);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
-	
-	ctx.restore();
-};
-
-XorGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
-XorGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
-
-/********************************************************************************************/
-function XnorGate()
-/********************************************************************************************/
-{
-	this.initDragableThing()
-	this.type = "XNOR";
-}
-
-XnorGate.prototype = new DragableThing();
-
-XnorGate.prototype.draw = function(ctx) {
-	ctx.save();
-	ctx.lineWidth = (this.selected ? 0.1 : 0.05);
-	
-	//	Inputs
-	ctx.beginPath();
-	ctx.moveTo(0.3, 0.95);
-	ctx.lineTo(0.3, 0.75);
-	ctx.stroke();
-	
-	ctx.beginPath();
-	ctx.moveTo(0.7, 0.95);
-	ctx.lineTo(0.7, 0.75);
-	ctx.stroke();		
-	
-	// Output
-	ctx.beginPath();
-	ctx.moveTo(0.5, 0.15);
-	ctx.lineTo(0.5, 0.05);
-	ctx.stroke();
-	
-	ctx.restore();
-};
-
-XnorGate.prototype.inputs = DragableThing.prototype.LogicGateDoubleInput;
-XnorGate.prototype.outputs = DragableThing.prototype.LogicGateSingleOutput;
-
+});
 
 /********************************************************************************************/
 function Switch()
@@ -613,29 +551,19 @@ Output.prototype.inputs = function() {
 function makeGate(type) {
 	var parts = type.split(":");
 	if (parts.length == 1) {
-		switch(type) {
-			case "AND":
-				return new AndGate();
-			case "OR":
-				return new OrGate();
-			case "NOT":
-				return new NotGate();
-			case "NAND":
-				return new NandGate();
-			case "NOR":
-				return new NorGate();
-			case "XOR":
-				return new XorGate();
-			case "XNOR":
-				return new XnorGate();
-			case "SWITCH":
-				return new Switch();
-			case "BULB":
-				return new Bulb();
-			case "INPUT":
-				return new Input();
-			case "OUTPUT":
-				return new Output();
+		if (_.contains(["AND", "OR", "NOT", "NAND", "NOR", "XOR", "XNOR"], type)) {
+			return new LogicGate(type);
+		} else {
+			switch(type) {
+				case "SWITCH":
+					return new Switch();
+				case "BULB":
+					return new Bulb();
+				case "INPUT":
+					return new Input();
+				case "OUTPUT":
+					return new Output();
+			}
 		}
 	} else {
 		type = parts[0];

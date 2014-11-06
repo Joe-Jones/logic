@@ -26,7 +26,13 @@ var Pallet = Backbone.View.extend({
 		// Create the elements
 		var html = '<table>';
 		for (var i = 0; i < gate_list.length; i++) {
-			html += '<tr><td><canvas width="30" height="30" draggable="true" id="pallet-item-' + String(i) + '"></canvas></td></tr>'
+			var width = 30;
+			var height = 30;
+			if (gate_info[gate_list[i]]) {
+				width *= gate_info[gate_list[i]].size.height;
+				height *= gate_info[gate_list[i]].size.width;
+			}
+			html += '<tr><td><canvas width="' + width + '" height="' + height +'" draggable="true" id="pallet-item-' + String(i) + '"></canvas></td></tr>'
 		}
 		html += "</table>";
 		this.$el.html(html);
@@ -41,8 +47,13 @@ var Pallet = Backbone.View.extend({
 	
 	drawGate: function(canvas, type) {
 		var ctx = canvas.getContext("2d");
-		ctx.scale(canvas.width, canvas.height);
-		ctx.translate(0.5, 0.5);
+		if (gate_info[type]) {
+			ctx.scale(canvas.width / gate_info[type].size.height, canvas.height / gate_info[type].size.width);
+			ctx.translate(gate_info[type].size.height - 0.5, 0.5);
+		} else {
+			ctx.scale(canvas.width, canvas.height);
+			ctx.translate(0.5, 0.5);
+		}
 		ctx.rotate(Math.PI / 2);
 		ctx.translate(-0.5, -0.5);
 		var gate = makeGate(type)
