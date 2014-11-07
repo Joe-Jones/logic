@@ -73,6 +73,11 @@ var MainView = JakeKit.Stack.extend({
 		//_.bindAll(this, "setProject"); Todo delete
 		
 		// Create the user interface
+		var edit_items = []
+		if (config.undo_redo) {
+			edit_items = [{ text:	"Undo", id: "undo"}, { text: "Redo", id: "redo"}]
+		}
+		edit_items.push({ text: "Delete", id: "delete"});
 		
 		this.menu = new JakeKit.w2toolbar([
 				{ type: "menu", id: "project_menu", caption: "Project", items: [
@@ -82,11 +87,7 @@ var MainView = JakeKit.Stack.extend({
 				]},
 				{ type: "menu", id: "schema_menu", caption: "Schema", items: [
 						{ text: "New", id: "new_schema"}]},
-				{ type: "menu", id: "edit_menu", caption: "Edit", items: [
-						{ text:	"Undo", id: "undo"},
-						{ text: "Redo", id: "redo"},
-						{ text: "Delete", id: "delete"}
-				]}]);
+				{ type: "menu", id: "edit_menu", caption: "Edit", items: edit_items}]);
 		
 		this.listenTo(this.menu, "new_project", this.newProject);
 		this.listenTo(this.menu, "open_project", this.showOpenProjectWindow);

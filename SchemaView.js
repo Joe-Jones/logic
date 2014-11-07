@@ -357,15 +357,17 @@ var EndPoint = Backbone.View.extend({
 		var down_id = _.uniqueId();
 		var html = '<tr>'
 		html += '<td><input type="text" id="' + _.escape(name_id) + '" value="' + _.escape(this.name) + '"><td>';
-		if (this.position.match(/FIRST/)) {
-			html += '<td></td>';
-		} else {
-			html += '<td><input type="button" id="' + _.escape(up_id) + '" value="Up"></td>';
-		}
-		if (this.position.match(/LAST/)) {
-			html += "<td></td>";
-		} else {
-			html += '<td><input type="button" id="' + _.escape(down_id) + '" value="Down"></td>';
+		if (config.reorder_pins) {
+			if (this.position.match(/FIRST/)) {
+				html += '<td></td>';
+			} else {
+				html += '<td><input type="button" id="' + _.escape(up_id) + '" value="Up"></td>';
+			}
+			if (this.position.match(/LAST/)) {
+				html += "<td></td>";
+			} else {
+				html += '<td><input type="button" id="' + _.escape(down_id) + '" value="Down"></td>';
+			}
 		}
 		html += '</tr>';
 		this.$el.html(html);
