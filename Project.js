@@ -220,6 +220,9 @@ Project.prototype = {
 	
 	getSchema: function(id) {
 		var schema = this.schemas[id];
+		if (!schema) {
+			console.log("Hi");
+		}
 		if (!schema.loaded) {
 			schema.load();
 		}

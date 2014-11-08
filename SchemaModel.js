@@ -73,7 +73,6 @@ SchemaModel.prototype.add = function(object) {
 	if (object.type == "SWITCH") {
 		object.stateChanged = function (new_state) {
 			that.logic_system.setOutput(object.logic_id, new_state);
-			that.logic_system.run(); //Todo, should this be here
 		};
 	}
 	this.invalidate();
@@ -181,7 +180,6 @@ SchemaModel.prototype.addConnection = function(input_item_num, input_num, output
 	// Add to the LogicSystem
 	this.makeConnection(connection);
 	
-	this.logic_system.run();
 	this.invalidate();
 };
 
@@ -313,7 +311,6 @@ SchemaModel.prototype.rebuildLogicSystem = function() {
 	}, this);
 	this.subcomponent_invalid = false;
 	this.logic_system.runCallbacks();
-	this.logic_system.run();
 };
 
 SchemaModel.prototype.saveAsTemplate = function() {

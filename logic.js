@@ -134,7 +134,7 @@ var MainView = JakeKit.Stack.extend({
 	
 	openProject: function(project_id) {
 		if (this.project_view) {
-			// Todo We need to tidy up the old one
+			clearInterval(this.project_view.interval_id);
 		}
 		this.project = new Project(this.database.loadProjectData(project_id, true));
 		this.project_view = new ProjectView(this.project);

@@ -31,10 +31,12 @@ var ProjectView = JakeKit.HBox.extend({
 		
 		this.listenTo(this.tabstack, "viewSelected", this.viewSelected);
 		
-	},
-	
-	getSchema: function(id) {
-		return this.schemas.get(id);
+		this.interval_id = setInterval(function(project_view) {
+			var schema_model = project_view.project.getSchema(project_view.project.selectedTab());
+			schema_model.logic_system.run(100);
+			project_view.activeView().doDraw();
+		}, 100, this);
+		
 	},
 	
 	openTab: function(schema_id, dont_select) {

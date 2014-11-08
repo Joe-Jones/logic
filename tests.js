@@ -355,6 +355,7 @@ function checkTruthTable2(table, table_name, schema, input_ids, output_ids, asse
 			schema.getObjectByNumber(input_id).stateChanged(row[n]);
 			n++;
 		}, this);
+		schema.logic_system.run();
 		_.each(output_ids, function(output_id) {
 			assert.equal(Boolean(schema.getObjectByNumber(output_id).on), Boolean(table[row_number][n]),
 			             "Table \"" + table_name + "\", Row " + row_number + ", Column " + n + " should be " + table[row_number][n] + ".");

@@ -119,10 +119,12 @@ LogicSystem.prototype.runCallbacks = function() {
 	}
 };
 
-LogicSystem.prototype.run = function() {
-	while (any(this.transients)) {
+LogicSystem.prototype.run = function(steps) {
+	var counter = 0;
+	while (any(this.transients) && (counter < steps || !steps)) {
 		this.runStep();
 		this.runCallbacks();
+		counter ++;
 	}
 };
 
