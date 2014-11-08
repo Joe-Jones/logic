@@ -594,9 +594,9 @@ SubCircit.prototype.width = function() {
 
 SubCircit.prototype.height = function() {
 	var schema_info = this.project.getSchemaInfo(this.schema_id);
-	var max_input_width = _.max(_.map(schema_info.inputs, function(item) { return item.name.length; }));
-	var max_output_width = _.max(_.map(schema_info.outputs, function(item) { return item.name.length; }));
-	return 2 + (max_input_width + max_output_width) * 0.25 ;
+	var max_input_width = _.max(_.flatten([_.map(schema_info.inputs, function(item) { return item.name.length; }), 0]));
+	var max_output_width = _.max(_.flatten([_.map(schema_info.outputs, function(item) { return item.name.length; }), 0]));
+	return 1.2 + (max_input_width + max_output_width) * 0.25 ;
 };
 
 SubCircit.prototype.size = function() {
@@ -614,7 +614,7 @@ SubCircit.prototype.size = function() {
 var TEXT_SCALE = 0.04;
 var TEXT_ROTATION = - Math.PI / 2;
 var connection_length = 0.28
-var connection_stride = 0.47;
+var connection_stride = 0.48;
 
 SubCircit.prototype.draw = function(ctx) {
 	ctx.save();
@@ -648,7 +648,7 @@ SubCircit.prototype.draw = function(ctx) {
 		ctx.save();
 		ctx.scale(TEXT_SCALE, TEXT_SCALE);
 		ctx.rotate(TEXT_ROTATION);
-		ctx.fillText(schema_info.inputs[i].name, -7 - height * 19, 10 + i * 12);
+		ctx.fillText(schema_info.inputs[i].name, 10 - height * 1 / 0.04, 10 + i * 12);
 		ctx.restore();
 		
 	}
@@ -665,7 +665,7 @@ SubCircit.prototype.draw = function(ctx) {
 		ctx.save();
 		ctx.scale(TEXT_SCALE, TEXT_SCALE);
 		ctx.rotate(TEXT_ROTATION);
-		ctx.fillText(schema_info.outputs[i].name, 25 - max_output_width * 19,  10 + i * 12);
+		ctx.fillText(schema_info.outputs[i].name, - 10 - max_output_width * 5.1,  10 + i * 12);
 		ctx.restore();
 	}
 	
@@ -677,7 +677,7 @@ SubCircit.prototype.outputs = function() {
 	var number_of_outputs = schema_info.outputs.length;
 	var outputs = [];
 	for (var i = 0; i < number_of_outputs; i++) {
-		outputs.push(this.top_left.plus(new Point(0.3 + i * 0.3, 0.05)));
+		outputs.push(this.top_left.plus(new Point(0.3 + i * connection_stride, 0.05)));
 	}
 	return outputs;
 };
@@ -688,7 +688,7 @@ SubCircit.prototype.inputs = function() {
 	var height = this.height();
 	var inputs = [];
 	for (var i = 0; i < number_of_inputs; i++) {
-		inputs.push(this.top_left.plus(new Point(0.3 + i * 0.3, height - 0.05)));
+		inputs.push(this.top_left.plus(new Point(0.3 + i * connection_stride, height - 0.05)));
 	}
 	return inputs;
 };

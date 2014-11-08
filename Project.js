@@ -220,9 +220,6 @@ Project.prototype = {
 	
 	getSchema: function(id) {
 		var schema = this.schemas[id];
-		if (!schema) {
-			console.log("Hi");
-		}
 		if (!schema.loaded) {
 			schema.load();
 		}
@@ -456,11 +453,11 @@ Action.prototype = {
 				model.open_tabs.push(schema.id);
 				model.schema_names[schema.id] = "New Schema";
 				model.selected_tab = schema.id; // needs to be here to stop the events causing a SELECT_SCHEMA to be recorded as well.
+				model.schema_infos[schema.id] = { input_counter: 0, inputs: [], output_counter: 0, outputs: [] };
 				model.trigger("schemaOpened", schema.id);
 				model.trigger("newSchema", schema.id);
 				this.previous_schema = model.selected_tab;
 				this.previously_selected_tab = model.selected_tab;
-				model.schema_infos[schema.id] = { input_counter: 0, inputs: [], output_counter: 0, outputs: [] };
 				break;
 			case "REMOVE_SCHEMA":
 				break;
