@@ -196,17 +196,25 @@ SchemaModel.prototype.makeConnection = function(connection) {
 	var output_num = connection.output_num;
 	var logic_output;
 	if (output_item.type == "SUBCIRCIT") {
-		logic_output = this.logic_system.gateNumber(output_item.template_instance,
-													this.project.getSchemaInfo(output_item.schema_id)["outputs"][output_num]["number"]);
+		var n = this.project.getSchemaInfo(output_item.schema_id)["outputs"][output_num]["number"];
+		logic_output = this.logic_system.gateNumber(output_item.template_instance, n);
+		if (_.isNull(logic_output)) {
+			var schema_model = this;
+			this.logic_system.addConectionMaker(output_item.template_instance, n, function() {
+				schema_model.makeConnection(connection);
+			});
+		}
 	} else {
 		logic_output = output_item.logic_id;
 	}
 	
-	if (input_item.type == "SUBCIRCIT") {
-		this.logic_system.connectToTemplateInstance(logic_output, input_item.template_instance,
-													this.project.getSchemaInfo(input_item.schema_id)["inputs"][input_num]["number"]);
-	} else {
-		this.logic_system.makeConnection(logic_output, connection.input_item.logic_id, connection.input_num);
+	if (!_.isNull(logic_output)) {
+		if (input_item.type == "SUBCIRCIT") {
+			this.logic_system.connectToTemplateInstance(logic_output, input_item.template_instance,
+														this.project.getSchemaInfo(input_item.schema_id)["inputs"][input_num]["number"]);
+		} else {
+			this.logic_system.makeConnection(logic_output, connection.input_item.logic_id, connection.input_num);
+		}
 	}
 };
 

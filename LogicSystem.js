@@ -147,7 +147,12 @@ LogicSystem.prototype.saveAsTemplate = function() {
 		var gate = this.gates[i];
 		if (gate) {
 			if (gate[0] == "OUTPUT") {
-				outputs[i] = gate_map[gate[1]];
+				if (_.has(inputs, gate[1])) {
+					inputs[gate[1]].push(["output", i]);
+					outputs[i] = ["input", gate[1]];
+				} else {
+					outputs[i] = gate_map[gate[1]];
+				}
 			} else if (gate[0] != "INPUT") {
 				var gate_to_save = [gate[0], 0, 0]
 				for (var input_num = 0; input_num <= 1; input_num++) {
@@ -185,11 +190,21 @@ LogicSystem.prototype.addTemplate = function(template) {
 	}
 	var inputs = {};
 	_.each(_.keys(template["inputs"]), function(input_id) {
-		inputs[input_id] = _.map(template["inputs"][input_id], function(gate) { return [gate[0] + start_gate - 1, gate[1]]; });
+		inputs[input_id] = _.map(template["inputs"][input_id], function(gate) {
+			if (gate[0] == "output") {
+				return ["output", gate[1]];
+			} else {
+				return [gate[0] + start_gate - 1, gate[1]];
+			}
+		});
 	});
 	var outputs = {};
 	_.each(_.keys(template["outputs"]), function(output_id) {
-		outputs[output_id] = template["outputs"][output_id] + start_gate - 1;
+		if (_.isArray(template["outputs"][output_id]) && template["outputs"][output_id][0] == "input") {
+			outputs[output_id] = ["input", template["outputs"][output_id][1], null, []];
+		} else {
+			outputs[output_id] = template["outputs"][output_id] + start_gate - 1;
+		}
 	});
 	return {
 		inputs: inputs,
@@ -208,7 +223,12 @@ LogicSystem.prototype.connectToTemplateInstance = function(o, ti, n) {
 	var inputs = ti["inputs"][n];
 	var connections_made = [];
 	_.each(inputs, function(input) {
-		this.makeConnection(o, input[0], input[1]);
+		if (input[0] == "output") {
+			ti["outputs"][input[1]][2] = o;
+			_.each(ti["outputs"][input[1]][3], function(f) { f(); });
+		} else {
+			this.makeConnection(o, input[0], input[1]);
+		}
 		connections_made.push([input[0], input[1]]);
 	}, this);
 	return connections_made;
@@ -219,6 +239,14 @@ LogicSystem.prototype.connectToTemplateInstance = function(o, ti, n) {
 */
 
 LogicSystem.prototype.gateNumber = function(ti, o) {
-	return ti["outputs"][o];
+	if (_.isArray(ti["outputs"][o]) && ti["outputs"][o][0] == "input") {
+		return ti["outputs"][o][2];
+	} else {
+		return ti["outputs"][o];
+	}
+};
+
+LogicSystem.prototype.addConectionMaker = function(ti, o, f) {
+	ti["outputs"][o][3].push(f);
 };
 
