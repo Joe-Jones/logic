@@ -130,7 +130,7 @@ var SchemaDetailsView = Backbone.View.extend({
 	render: function() {
 		var schema_id = this.project.selectedTab();
 		var html = '<table><tr><td>';
-		html += 'Schema Name<br>';
+		html += 'Schematic Name<br>';
 		html += '<input id="schema-name" type="text" value="' + _.escape(this.project.getSchemaName(schema_id)) + '">';
 		html += '</td></tr><tr><td id="component-editor-panel"></td></tr></table>'
 				
@@ -155,20 +155,41 @@ var SchemaDetailsView = Backbone.View.extend({
 
 });
 
+var picker_menu = [
+	{ text: "Pallet", name: "palletPicked"},
+	{ text: "Components", name: "componentsPicked"},
+	{ text: "Schematic", name: "schemaDetailsPicked" },
+	{ text: "About Digital Schematic", name: "aboutPicked" }
+];
+
 var Picker = Backbone.View.extend({
+
+	className: "picker",
 	
 	initialize: function(none, sidebar) {
 		this.sidebar = sidebar;
 	},
 	
 	render: function() {
-		var html = '<a href="#" id="pick-pallet">Pallet</a><a href="#" id="pick-components">Components</a>';
-		html += '<a href="#" id="pick-schema-details">Schema Details</a>'
+		var html = '';
+		_.each(picker_menu, function(menu_item) {
+			html += '<div id="' + menu_item.name + '">' + menu_item.text + '</div>';
+		}, this);
 		this.$el.html(html);
-		var sidebar = this.sidebar;
-		this.$("#pick-pallet").click(this.sidebar.palletPicked);
-		this.$("#pick-components").click(this.sidebar.componentsPicked);
-		this.$("#pick-schema-details").click(this.sidebar.schemaDetailsPicked);
+		_.each(picker_menu, function(menu_item) {
+			this.$("#" + menu_item.name).click(this.sidebar[menu_item.name]);
+		}, this);
+	},
+	
+	showSelection: function(name) {
+		_.each(picker_menu, function(menu_item) {
+			var item_name = menu_item.name;
+			if (item_name == name) {
+				this.$("#" + item_name).addClass("selected");
+			} else {
+				this.$("#" + item_name).removeClass("selected");
+			}
+		}, this);
 	}
 
 });
@@ -179,7 +200,7 @@ var Sidebar = Backbone.View.extend({
 
 	initialize: function(project) {
 		this.project = project;
-		_.bindAll(this, "newSchema", "schemaNameChanged", "palletPicked", "componentsPicked", "schemaDetailsPicked");
+		_.bindAll(this, "newSchema", "schemaNameChanged", "palletPicked", "componentsPicked", "schemaDetailsPicked", "aboutPicked");
 		this.listenTo(this.project, "newSchema", this.newSchema);
 		this.listenTo(this.project, "schemaNameChanged", this.schemaNameChanged);
 		this.picker = new Picker({}, this);
@@ -198,6 +219,7 @@ var Sidebar = Backbone.View.extend({
 			this.view = new Pallet();
 			this.setContent(this.view);
 			this.current_selection = "pallet";
+			this.picker.showSelection("palletPicked");
 		}
 	},
 	
@@ -206,6 +228,7 @@ var Sidebar = Backbone.View.extend({
 			this.view = new ComponentList(this.project);
 			this.setContent(this.view);
 			this.current_selection = "components";
+			this.picker.showSelection("componentsPicked");
 		}
 	},
 	
@@ -214,6 +237,16 @@ var Sidebar = Backbone.View.extend({
 			this.view = new SchemaDetailsView({}, this.project);
 			this.setContent(this.view);
 			this.current_selection = "schema_details";
+			this.picker.showSelection("schemaDetailsPicked");
+		}
+	},
+	
+	aboutPicked: function() {
+		if (this.current_selection != "about") {
+			this.view = new AboutBox();
+			this.setContent(this.view);
+			this.current_selection = "about";
+			this.picker.showSelection("aboutPicked");
 		}
 	},
 	
@@ -234,6 +267,19 @@ var Sidebar = Backbone.View.extend({
 		this.picker.render();
 		this.$("#picker-panel").append(this.picker.$el);
 		this.palletPicked();
+		this.picker.showSelection("palletPicked");
 	}
 	
 });
+
+var AboutBox =  Backbone.View.extend({
+	
+	render: function() {
+		var html = '<p>This is program for the <a href="http://en.wikipedia.org/wiki/Schematic_capture">schematic capture</a> and <a href="http://en.wikipedia.org/wiki/Electronic_circuit_simulation">simulation<a> of digital electronic circuits built out of <a href="http://en.wikipedia.org/wiki/Logic_gate">logic gates<\a>.</p>';
+		html += '<p>This software is a toy. It may be useful for educational purposes but it is certainly not a tool suitable for professional engineers and probably not engineering students either. You will hopefully have a lot of fun playing with it though.</p>';
+		html += '<p>In it&apos;s current state this software is experimental, data loss is almost guaranteed. The author is not going to help you recover lost schematics.</p>';
+		html += '<p>This software was created by Joe Jones, the source code is available on git hub <a href="https://github.com/Joe-Jones/logic">https://github.com/Joe-Jones/logic</a> and can be copied under the terms of the MIT license.</p>';
+		this.$el.html(html);
+	}
+
+})

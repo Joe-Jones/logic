@@ -85,7 +85,7 @@ var MainView = JakeKit.Stack.extend({
 						{ text: "Rename", id: "rename_project" },
 						{ text: "Open", id: "open_project" }
 				]},
-				{ type: "menu", id: "schema_menu", caption: "Schema", items: [
+				{ type: "menu", id: "schema_menu", caption: "Schematic", items: [
 						{ text: "New", id: "new_schema"}]},
 				{ type: "menu", id: "edit_menu", caption: "Edit", items: edit_items}]);
 		

@@ -451,7 +451,7 @@ Action.prototype = {
 			case "ADD_SCHEMA":
 				var schema = model.newSchema();
 				model.open_tabs.push(schema.id);
-				model.schema_names[schema.id] = "New Schema";
+				model.schema_names[schema.id] = "New Schematic";
 				model.selected_tab = schema.id; // needs to be here to stop the events causing a SELECT_SCHEMA to be recorded as well.
 				model.schema_infos[schema.id] = { input_counter: 0, inputs: [], output_counter: 0, outputs: [] };
 				model.trigger("schemaOpened", schema.id);
