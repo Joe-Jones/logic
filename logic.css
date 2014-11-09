@@ -1,1 +1,51 @@
 
+body, html {
+	height: 100%;
+}
+body, div, canvas {
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+div.layout {
+	position: absolute;
+}
+#pallet {
+	left: 0;
+}
+#canvas_div {
+	right: 0;
+	left: 30px;
+	height: 100%;
+	width: auto;
+}
+
+/* Components */
+
+.VBox {
+	height: 100%;
+}
+
+.components {
+	width: 200px;
+	height: 100%;
+}
+
+.sidebar {
+	width: 20%;
+}
+
+.picker * {
+	border-width: 2px;
+	border-style: solid;
+	border-color: black;
+	padding: 2px;
+	margin: 2px;
+	color: black;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.picker .selected {
+	background-color: #eeeeee;
+}

@@ -1,30 +1,20 @@
 <!doctype html>
 <html>
 	<head>
-		<title>Logic!</title>
-		<style>
-			body, div, canvas {
-				margin: 0px;
-				padding: 0px;
-				border: 0px;
-			}
-			div.layout {
-				position: absolute;
-			}
-			#pallet {
-				left: 0;
-			}
-			#canvas_div {
-				right: 0;
-				left: 30px;
-				height: 100%;
-				width: auto;
-			}
-		</style>
+		<title>Digital Schematic</title>
+		<link rel="stylesheet" type="text/css" href="COMPILEDCSS">
 	</head>
 	<body id="body">
-		<div id="pallet" class="layout"></div>
-		<div id="canvas_div" class="layout"><canvas id="logic_canvas" width="100" height="100"></div>
-		<script src="logic-compiled.js"></script>
+		<script>
+			var config = {
+				undo_redo: false,
+				reorder_pins: false
+			};
+		</script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.7.0/underscore-min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.1.2/backbone-min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/sylvester/0.1.3/sylvester.js"></script>
+		<script src="COMPILEDJS"></script>
 	</body>
 </html>
