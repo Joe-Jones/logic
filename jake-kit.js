@@ -622,7 +622,7 @@ var JakeKit = {};
 			x_min = x_max = y_min = y_max = NaN;
 			_.each(arguments, function(point) {
 				var pick = function(a, b, f) {
-					if (a === NaN) {
+					if (_.isNaN(a)) {
 						return b;
 					} else {
 						return f([a, b]);
