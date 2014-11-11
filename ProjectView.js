@@ -130,6 +130,7 @@ var SchemaDetailsView = Backbone.View.extend({
 	render: function() {
 		var schema_id = this.project.selectedTab();
 		var html = '<table><tr><td>';
+		html += '<span class="button" id="new-schema">New Schematic</span><hr>';
 		html += 'Schematic Name<br>';
 		html += '<input id="schema-name" type="text" value="' + _.escape(this.project.getSchemaName(schema_id)) + '">';
 		html += '</td></tr><tr><td id="component-editor-panel"></td></tr></table>'
@@ -151,6 +152,10 @@ var SchemaDetailsView = Backbone.View.extend({
 			var component_editor = new ComponentEditor({}, schema_id, this.project);
 			this.$("#component-editor-panel").append(component_editor.$el);
 		}
+		
+		this.$("#new-schema").click(function() {
+			that.project.dispatchAction(new Action({type: "ADD_SCHEMA"}));
+		});
 	}
 
 });

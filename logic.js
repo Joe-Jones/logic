@@ -85,14 +85,11 @@ var MainView = JakeKit.Stack.extend({
 						{ text: "Rename", id: "rename_project" },
 						{ text: "Open", id: "open_project" }
 				]},
-				{ type: "menu", id: "schema_menu", caption: "Schematic", items: [
-						{ text: "New", id: "new_schema"}]},
 				{ type: "menu", id: "edit_menu", caption: "Edit", items: edit_items}]);
 		
 		this.listenTo(this.menu, "new_project", this.newProject);
 		this.listenTo(this.menu, "open_project", this.showOpenProjectWindow);
 		this.listenTo(this.menu, "rename_project", this.showRenameProjectWindow);
-		this.listenTo(this.menu, "new_schema", this.newSchema);
 	
 		this.hbox = new JakeKit.HBox();
 		
@@ -236,10 +233,6 @@ var MainView = JakeKit.Stack.extend({
 		this.addChild(this.rename_window);
 		this.makeActive(this.rename_window);
 	
-	},
-	
-	newSchema: function() {
-		this.project.dispatchAction(new Action({type: "ADD_SCHEMA"}));
 	}
 		
 });

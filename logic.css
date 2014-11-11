@@ -49,3 +49,14 @@ div.layout {
 .picker .selected {
 	background-color: #eeeeee;
 }
+
+.button {
+	border-width: 2px;
+	border-style: solid;
+	border-color: black;
+	padding: 2px;
+	margin: 2px;
+	color: black;
+	display: inline-block;
+	cursor: pointer;
+}
