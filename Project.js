@@ -171,8 +171,9 @@ Stack.prototype = {
 
 };
 
-function Project(project_data) {
+function Project(project_data, main_view) {
 	this.project_data = project_data;
+	this.main_view = main_view;
 	this.template_manager = new TemplateManager(this.project_data.getItem("template_manager"));
 	this.schema_storage = new SubStorage(project_data, "schemas");
 	this.schemas = {};

@@ -70,39 +70,14 @@ var MainView = JakeKit.Stack.extend({
 		this.database = database;
 		JakeKit.Stack.prototype.initialize.call(this);
 		
-		//_.bindAll(this, "setProject"); Todo delete
+		_.bindAll(this, "newProject");
 		
 		// Create the user interface
-		var edit_items = []
-		if (config.undo_redo) {
-			edit_items = [{ text:	"Undo", id: "undo"}, { text: "Redo", id: "redo"}]
-		}
-		edit_items.push({ text: "Delete", id: "delete"});
-		
-		this.menu = new JakeKit.w2toolbar([
-				{ type: "menu", id: "project_menu", caption: "Project", items: [
-						{ text: "New", id: "new_project" },
-						{ text: "Rename", id: "rename_project" },
-						{ text: "Open", id: "open_project" }
-				]},
-				{ type: "menu", id: "edit_menu", caption: "Edit", items: edit_items}]);
-		
-		this.listenTo(this.menu, "new_project", this.newProject);
-		this.listenTo(this.menu, "open_project", this.showOpenProjectWindow);
-		this.listenTo(this.menu, "rename_project", this.showRenameProjectWindow);
-	
-		this.hbox = new JakeKit.HBox();
 		
 		this.project_view_container = new JakeKit.HBox();
-		this.hbox.addChild(this.project_view_container);
 		
-		this.main_window = new JakeKit.VBox();
-		
-		this.main_window.addChild(this.menu);
-		this.main_window.addChild(this.hbox);
-		
-		this.addChild(this.main_window);
-		this.makeActive(this.main_window);
+		this.addChild(this.project_view_container);
+		this.makeActive(this.project_view_container);
 		
 		// Load data
 		this.project_list = database.getProjectList();
@@ -133,11 +108,8 @@ var MainView = JakeKit.Stack.extend({
 		if (this.project_view) {
 			clearInterval(this.project_view.interval_id);
 		}
-		this.project = new Project(this.database.loadProjectData(project_id, true));
+		this.project = new Project(this.database.loadProjectData(project_id, true), this);
 		this.project_view = new ProjectView(this.project);
-		this.project_view.listenTo(this.menu, "undo", this.project_view.undo);
-		this.project_view.listenTo(this.menu, "redo", this.project_view.redo);
-		this.project_view.listenTo(this.menu, "delete", this.project_view.deleteSelection);
 		
 		this.project_view_container.empty()
 		this.project_view_container.addChild(this.project_view);
@@ -147,94 +119,8 @@ var MainView = JakeKit.Stack.extend({
 		}
 		
 		this.database.setConfig("active_project", project_id);
-	},
-	
-	showOpenProjectWindow: function() {
-		this.grid = new JakeKit.w2grid({
-			name: "open_project_grid",
-			columns: [
-				{ field: 'recid', caption: 'ID', size: '50px', sortable: true, attr: 'align=center' },
-				{ field: 'name', caption: 'Project Name', size: '30%', sortable: true, resizable: true },
-				{ field: 'date_modified', caption: 'Last Modified', size: '30%', sortable: true, resizable: true },
-				{ field: 'date_created', caption: 'Created', size: '40%', resizable: true },
-			]
-		});
-		
-		//var popup = new JakeKit.w2popup();
-		//popup.setChild(grid);
-		//popup.render();
-		
-		this.addChild(this.grid);
-		this.makeActive(this.grid);
-		
-		this.project_list = this.database.getProjectList();
-		var records = this.project_list.toJSON();
-		_.each(records, function(record) {
-			record.recid = record.project_id;
-		});
-		this.grid.add(records);
-		this.listenTo(this.grid, "click", this.ProjectPicked);
-
-	},
-	
-	ProjectPicked: function(event) {
-		var project_id = event.recid;
-		
-		// Remove open dialog from the display
-		this.grid.destroy();
-		this.removeChild(this.grid);
-		this.stopListening(this.grid);
-		delete this.grid;
-		
-		this.makeActive(this.main_window);
-		
-		// Now load the Project
-		this.openProject(project_id);
-	},
-	
-	showRenameProjectWindow: function() {
-	
-		var that = this;
-		
-		var project_list = this.database.getProjectList();
-		var project_id = this.database.getConfig("active_project");
-		var project_record;
-		project_list.each(function(pr) {
-			if (pr.get("project_id") == project_id) {
-				project_record = pr;
-			}
-		});
-	
-		var RenameWindow = Backbone.View.extend({
-		
-			initialize: function() {
-			},
-			
-			render: function() {
-				this.$el.html('<input type="text" value="' + _.escape(project_record.get("name")) + '"></input><button id="save_button">Save</button><button id="cancel_button">Cancel</button>');
-				this.$("#cancel_button").on("click", function() {
-					that.removeChild(that.rename_window);
-					delete that.rename_window;
-					that.makeActive(that.main_window);
-				});
-				var rename_window = this;
-				this.$("#save_button").on("click", function() {
-					project_record.set("name", rename_window.$("input")[0].value);
-					project_record.save();
-					that.removeChild(that.rename_window);
-					delete that.rename_window;
-					that.makeActive(that.main_window);
-				});
-			}
-		
-		});
-		
-		this.rename_window = new RenameWindow();
-		this.addChild(this.rename_window);
-		this.makeActive(this.rename_window);
-	
 	}
-		
+	
 });
 	
 var body;

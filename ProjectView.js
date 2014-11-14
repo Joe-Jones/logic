@@ -5,9 +5,9 @@ var ProjectView = JakeKit.HBox.extend({
 	initialize: function(project) {
 		JakeKit.HBox.prototype.initialize.call(this);
 		this.project = project;
-		_.bindAll(this, "openTab", "schemaNameChanged", "selectTab");
+		_.bindAll(this, "openTab", "schemaNameChanged", "selectTab", "deleteSelection");
 		
-		this.sidebar = new Sidebar(project);
+		this.sidebar = new Sidebar(project, this);
 		this.addChild(this.sidebar);
 		
 		this.tabstack = new JakeKit.w2tabstack();
@@ -161,8 +161,10 @@ var SchemaDetailsView = Backbone.View.extend({
 });
 
 var picker_menu = [
+	{ text: "Project", name: "projectPicked"},
 	{ text: "Pallet", name: "palletPicked"},
 	{ text: "Components", name: "componentsPicked"},
+	{ text: "Edit", name: "editPicked"},
 	{ text: "Schematic", name: "schemaDetailsPicked" },
 	{ text: "About Digital Schematic", name: "aboutPicked" }
 ];
@@ -203,20 +205,31 @@ var Sidebar = Backbone.View.extend({
 
 	className: "sidebar",
 
-	initialize: function(project) {
+	initialize: function(project, project_view) {
 		this.project = project;
-		_.bindAll(this, "newSchema", "schemaNameChanged", "palletPicked", "componentsPicked", "schemaDetailsPicked", "aboutPicked");
+		this.project_view = project_view;
+		_.bindAll(this, "palletPicked", "componentsPicked", "schemaDetailsPicked", "aboutPicked", "projectPicked", "editPicked");
 		this.listenTo(this.project, "newSchema", this.newSchema);
 		this.listenTo(this.project, "schemaNameChanged", this.schemaNameChanged);
 		this.picker = new Picker({}, this);
 	},
 	
-	newSchema: function() {
-	
+	editPicked: function() {
+		if (this.current_selection != 'edit') {
+			this.view = new EditBox({}, this.project_view);
+			this.setContent(this.view);
+			this.current_selection = "edit";
+			this.picker.showSelection("editPicked");
+		}
 	},
 	
-	schemaNameChanged: function() {
-	
+	projectPicked: function() {
+		if (this.current_selection != 'project') {
+			this.view = new ProjectBox(this.project);
+			this.setContent(this.view);
+			this.current_selection = "project";
+			this.picker.showSelection("projectPicked");
+		}
 	},
 	
 	palletPicked: function() {
@@ -277,7 +290,77 @@ var Sidebar = Backbone.View.extend({
 	
 });
 
-var AboutBox =  Backbone.View.extend({
+var ProjectBox = Backbone.View.extend({
+	
+	initialize: function(project) {
+		this.project = project;
+		this.mode = "project";
+	},
+	
+	render: function() {
+		this.$el.empty();
+		if (this.mode == "project") {
+			var html = '<table><tr><td><span class="button" id="new-project">New Project</span>'
+			html += '<span class="button" id="open-project">Open Project</span><hr>';
+			
+			// get the project name
+			var main_view = this.project.main_view;
+			var database = this.project.main_view.database;
+			var project_list = database.getProjectList();
+			var project_id = database.getConfig("active_project");
+			var project_record;
+			project_list.each(function(pr) {
+				if (pr.get("project_id") == project_id) {
+					project_record = pr;
+				}
+			});
+			var database_name = project_record.get("name");
+			
+			html += 'Project Name<br><input id="project-name" type="text" value="' + _.escape(project_record.get("name")) + '"></input>'
+			this.$el.html(html);
+		
+			this.$("#new-project").click(main_view.newProject);
+			var project_box = this;
+			this.$("#open-project").click(function() {
+				project_box.mode = "open-project";
+				project_box.render();
+			});
+			this.$("#project-name").change(function() {
+				project_record.set("name", project_box.$("#project-name")[0].value);
+				project_record.save();
+			})
+		} else {
+			var main_view = this.project.main_view;
+			var database = this.project.main_view.database;
+			var project_list = database.getProjectList();
+			var records = project_list.toJSON();
+			this.$el.html("<ul></ul>");
+			_.each(records, function(project_record) {
+				var id = _.uniqueId();
+				this.$("ul").append('<li id="' + id + '">' + _.escape(project_record.name) + '</li');
+				this.$("#" + id).click(function() {
+					main_view.openProject(project_record.project_id);
+				});
+			}, this);
+		}
+	}
+	
+});
+
+var EditBox = Backbone.View.extend({
+
+	initialize: function(none, project_view) {
+		this.project_view = project_view;
+	},
+
+	render: function() {
+		this.$el.html('<table><tr><td><span class="button" id="delete">Delete</span></td></tr></table>');
+		this.$("#delete").click(this.project_view.deleteSelection);
+	}
+	
+});
+
+var AboutBox = Backbone.View.extend({
 	
 	render: function() {
 		var html = '<p>This is program for the <a href="http://en.wikipedia.org/wiki/Schematic_capture">schematic capture</a> and <a href="http://en.wikipedia.org/wiki/Electronic_circuit_simulation">simulation<a> of digital electronic circuits built out of <a href="http://en.wikipedia.org/wiki/Logic_gate">logic gates<\a>.</p>';
