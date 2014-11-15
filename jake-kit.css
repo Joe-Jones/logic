@@ -15,6 +15,7 @@
 }
 
 .Jake-Kit-HBox > * {
+	display: inline;
 	float: left;
 }
 

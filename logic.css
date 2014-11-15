@@ -32,7 +32,40 @@ div.layout {
 }
 
 .sidebar {
-	width: 20%;
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
+}
+
+.sidebar > table {
+	width: 200px;
+}
+
+.sidebar > table > tbody {
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+.sidebar > table > tbody > tr {
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+.sidebar > table > tbody > tr > td {
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
 }
 
 .picker * {
