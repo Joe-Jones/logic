@@ -27,4 +27,65 @@
 	height: 100%;
 }
 
+.ProjectView {
+	/*height: 100%;*/
+}
 
+.ProjectView > tbody {
+	/*height: 100%;*/
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+.ProjectView > tbody > tr {
+	/*height: 100%;*/
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+.ProjectView > tbody > tr > td {
+	/*height: 100%;*/
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+.ProjectView > tbody > tr > :first-child { /* this is the td with id sidebarpanel, I could have just used #sidebarpanel as the selector */
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
+	vertical-align: top;
+}
+
+.sidebar > table {
+	width: 200px;
+}
+
+.sidebar > table > tbody {
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+.sidebar > table > tbody > tr {
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}
+
+.sidebar > table > tbody > tr > td {
+	width: 200px;
+	min-width: 200px;
+	max-width: 200px;
+	margin: 0px;
+	padding: 0px;
+	border: 0px;
+}

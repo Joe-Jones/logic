@@ -63,21 +63,15 @@ var Pallet = Backbone.View.extend({
 });
 
 /********************************************************************************************/
-var MainView = JakeKit.Stack.extend({
+var MainView = Backbone.View.extend({
 /********************************************************************************************/
+
+	el: 'body',
 	
 	initialize: function(database) {
 		this.database = database;
-		JakeKit.Stack.prototype.initialize.call(this);
-		
-		_.bindAll(this, "newProject");
-		
-		// Create the user interface
-		
-		this.project_view_container = new JakeKit.HBox();
-		
-		this.addChild(this.project_view_container);
-		this.makeActive(this.project_view_container);
+		_.bindAll(this, "newProject", "_resized");
+		window.addEventListener('resize', this._resized, false);
 		
 		// Load data
 		this.project_list = database.getProjectList();
@@ -88,6 +82,14 @@ var MainView = JakeKit.Stack.extend({
 			this.newProject();
 		}
 		
+	},
+	
+	_resized: function() {
+		if (this.project_view) {
+			this.project_view.$el.width(this.$el.width());
+			//this.project_view.$el.height();
+			this.project_view._resized(this.$el.height());
+		}
 	},
 	
 	newProject: function() {
@@ -111,23 +113,18 @@ var MainView = JakeKit.Stack.extend({
 		this.project = new Project(this.database.loadProjectData(project_id, true), this);
 		this.project_view = new ProjectView(this.project);
 		
-		this.project_view_container.empty()
-		this.project_view_container.addChild(this.project_view);
-		// Todo this was never meant to be needed outside of the toolkit :-(
-		if (this.project_view_container._vivified) {
-			this.project_view_container._resized();
-		}
+		this.$el.empty();
+		this.$el.append(this.project_view.$el);
+		this.project_view.render();
+		this._resized();
 		
 		this.database.setConfig("active_project", project_id);
 	}
 	
 });
 	
-var body;
 $(document).ready(function() {
 	getDatabase("logic").done(function(database) {
-		body = new JakeKit.Wrapper($('body'));
 		var main_view = new MainView(database);
-		body.setChild(main_view);
 	});
 });

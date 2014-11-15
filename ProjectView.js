@@ -1,17 +1,18 @@
 "use strict";
 
-var ProjectView = JakeKit.HBox.extend({
+var ProjectView = Backbone.View.extend({
+	
+	tagName: 'table',
+	className: 'ProjectView',
 	
 	initialize: function(project) {
-		JakeKit.HBox.prototype.initialize.call(this);
+		//JakeKit.HBox.prototype.initialize.call(this);
 		this.project = project;
 		_.bindAll(this, "openTab", "schemaNameChanged", "selectTab", "deleteSelection");
 		
 		this.sidebar = new Sidebar(project, this);
-		this.addChild(this.sidebar);
 		
 		this.tabstack = new JakeKit.w2tabstack();
-		this.addChild(this.tabstack);
 		this.views = {};
 		
 		this.listenTo(this.project, "schemaNameChanged", this.schemaNameChanged);
@@ -37,6 +38,27 @@ var ProjectView = JakeKit.HBox.extend({
 			project_view.activeView().doDraw();
 		}, 100, this);
 		
+	},
+	
+	render: function() {
+		this.$el.html('<tbody><tr><td id="sidebarpanel"></td><td id="projectviewpanel"></td></tr></tbody>');
+		this.$sidebarPanel = this.$("#sidebarpanel");
+		this.$projectViewPanel = this.$("#projectviewpanel");
+		
+		this.$sidebarPanel.append(this.sidebar.$el);
+		this.sidebar.render();
+		this.$projectViewPanel.append(this.tabstack.$el);
+		this.tabstack.render();
+		
+	},
+	
+	_resized: function(height) {
+		this.$projectViewPanel.width(this.$el.width() - this.$sidebarPanel.width());
+		this.$el.height(height);
+		this.$el.attr("height", height);
+		this.$("tbody").attr("height", height);
+		this.$projectViewPanel.height(height);
+		this.tabstack._resized();
 	},
 	
 	openTab: function(schema_id, dont_select) {

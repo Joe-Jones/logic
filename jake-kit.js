@@ -127,6 +127,65 @@ var JakeKit = {};
 		
 	});
 	
+	JakeKit.TableHBox = Backbone.View.extend({
+	
+		tagName: 'table',
+			
+		className: 'Jake-Kit-Layout Jake-Kit-TableHBox',
+			
+		initialize: function() {
+			this._children = [];
+			this._vivified = false;
+		},
+		
+		render: function() {
+			var that = this;
+			this.$el.html('<tbody><tr></tr></tbody>');
+			this.$tr = this.$("tr");
+			_.each(this._children, function(child) {
+				var id = _.uniqueId();
+				this.$tr.append('<td id="' + id + '"></td');
+				this.$("#" + id).append(child.$el);
+				child.render();
+			}, this);
+			this._vivified = true;
+			return this;
+		},
+		
+		addChild: function(child) {
+			this._children.push(child);
+			if (this._vivified) {
+				var id = _.uniqueId();
+				this.$tr.append('<td id="' + id + '"></td');
+				this.$("#" + id).append(child.$el);
+				child.render();
+			}
+		},
+		
+		empty: function() {
+			this._children = [];
+			if (this._vivified) {
+				this.$tr.empty();
+			}
+		},
+		
+		_resized: function() {
+			var width = this.$el.width();
+			var last_index = this._children.length - 1;
+			_.each(this._children, function(child, index) {
+				if (index != last_index) {
+					width -= child.$el.width();
+				} else {
+					child.$el.width(width);
+				}
+				if (_.isFunction(child._resized)) {
+					child._resized();
+				}
+			});
+		}
+		
+	});
+	
 	JakeKit.Stack = Backbone.View.extend({
 		
 		className: 'Jake-Kit-Layout Jake-Kit-Stack',
