@@ -96,6 +96,7 @@ var SchemaView = JakeKit.Canvas.extend({
 	},
 	
 	drop: function(event, point) {
+		event.preventDefault();
 		var type = event.originalEvent.dataTransfer.getData("Text");
 		this.addObject(type, new Point(point.elements[0], point.elements[1]));
 	},
