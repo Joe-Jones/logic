@@ -12,6 +12,14 @@ hopefully have a lot of fun playing with it though.
 In it's current state this software is experimental, data loss is almost guaranteed.
 The author is not going to help you recover lost schematics.
 
+###Usage notes
+
+At the moment there is no error handling. You may find yourself looking at a blank screen and no amount or F5 or Ctrl-R will get anything to display. This is because the program is crashing while it reads its data back from disk. If this happens you need to use your browsers developer tools to delete all of the sites local storage.
+
+In Chrome the steps needed are. With the offending blank screen open, press F12, select Resources from along the top of the window that appears. Expand the item called Local Storage, then click on http://www.digitalschematic.org/. Now select the top item in the list on the right and hold down the Delete key until they are all gone. Well done you have deleted all your data. The next time you refresh http://www.digitalschematic.org/ it will be working again.
+
+Improving this situation is the next thing on my to do list.
+
 Licence
 -------
 The MIT License (MIT)
