@@ -4,7 +4,7 @@
 	Some little bits and pieces to help with testing and thing that aren't to be included in the release version.
 */
 
-function actions(id) {
+function _actions(id) {
 	var database = getDatabase("logic", true);
 	var project_data = database.loadProjectData(id, true);
 	var position = 0;
@@ -15,4 +15,16 @@ function actions(id) {
 		position++;
 	}
 	return actions;
+}
+
+function _get_project() {
+	return body.child.project;
+}
+
+function _get_database() {
+	return body.child.database;
+}
+
+function _crash() {
+	_get_project().dispatchAction(new Action({type: "CRASH"}));
 }

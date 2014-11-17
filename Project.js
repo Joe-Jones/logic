@@ -171,7 +171,7 @@ Stack.prototype = {
 
 };
 
-function Project(project_data, main_view) {
+function Project(project_data, main_view, replay_to) {
 	this.project_data = project_data;
 	this.main_view = main_view;
 	this.template_manager = new TemplateManager(this.project_data.getItem("template_manager"));
@@ -193,12 +193,25 @@ function Project(project_data, main_view) {
 	this.history_position = this.checkpoint_position;
 	this.absolute_history_position = this.history_position
 	var action;
-	while(action = this.project_data.getItem("history/" + this.absolute_history_position)) {
+	while((action = this.project_data.getItem("history/" + this.absolute_history_position))
+	      && (_.isNumber(replay_to) ? this.absolute_history_position <= replay_to : true)) {
 		action = vivifyAction(action);
-		this.dispatchAction(action, true);
+		try {
+			this.dispatchAction(action, true);
+		}
+		catch (e) {
+			e.error_at = this.absolute_history_position;
+			throw(e);
+		}
 		this.absolute_history_position ++;
 	}
-	
+	if (_.isNumber(replay_to)) {
+		var wipe_counter = this.absolute_history_position;
+		while (this.project_data.getItem("history/" + wipe_counter)) {
+			this.project_data.removeItem("history/" + wipe_counter);
+			wipe_counter ++;
+		}
+	}
 }
 
 Project.prototype = {
@@ -278,13 +291,32 @@ Project.prototype = {
 				}
 			}
 		} else {
-			if (action.schemaID()) {
-				var schema = this.getSchema(action.schemaID());
-				action.doTo(schema);
-				// Todo the user interface needs to be informed
-			} else {
-				action.doTo(this);
-				// Todo the user interface needs to be informed
+			try {
+				if (action.schemaID()) {
+					var schema = this.getSchema(action.schemaID());
+					action.doTo(schema);
+					// Todo the user interface needs to be informed
+				} else {
+					action.doTo(this);
+					// Todo the user interface needs to be informed
+				}
+			} catch (e) {
+				if (dont_record) {
+					// We are replaying a project from disc so we want the constructor to handle the fact that an exception has occurred.
+					throw(e);
+				} else {
+					// This is a new action, let's just log the fact it's caused a problem and stick it in the database as normal.
+					action.caused_a_crash = 1;
+					var error = {
+						name: e.name,
+						message: e.message
+					};
+					if (e.stack) {
+						error.stack = e.stack;
+					}
+					action.error = error
+					console.log(action);
+				}
 			}
 			if (!action.dont_record) {
 				if (!dont_record) {
@@ -592,6 +624,11 @@ Action.prototype = {
 				} else {
 					this.replay = true;
 				}
+				break;
+				
+			/* a special action for when you want things to crash */
+			case "CRASH":
+				this.does.not.exist();
 				break;
 
 		}

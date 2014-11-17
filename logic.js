@@ -104,23 +104,74 @@ var MainView = JakeKit.Stack.extend({
 		this.openProject(new_project.get("project_id"));
 	},
 	
-	openProject: function(project_id) {
+	openProject: function(project_id, replay_to) {
 		if (this.project_view) {
 			clearInterval(this.project_view.interval_id);
 		}
-		this.project = new Project(this.database.loadProjectData(project_id, true), this);
-		this.project_view = new ProjectView(this.project);
-		
-		this.project_view_container.empty()
-		this.project_view_container.addChild(this.project_view);
-		// Todo this was never meant to be needed outside of the toolkit :-(
-		if (this.project_view_container._vivified) {
-			this.project_view_container._resized();
+		var error_at = null;
+		try {
+			this.project = new Project(this.database.loadProjectData(project_id, true), this, replay_to);
+		}
+		catch (e) {
+			error_at = e.error_at;
 		}
 		
-		this.database.setConfig("active_project", project_id);
+		this.project_view_container.empty()
+		if (_.isNumber(error_at)) {
+			var error_handler = new ErrorHandler({}, this, project_id, error_at - 1);
+			this.project_view_container.addChild(error_handler);
+		} else {
+			this.project_view = new ProjectView(this.project);
+			this.project_view_container.addChild(this.project_view);
+			// Todo this was never meant to be needed outside of the toolkit :-(
+			if (this.project_view_container._vivified) {
+				this.project_view_container._resized();
+			}
+			
+			this.database.setConfig("active_project", project_id);
+		}
 	}
 	
+});
+
+var ErrorHandler = Backbone.View.extend({
+
+	initialize: function(none, main_view, project_id, replay_to) {
+		this.project_id = project_id;
+		this.replay_to = replay_to;
+		this.main_view = main_view;
+	},
+	
+	render: function() {
+		var html = '<div style="ErrorHandler">An error has occurred, what do you want to do<br>';
+		html += '<input type="radio" name="recovery_choice" value="recover" checked>Try and recover the ';
+		html += 'project. You may loose some of your most recent edits but the project will remain usable.<br>';
+		html += '<input type="radio" name="recovery_choice" value="new">Forget this project for now and ';
+		html += 'open a new project<br>';
+		//html += '<input type="radio" name="recovery_choice" value="existing">Forget this project for now and ';
+		//html += 'choose a different project to open<br>';
+		html += '<button id="go" a="Go">Go</button>';
+		this.$el.html(html);
+		var that = this;
+		this.$("#go").click(function() {
+			console.log();
+			switch ($("input:radio[name='recovery_choice']:checked").val()) {
+			
+				case "recover":
+				that.main_view.openProject(that.project_id, that.replay_to);
+				break;
+				
+				case "new":
+				that.main_view.newProject();
+				break;
+				
+				case "existing":
+				
+				break;
+			}
+		});
+	}
+
 });
 	
 var body;
