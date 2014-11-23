@@ -369,6 +369,14 @@ Project.prototype = {
 	isComponent: function(schema_id) {
 		var schema_info = this.getSchemaInfo(schema_id);
 		return (schema_info.inputs.length > 0 || schema_info.outputs.length > 0);
+	},
+	
+	getGraph: function(schema_id) {
+		return this.schemas[schema_id].asGraph();
+	},
+	
+	getFlatGraph: function(schema_id) {
+		return replaceAllSubCircuits(this.getGraph(schema_id), this);
 	}
 
 };
@@ -580,12 +588,14 @@ Action.prototype = {
 						name:	"i_" + model.project.schema_infos[this.schema_id]["input_counter"],
 						number:	object.logic_id})
 					model.project.schema_infos[this.schema_id]["input_counter"]++;
+					object.connection_number = model.project.schema_infos[this.schema_id]["inputs"].length - 1;
 				}
 				if (this.gate_type == "OUTPUT") {
 					model.project.schema_infos[this.schema_id]["outputs"].push({
 						name:	"0_" + model.project.schema_infos[this.schema_id]["output_counter"],
 						number:	object.logic_id})
 					model.project.schema_infos[this.schema_id]["output_counter"]++;
+					object.connection_number = model.project.schema_infos[this.schema_id]["outputs"].length - 1;
 				}
 				model.trigger("gateAdded", object.number);
 				break;

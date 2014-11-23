@@ -331,3 +331,36 @@ SchemaModel.prototype.checkAndRebuild = function() {
 		this.rebuildLogicSystem();
 	}
 };
+
+SchemaModel.prototype.asGraph = function() {
+	var graph = new jsnx.DiGraph();
+	
+	_.each(this.objects, function(object) {
+		// Add object to the graph.
+		var attrs = { type: object.type };
+		if (object.type == "SUBCIRCIT") {
+			attrs.schema_id = object.schema_id;
+		} else if (_.contains(["INPUT", "OUTPUT"], object.type)) {
+			attrs.connection_number = object.connection_number;
+		}
+		graph.add_node(object.number, attrs);
+		
+		// Add the connections.
+		_.each(object.output_connections, function(output) {
+			var connection_node = _.uniqueId();
+			_.each(output, function(connection) {
+				// Gather the information we need to create the connection.  
+				var source_node = object.number;
+				var source_label = connection.output_num;
+				var dest_node = connection.input_item.number;
+				var dest_label = connection.input_num;
+				
+				// Add the connection.
+				graph.add_edge(source_node, connection_node, { connect_to: source_label });
+				graph.add_edge(connection_node, dest_node, { connect_to: dest_label });
+			}, this);
+		}, this);
+	}, this);
+	
+	return graph;
+};
