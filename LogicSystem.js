@@ -128,130 +128,6 @@ LogicSystem.prototype.run = function(steps) {
 	}
 };
 
-LogicSystem.prototype.saveAsTemplate = function() {
-	var gate_map = {};
-	var inputs = {};
-	var outputs = {};
-	var counter = 1;
-	for (var i = 0; i < this.gates.length; i++) {
-		var gate = this.gates[i];
-		if (gate) {
-			if (gate[0] == "INPUT") {
-				inputs[i] = [];
-			} else if (gate[0] != "OUTPUT") {
-				gate_map[i] = counter;
-				counter ++;
-			}
-		}
-	}
-	var template = [];
-	for (var i = 0; i < this.gates.length; i++) {
-		var gate = this.gates[i];
-		if (gate) {
-			if (gate[0] == "OUTPUT") {
-				if (_.has(inputs, gate[1])) {
-					inputs[gate[1]].push(["output", i]);
-					outputs[i] = ["input", gate[1]];
-				} else {
-					outputs[i] = gate_map[gate[1]];
-				}
-			} else if (gate[0] != "INPUT") {
-				var gate_to_save = [gate[0], 0, 0]
-				for (var input_num = 0; input_num <= 1; input_num++) {
-					var connected_to = gate[input_num + 1]; 
-					if (inputs[connected_to]) {
-						inputs[connected_to].push([gate_map[i], input_num]);
-					} else {
-						gate_to_save[input_num + 1] = gate_map[gate[input_num + 1]];
-					}
-				}
-				template.push(gate_to_save);
-			}
-		}
-	}
-	return {
-		"inputs": inputs,
-		"outputs": outputs,
-		"gates": template
-	};
-};
-
-LogicSystem.prototype.addTemplate = function(template) {
-	var start_gate = this.gates.length;
-	var gate_count = template["gates"].length;
-	var gates = [];
-	for (var i = 0; i < gate_count; i++) {
-		var gate = template["gates"][i];
-		var id = this.addGate(gate[0]);
-		gates.push(id);
-		for (var j = 1; j <= 2; j++) {
-			if (template.gates[i][j]) {
-				this.gates[id][j] = gate[j] + start_gate - 1;
-			}
-		}
-	}
-	var inputs = {};
-	_.each(_.keys(template["inputs"]), function(input_id) {
-		inputs[input_id] = _.map(template["inputs"][input_id], function(gate) {
-			if (gate[0] == "output") {
-				return ["output", gate[1]];
-			} else {
-				return [gate[0] + start_gate - 1, gate[1]];
-			}
-		});
-	});
-	var outputs = {};
-	_.each(_.keys(template["outputs"]), function(output_id) {
-		if (_.isArray(template["outputs"][output_id]) && template["outputs"][output_id][0] == "input") {
-			outputs[output_id] = ["input", template["outputs"][output_id][1], null, []];
-		} else {
-			outputs[output_id] = template["outputs"][output_id] + start_gate - 1;
-		}
-	});
-	return {
-		inputs: inputs,
-		outputs: outputs,
-		gates: gates
-	};
-};
-
-/*
-	connects the output of gate o to input number n of the template instance ti
-	
-	returns the list of connections that need to be removed to undo this action.
-*/
-
-LogicSystem.prototype.connectToTemplateInstance = function(o, ti, n) {
-	var inputs = ti["inputs"][n];
-	var connections_made = [];
-	_.each(inputs, function(input) {
-		if (input[0] == "output") {
-			ti["outputs"][input[1]][2] = o;
-			_.each(ti["outputs"][input[1]][3], function(f) { f(); });
-		} else {
-			this.makeConnection(o, input[0], input[1]);
-		}
-		connections_made.push([input[0], input[1]]);
-	}, this);
-	return connections_made;
-};
-
-/*
-	returns the gate number to use when connecting to output o of template instance ti
-*/
-
-LogicSystem.prototype.gateNumber = function(ti, o) {
-	if (_.isArray(ti["outputs"][o]) && ti["outputs"][o][0] == "input") {
-		return ti["outputs"][o][2];
-	} else {
-		return ti["outputs"][o];
-	}
-};
-
-LogicSystem.prototype.addConectionMaker = function(ti, o, f) {
-	ti["outputs"][o][3].push(f);
-};
-
 function copyInto(source, destination) {
 	var node_map = {};
 	jsnx.forEach(source.nodes_iter(), function(node) {
@@ -264,7 +140,8 @@ function copyInto(source, destination) {
 		node_map[node] = id;
 	});
 	jsnx.forEach(source.edges_iter(), function(edge) {
-		destination.add_edge(node_map[edge[0]], node_map[edge[1]], edge[2]);
+		var edge_attrs = source.get_edge_data(edge[0], edge[1]);
+		destination.add_edge(node_map[edge[0]], node_map[edge[1]], edge_attrs);
 	});
 }
 
@@ -319,12 +196,12 @@ function replaceNode(circuit, subcircuit, node_to_replace) {
 	circuit.remove_node(node_to_replace);
 }
 
-function replaceAllSubCircuits(circuit, project) {
+function replaceAllSubCircuits(circuit, template_manager) {
 	var new_circuit = new jsnx.DiGraph(circuit);
 	_.each(new_circuit.nodes(), function(node) {
 		var node_attrs = new_circuit.node.get(node);
 		if (node_attrs.type == "SUBCIRCIT") {
-			replaceNode(new_circuit, project.getFlatGraph(node_attrs.schema_id), node);
+			replaceNode(new_circuit, template_manager.getFlatGraph(node_attrs.schema_id), node);
 		}
 	});
 	return new_circuit;
@@ -341,9 +218,9 @@ function buildLogicSystem(graph, schema_model) {
 		if (node_attrs.type) {
 			logic_ids[node] = logic_system.addGate(node_attrs.type);
 			if (node_attrs.type == "SWITCH") {
-				inputs.push[node];
+				inputs.push(node);
 			} else if (node_attrs.type == "BULB") {
-				outputs.push[node];
+				outputs.push(node);
 			}
 		} else {
 			connection_nodes.push(node);
@@ -359,7 +236,10 @@ function buildLogicSystem(graph, schema_model) {
 	_.each(inputs, function(node) {
 		var object = schema_model.getObjectByNumber(node);
 		if (object) {
-			logic_system.setOutput(logic_ids, object.getState());
+			logic_system.setOutput(logic_ids[node], object.getState());
+			object.stateChanged = function(new_state) {
+				logic_system.setOutput(logic_ids[node], new_state);
+			}
 		}
 	});
 	_.each(outputs, function(node) {
@@ -370,5 +250,6 @@ function buildLogicSystem(graph, schema_model) {
 			});
 		}
 	});
+	return logic_system;
 }
 

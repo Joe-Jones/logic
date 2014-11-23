@@ -201,6 +201,7 @@ function Project(project_data, main_view, replay_to) {
 		}
 		catch (e) {
 			e.error_at = this.absolute_history_position;
+			console.log(e);
 			throw(e);
 		}
 		this.absolute_history_position ++;
@@ -586,14 +587,14 @@ Action.prototype = {
 				if (this.gate_type == "INPUT") {
 					model.project.schema_infos[this.schema_id]["inputs"].push({
 						name:	"i_" + model.project.schema_infos[this.schema_id]["input_counter"],
-						number:	object.logic_id})
+						number:	object.number})
 					model.project.schema_infos[this.schema_id]["input_counter"]++;
 					object.connection_number = model.project.schema_infos[this.schema_id]["inputs"].length - 1;
 				}
 				if (this.gate_type == "OUTPUT") {
 					model.project.schema_infos[this.schema_id]["outputs"].push({
 						name:	"0_" + model.project.schema_infos[this.schema_id]["output_counter"],
-						number:	object.logic_id})
+						number:	object.number})
 					model.project.schema_infos[this.schema_id]["output_counter"]++;
 					object.connection_number = model.project.schema_infos[this.schema_id]["outputs"].length - 1;
 				}

@@ -35,12 +35,8 @@ SchemaModel.prototype.add = function(object) {
 	
 	//Add it to the LogicSystem
 	if (object.type == "SUBCIRCIT") {
-		var template = this.template_manager.getTemplate(object.schema_id);
-		object.template_instance = this.logic_system.addTemplate(template);
 		object.project = this.project;
 		this.template_manager.templateAdded(object.schema_id, this.id);
-	} else {
-		object.logic_id = this.logic_system.addGate(object.type);
 	}
 	
 	if (_.contains(["INPUT", "OUTPUT"], object.type)) {
@@ -53,7 +49,7 @@ SchemaModel.prototype.add = function(object) {
 			}
 			var info;
 			_.each(list, function(i) {
-				if (i.number == this.logic_id) {
+				if (i.number == this.number) {
 					info = i;
 				}
 			}, this);
@@ -61,26 +57,13 @@ SchemaModel.prototype.add = function(object) {
 		}
 	}
 	
-	if (object.DisplaysState) {
-		this.logic_system.registerCallback(object.logic_id,
-			function (new_state) {
-				object.setState(new_state);
-				if (that.drawer) {
-					that.drawer.invalidateRectangle(object.boundingBox());
-				}
-			});
-	}
-	if (object.type == "SWITCH") {
-		object.stateChanged = function (new_state) {
-			that.logic_system.setOutput(object.logic_id, new_state);
-		};
-	}
 	this.invalidate();
 };
 
 SchemaModel.prototype.removeLastGate = function() {
 	this.next_item_number--;
 	this.remove(this.next_item_number);
+	this.invalidate();
 }
 
 SchemaModel.prototype.remove = function(object) {
@@ -88,16 +71,8 @@ SchemaModel.prototype.remove = function(object) {
 		object = this.objects[object];
 	}
 	delete this.objects[object.number];
-	if (object.DisplaysState) {
-		this.logic_system.dropCallback(object.logic_id);
-	}
 	if (object.type == "SUBCIRCIT") {
-		_.each(object.template_instance.gates, function(gate) {
-			this.logic_system.removeGate(gate);
-		}, this);
 		this.template_manager.templateRemoved(object.schema_id, this.id);
-	} else {
-		this.logic_system.removeGate(object.logic_id);
 	}
 	this.invalidate();
 };
@@ -177,43 +152,7 @@ SchemaModel.prototype.addConnection = function(input_item_num, input_num, output
 	connection.number = this.next_connection_number;
 	this.next_connection_number ++;
 	
-	// Add to the LogicSystem
-	this.makeConnection(connection);
-	
 	this.invalidate();
-};
-
-/*
-	This adds an already existing connection into the LogicSystem.
-*/
-
-SchemaModel.prototype.makeConnection = function(connection) {
-	var output_item = connection.output_item;
-	var input_item = connection.input_item;
-	var input_num = connection.input_num;
-	var output_num = connection.output_num;
-	var logic_output;
-	if (output_item.type == "SUBCIRCIT") {
-		var n = this.project.getSchemaInfo(output_item.schema_id)["outputs"][output_num]["number"];
-		logic_output = this.logic_system.gateNumber(output_item.template_instance, n);
-		if (_.isNull(logic_output)) {
-			var schema_model = this;
-			this.logic_system.addConectionMaker(output_item.template_instance, n, function() {
-				schema_model.makeConnection(connection);
-			});
-		}
-	} else {
-		logic_output = output_item.logic_id;
-	}
-	
-	if (!_.isNull(logic_output)) {
-		if (input_item.type == "SUBCIRCIT") {
-			this.logic_system.connectToTemplateInstance(logic_output, input_item.template_instance,
-														this.project.getSchemaInfo(input_item.schema_id)["inputs"][input_num]["number"]);
-		} else {
-			this.logic_system.makeConnection(logic_output, connection.input_item.logic_id, connection.input_num);
-		}
-	}
 };
 
 SchemaModel.prototype.removeConnection = function(input_item_num, input_num, output_item_num, output_num) {
@@ -224,13 +163,7 @@ SchemaModel.prototype.removeConnection = function(input_item_num, input_num, out
 	
 	input_item.removeInput(input_num);
 	output_item.removeOutput(output_num, connection);
-	if (input_item.type == "SUBCIRCIT") {
-		_.each(input_item.template_instance.inputs[input_num + 1], function(pair) {
-			this.logic_system.removeConnection(pair[0], pair[1]);
-		}, this);
-	} else {
-		this.logic_system.removeConnection(input_item.logic_id, input_num);
-	}
+
 	this.invalidate();
 };
 
@@ -279,58 +212,28 @@ SchemaModel.prototype.load = function() {
 	}
 	delete this.data;
 	this.loaded = true;
-	this.subcomponent_invalid = false;
-};
-
-SchemaModel.prototype.rebuildLogicSystem = function() {
-	var model = this;
-	this.logic_system = new LogicSystem();
-	_.each(this.objects, function(object) {
-		if (object.type == "SUBCIRCIT") {
-			var template = this.template_manager.getTemplate(object.schema_id);
-			object.template_instance = this.logic_system.addTemplate(template);
-		} else {
-			object.logic_id = this.logic_system.addGate(object.type);
-			if (object.DisplaysState) {
-				this.logic_system.registerCallback(object.logic_id, function (new_state) {
-					object.setState(new_state);
-					if (model.drawer) {
-						model.drawer.invalidateRectangle(object.boundingBox());
-					}
-				});
-			}
-			if (object.type == "SWITCH") {
-				this.logic_system.setOutput(object.logic_id, object.getState());
-			}
-		}
-	}, this);
-	_.each(this.objects, function(object) {
-		_.each(object.getConnections("OUTPUT", 0), function(connection) {
-			this.makeConnection(connection);
-		}, this);
-	}, this);
-	this.subcomponent_invalid = false;
-	this.logic_system.runCallbacks();
-};
-
-SchemaModel.prototype.saveAsTemplate = function() {
-	this.checkAndRebuild();
-	return this.logic_system.saveAsTemplate();
+	this.needs_build = false;
 };
 
 SchemaModel.prototype.invalidate = function() {
 	this.template_manager.templateInvalid(this.id);
+	this.needs_build = true;
 };
 
 SchemaModel.prototype.subcomponentInvalid = function() {
-	this.subcomponent_invalid = true;
+	this.needs_build = true;
 };
 
 SchemaModel.prototype.checkAndRebuild = function() {
-	if (this.subcomponent_invalid) {
-		this.rebuildLogicSystem();
+	if (this.needs_build) {
+		this.logic_system = buildLogicSystem(this.template_manager.getTemplate(this.id), this);
 	}
+	this.needs_build = false;
 };
+
+SchemaModel.prototype.saveAsTemplate = function() {
+	return replaceAllSubCircuits(this.asGraph(), this.project);
+}
 
 SchemaModel.prototype.asGraph = function() {
 	var graph = new jsnx.DiGraph();
