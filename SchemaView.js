@@ -273,6 +273,7 @@ var SchemaView = JakeKit.Canvas.extend({
 			schema_id: this.model.id,
 			type: "ADD_GATE",
 			gate_type:	type,
+			number: this.model.nextItemId(),
 			position: at
 		});
 		this.action_recorder.dispatchAction(action);

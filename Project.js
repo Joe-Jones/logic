@@ -582,6 +582,7 @@ Action.prototype = {
 			/* Actions on a Schema */
 			case "ADD_GATE":
 				var object = makeGate(this.gate_type);
+				object.number = this.number;
 				model.add(object);
 				object.setPosition(this.position);
 				if (this.gate_type == "INPUT") {
