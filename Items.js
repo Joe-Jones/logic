@@ -269,6 +269,14 @@ DragableThing.prototype.outputs = function() {
 	return [];
 }
 
+DragableThing.prototype.input = function(n) {
+	return this.inputs()[n];
+};
+
+DragableThing.prototype.output = function(n) {
+	return this.outputs()[n];
+};
+
 DragableThing.prototype.addConnection = function(connection) {
 	if (connection.input_item === this) {
 		this.input_connections[connection.input_num] = connection;
@@ -693,6 +701,26 @@ SubCircit.prototype.inputs = function() {
 	return inputs;
 };
 
+SubCircit.prototype.input = function(n) {
+	var schema_info = this.project.getSchemaInfo(this.schema_id);
+	var inputs = schema_info.inputs;
+	for (var i = 0; i < inputs.length; i++) {
+		if (inputs[i].number == n) {
+			return this.inputs()[i];
+		}
+	}
+};
+
+SubCircit.prototype.output = function(n) {
+	var schema_info = this.project.getSchemaInfo(this.schema_id);
+	var outputs = schema_info.outputs;
+	for (var i = 0; i < outputs.length; i++) {
+		if (outputs[i].number == n) {
+			return this.outputs()[i];
+		}
+	}
+};
+
 /********************************************************************************************/
 function Connection(input_item, input_num, output_item, output_num)
 /********************************************************************************************/
@@ -706,12 +734,12 @@ function Connection(input_item, input_num, output_item, output_num)
 Connection.prototype.getPoints = function() {
 	var input, output;
 	if (this.input_item) {
-		input = this.input_item.inputs()[this.input_num];
+		input = this.input_item.input(this.input_num);
 	} else {
 		input = this.drag_position;
 	}
 	if (this.output_item) {
-		output = this.output_item.outputs()[this.output_num];
+		output = this.output_item.output(this.output_num);
 	} else {
 		output = this.drag_position;
 	}

@@ -112,7 +112,7 @@ var MainView = JakeKit.Stack.extend({
 		try {
 			this.project = new Project(this.database.loadProjectData(project_id, true), this, replay_to);
 		}
-		catch (e) { //throw(e);
+		catch (e) { throw(e);
 			error_at = e.error_at;
 		}
 		

@@ -135,6 +135,7 @@ function copyInto(source, destination) {
 		var node_attrs = source.node.get(node);
 		if (node_attrs.type && _.contains(["INPUT", "OUTPUT"], node_attrs.type)) {
 			node_attrs.from_subcircuit = true;
+			node_attrs.connection_number = node;
 		}
 		destination.add_node(id, node_attrs);
 		node_map[node] = id;
@@ -199,9 +200,11 @@ function replaceNode(circuit, subcircuit, node_to_replace) {
 function replaceAllSubCircuits(circuit, template_manager) {
 	var new_circuit = new jsnx.DiGraph(circuit);
 	_.each(new_circuit.nodes(), function(node) {
-		var node_attrs = new_circuit.node.get(node);
-		if (node_attrs.type == "SUBCIRCIT") {
-			replaceNode(new_circuit, template_manager.getFlatGraph(node_attrs.schema_id), node);
+		if (new_circuit.has_node(node)) {
+			var node_attrs = new_circuit.node.get(node);
+			if (node_attrs.type == "SUBCIRCIT") {
+				replaceNode(new_circuit, template_manager.getFlatGraph(node_attrs.schema_id), node);
+			}
 		}
 	});
 	return new_circuit;

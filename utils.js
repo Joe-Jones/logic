@@ -45,7 +45,7 @@ function _draw_graph(graph) {
 			if (type == "SUBCIRCIT") {
 				return node_data.schema_id;
 			} else if (_.contains(["INPUT", "OUTPUT"], type)) {
-				return type + "[" + node_data.connection_number + "]";
+				return type + "[" + data.node + "]";
 			} else {
 				return type;
 			}

@@ -590,14 +590,12 @@ Action.prototype = {
 						name:	"i_" + model.project.schema_infos[this.schema_id]["input_counter"],
 						number:	object.number})
 					model.project.schema_infos[this.schema_id]["input_counter"]++;
-					object.connection_number = model.project.schema_infos[this.schema_id]["inputs"].length - 1;
 				}
 				if (this.gate_type == "OUTPUT") {
 					model.project.schema_infos[this.schema_id]["outputs"].push({
 						name:	"0_" + model.project.schema_infos[this.schema_id]["output_counter"],
 						number:	object.number})
 					model.project.schema_infos[this.schema_id]["output_counter"]++;
-					object.connection_number = model.project.schema_infos[this.schema_id]["outputs"].length - 1;
 				}
 				model.trigger("gateAdded", object.number);
 				break;

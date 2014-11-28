@@ -114,23 +114,29 @@ SchemaModel.prototype.hitTest = function(point) {
 
 SchemaModel.prototype.hotPoint = function(point) {
 	var items = this.hitTest(point);
+	var hot_point;
+	outer_loop:
 	for (var i = 0; i < items.length; i++) {
 		var item = items[i];
 		var inputs = item.inputs();
 		for (var j = 0; j < inputs.length; j++) {
 			var input = inputs[j];
 			if (point.distance(input) < 0.2) {
-				return { item: item, type: 'INPUT', number: j, position: input };
+				hot_point = { item: item, type: 'INPUT', number: j, position: input };
 			}
 		}
 		var outputs = item.outputs();
 		for (var j = 0; j < outputs.length; j++) {
 			var output = outputs[j];
 			if (point.distance(output) < 0.2) {
-				return { item: item, type: 'OUTPUT', number: j, position: output };
+				hot_point = { item: item, type: 'OUTPUT', number: j, position: output };
 			}
 		}
 	}
+	if (hot_point && hot_point.item.type == "SUBCIRCIT") {
+		hot_point.number = this.project.getSchemaInfo(item.schema_id)[hot_point.type == 'INPUT' ? 'inputs' : 'outputs'][hot_point.number].number;
+	}
+	return hot_point;
 }
 
 function hotPointsEqual(a, b) {
@@ -243,8 +249,6 @@ SchemaModel.prototype.asGraph = function() {
 		var attrs = { type: object.type };
 		if (object.type == "SUBCIRCIT") {
 			attrs.schema_id = object.schema_id;
-		} else if (_.contains(["INPUT", "OUTPUT"], object.type)) {
-			attrs.connection_number = object.connection_number;
 		}
 		graph.add_node(object.number, attrs);
 		
